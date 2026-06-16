@@ -1,7 +1,7 @@
 name: nightly-docker
 
 on:
-  push:
+  pull_request:
     branches:
       - main
   schedule:
