@@ -9,7 +9,8 @@
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
     "typecheck": "nuxt typecheck",
-    "test": "bun test"
+    "test": "bun test",
+    "release": "./scripts/release.sh"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.112",
