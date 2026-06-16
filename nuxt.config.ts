@@ -34,7 +34,8 @@ export default defineNuxtConfig({
       theme_color: "#09090b",
       background_color: "#09090b",
       display: "standalone",
-      start_url: "/app/room",
+      scope: "/app",
+      start_url: "/app/overview",
       icons: [
         {
           src: "pwa-192x192.png",
