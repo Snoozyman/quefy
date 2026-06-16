@@ -1,0 +1,35 @@
+{
+  // https://nuxt.com/docs/guide/concepts/typescript
+  "files": [],
+  "references": [
+    {
+      "path": "./.nuxt/tsconfig.app.json"
+    },
+    {
+      "path": "./.nuxt/tsconfig.server.json"
+    },
+    {
+      "path": "./.nuxt/tsconfig.shared.json"
+    },
+    {
+      "path": "./.nuxt/tsconfig.node.json"
+    }
+  ],
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "erasableSyntaxOnly": true,
+    "noUncheckedIndexedAccess": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "types": [
+      "@types/bun"
+    ]
+  },
+}

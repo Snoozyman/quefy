@@ -1,0 +1,16 @@
+services:
+  quefy:
+    image: snoozyman/quefy:latest
+    container_name: quefy
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      # Path to yt-dlp (default resolves from PATH)
+      # - YT_DLP_PATH=yt-dlp
+      # Uncomment and adjust to enable authenticated YouTube requests
+      # - YT_DLP_COOKIES=/data/cookies.txt
+    # Uncomment to mount a cookies file for authenticated requests
+    # volumes:
+    #   - ./cookies.txt:/data/cookies.txt:ro

@@ -1,0 +1,25 @@
+{
+  "editor.tabSize": 2,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "editor.quickSuggestions": {
+    "strings": "on"
+  },
+  "tailwindCSS.classAttributes": [
+    "class",
+    "ui"
+  ],
+  "tailwindCSS.experimental.classRegex": [
+    [
+      "ui:\\s*{([^)]*)\\s*}",
+      "(?:'|\"|`)([^']*)(?:'|\"|`)"
+    ]
+  ],
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
+  //"typescript.native-preview.tsdk": "node_modules/@typescript/native-preview",
+}
