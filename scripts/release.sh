@@ -8,9 +8,11 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
+REPO_URL="https://github.com/Snoozyman/quefy"
+
 # Get latest tag
 get_latest_tag() {
-  git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0"
+  git describe --tags --abbrev=0 2>/dev/null || echo ""
 }
 
 # Parse version components
@@ -49,6 +51,75 @@ bump_version() {
   echo "$major.$minor.$patch"
 }
 
+# Get commits since last tag
+get_commits_since_tag() {
+  local latest_tag="$1"
+  if [ -z "$latest_tag" ]; then
+    git log --pretty=format:"%H|%h|%s" --reverse
+  else
+    git log "${latest_tag}..HEAD" --pretty=format:"%H|%h|%s" --reverse
+  fi
+}
+
+# Generate changelog entry
+generate_changelog_entry() {
+  local version="$1"
+  local date=$(date +%Y-%m-%d)
+  local latest_tag="$2"
+
+  local commits=$(get_commits_since_tag "$latest_tag")
+
+  if [ -z "$commits" ]; then
+    echo "## [$version] - $date"
+    echo
+    echo "No changes."
+    echo
+    return
+  fi
+
+  echo "## [$version] - $date"
+  echo
+  echo "### Commits"
+  echo
+
+  while IFS='|' read -r full_hash short_hash message; do
+    echo "- [\`${short_hash}\`](${REPO_URL}/commit/${full_hash}) ${message}"
+  done <<< "$commits"
+
+  echo
+}
+
+# Update CHANGELOG.md
+update_changelog() {
+  local version="$1"
+  local latest_tag="$2"
+  local changelog_file="CHANGELOG.md"
+
+  if [ ! -f "$changelog_file" ]; then
+    echo -e "${RED}Error: $changelog_file not found${NC}"
+    exit 1
+  fi
+
+  local new_entry=$(generate_changelog_entry "$version" "$latest_tag")
+
+  # Create temp file with new entry
+  local temp_file=$(mktemp)
+
+  # Read header (first 6 lines)
+  head -n 6 "$changelog_file" > "$temp_file"
+
+  # Add new entry
+  echo "$new_entry" >> "$temp_file"
+
+  # Add rest of file (skip header)
+  tail -n +7 "$changelog_file" >> "$temp_file"
+
+  # Replace original
+  mv "$temp_file" "$changelog_file"
+
+  echo -e "${GREEN}✓ Updated CHANGELOG.md${NC}"
+}
+
 # Check for uncommitted changes
 check_clean() {
   if ! git diff-index --quiet HEAD -- 2>/dev/null; then
@@ -79,7 +150,12 @@ main() {
 
   # Get current version
   local latest_tag=$(get_latest_tag)
-  local current_version=$(parse_version "$latest_tag")
+  local current_version
+  if [ -z "$latest_tag" ]; then
+    current_version="0.0.0"
+  else
+    current_version=$(parse_version "$latest_tag")
+  fi
 
   echo -e "Current version: ${GREEN}$current_version${NC}"
   echo
@@ -111,37 +187,40 @@ main() {
   local new_tag="v$new_version"
 
   echo
-  echo -e "Creating tag: ${GREEN}$new_tag${NC}"
-
-  # Optional: add release notes
-  read -p "Add release notes? (y/N) " -n 1 -r
+  echo -e "Preparing release: ${GREEN}$new_tag${NC}"
   echo
 
-  if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "Enter release notes (Ctrl+D when done):"
-    local notes=$(cat)
-    git tag -a "$new_tag" -m "Release $new_tag" -m "$notes"
-  else
-    git tag -a "$new_tag" -m "Release $new_tag"
-  fi
+  # Update CHANGELOG.md
+  update_changelog "$new_version" "$latest_tag"
 
+  # Commit changelog
+  echo "Committing changelog update..."
+  git add CHANGELOG.md
+  git commit -m "chore: update changelog for $new_tag"
+  echo -e "${GREEN}✓ Changelog committed${NC}"
+  echo
+
+  # Create tag
+  git tag -a "$new_tag" -m "Release $new_tag"
   echo -e "${GREEN}✓ Tag created: $new_tag${NC}"
   echo
 
   # Push?
-  read -p "Push tag to origin? (Y/n) " -n 1 -r
+  read -p "Push commit and tag to origin? (Y/n) " -n 1 -r
   echo
 
   if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-    echo "Pushing tag..."
+    echo "Pushing..."
+    git push origin HEAD
     git push origin "$new_tag"
-    echo -e "${GREEN}✓ Tag pushed successfully${NC}"
+    echo -e "${GREEN}✓ Pushed successfully${NC}"
     echo
     echo "GitHub Actions will now:"
     echo "  • Run CI (typecheck + test)"
     echo "  • Build and push Docker image: snoozyman/quefy:$new_tag"
   else
-    echo "Tag created locally. Push with:"
+    echo "Release created locally. Push with:"
+    echo "  git push origin HEAD"
     echo "  git push origin $new_tag"
   fi
 }
