@@ -1,9 +1,11 @@
 # Quefy
 
-[![ci](https://img.shields.io/github/actions/workflow/status/Snoozyman/quefy/ci.yml?branch=master&style=flat-square&label=ci)](https://github.com/Snoozyman/quefy/actions/workflows/ci.yml)
-[![Docker](https://img.shields.io/docker/v/Snoozyman/quefy?style=flat-square&label=docker)](https://hub.docker.com/r/Snoozyman/quefy)
-[![License](https://img.shields.io/github/license/Snoozyman/quefy?style=flat-square)](LICENSE)
-
+[![CI](https://img.shields.io/github/actions/workflow/status/Snoozyman/quefy/ci.yml?logo=github)](https://github.com/Snoozyman/quefy/actions/workflows/ci.yml)
+[![Docker](https://img.shields.io/github/actions/workflow/status/Snoozyman/quefy/docker-publish.yml?logo=docker)](https://github.com/Snoozyman/quefy/actions/workflows/docker-publish.yml)
+<!--
+[![License](https://img.shields.io/github/license/Snoozyman/quefy)](LICENSE)
+![GitHub Tag](https://img.shields.io/github/v/tag/Snoozyman/quefy)
+-->
 Multi-user YouTube audio streaming rooms. Host creates a room, share the code —
 joiners queue songs, host's device plays the audio.
 
