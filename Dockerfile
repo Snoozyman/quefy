@@ -31,6 +31,7 @@ COPY --from=build /tmp/yt-dlp /usr/local/bin/yt-dlp
 COPY --from=build /app/.output ./.output
 
 ENV NODE_ENV=production
-EXPOSE 3000
+ENV PORT=3000
+EXPOSE ${PORT}
 
 CMD ["node", ".output/server/index.mjs"]
