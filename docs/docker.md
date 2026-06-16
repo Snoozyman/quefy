@@ -63,11 +63,11 @@ docker run -d -p 3000:3000 quefy:local
 
 ## Image Tags
 
-| Tag | Description |
-|-----|-------------|
-| `latest` | Latest stable release |
-| `v0.1.0` | Specific version (e.g., v0.1.0, v0.2.0) |
-| `0.1` | Latest patch for minor version (e.g., 0.1.x) |
+| Tag      | Description                                  |
+| -------- | -------------------------------------------- |
+| `latest` | Latest stable release                        |
+| `v0.1.0` | Specific version (e.g., v0.1.0, v0.2.0)      |
+| `0.1`    | Latest patch for minor version (e.g., 0.1.x) |
 
 ## Environment Variables
 
@@ -80,10 +80,10 @@ docker run -d \
   snoozyman/quefy:latest
 ```
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `NODE_ENV` | `production` | Node environment |
-| `YT_DLP_COOKIES` | _(none)_ | Path to cookies file inside container |
+| Variable         | Default      | Description                           |
+| ---------------- | ------------ | ------------------------------------- |
+| `NODE_ENV`       | `production` | Node environment                      |
+| `YT_DLP_COOKIES` | _(none)_     | Path to cookies file inside container |
 
 ## Volume Mounts
 

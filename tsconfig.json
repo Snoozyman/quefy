@@ -28,8 +28,6 @@
     "noPropertyAccessFromIndexSignature": true,
     "exactOptionalPropertyTypes": true,
     "noImplicitOverride": true,
-    "types": [
-      "@types/bun"
-    ]
-  },
+    "types": ["@types/bun"]
+  }
 }

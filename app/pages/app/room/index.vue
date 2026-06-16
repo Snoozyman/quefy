@@ -77,7 +77,10 @@ async function createRoom() {
       method: "POST",
       body: { title: roomTitle.value.trim() || undefined },
     });
-    localStorage.setItem("quefy-host", JSON.stringify({ roomId: data.roomId, hostToken: data.hostToken }));
+    localStorage.setItem(
+      "quefy-host",
+      JSON.stringify({ roomId: data.roomId, hostToken: data.hostToken }),
+    );
     router.push(`/app/room/${data.roomId}`);
   } catch (e) {
     error.value = "Failed to create room. Is the server running?";

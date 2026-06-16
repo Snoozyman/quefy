@@ -17,35 +17,41 @@ useSeoMeta({
   ogImage: "https://quefy.app/og-image.png",
   twitterCard: "summary_large_image",
 });
+
+const route = useRoute();
+const isApp = computed(() => route.path.startsWith("/app"));
 </script>
 
 <template>
   <UApp>
-    <Header />
+    <Header v-if="!isApp" />
 
-    <UMain>
+    <UMain v-if="!isApp">
       <NuxtPage />
     </UMain>
+    <NuxtPage v-else />
 
-    <USeparator icon="i-simple-icons-nuxtdotjs" />
+    <template v-if="!isApp">
+      <USeparator icon="i-simple-icons-nuxtdotjs" />
 
-    <UFooter>
-      <template #left>
-        <p class="text-sm text-muted">
-          Built with Nuxt UI • © {{ new Date().getFullYear() }}
-        </p>
-      </template>
+      <UFooter>
+        <template #left>
+          <p class="text-sm text-muted">
+            Built with Nuxt UI • © {{ new Date().getFullYear() }}
+          </p>
+        </template>
 
-      <template #right>
-        <UButton
-          to="https://github.com/nuxt-ui-templates/starter"
-          target="_blank"
-          icon="i-simple-icons-github"
-          aria-label="GitHub"
-          color="neutral"
-          variant="ghost"
-        />
-      </template>
-    </UFooter>
+        <template #right>
+          <UButton
+            to="https://github.com/nuxt-ui-templates/starter"
+            target="_blank"
+            icon="i-simple-icons-github"
+            aria-label="GitHub"
+            color="neutral"
+            variant="ghost"
+          />
+        </template>
+      </UFooter>
+    </template>
   </UApp>
 </template>

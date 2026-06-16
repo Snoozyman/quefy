@@ -67,7 +67,13 @@ describe("verifyHost", () => {
 describe("addToQueue", () => {
   test("adds a song to the queue", () => {
     const room = createRoom();
-    const song = addToQueue(room.id, "dQw4w9WgXcQ", "Never Gonna Give You Up", "https://example.com/audio", "Alice");
+    const song = addToQueue(
+      room.id,
+      "dQw4w9WgXcQ",
+      "Never Gonna Give You Up",
+      "https://example.com/audio",
+      "Alice",
+    );
     expect(song).not.toBeNull();
     expect(song!.id).toBeTruthy();
     expect(song!.videoId).toBe("dQw4w9WgXcQ");

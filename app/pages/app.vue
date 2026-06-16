@@ -1,18 +1,21 @@
 <template>
   <div>
-    <UDashboardGroup class="mt-16">
+    <UDashboardGroup>
       <UDashboardSidebar
         collapsible
         resizable
+        mode="slideover"
         :ui="{ footer: 'border-t border-default' }"
       >
         <template #header="{ collapsed }">
-          <h2 v-if="!collapsed" class="grow shrink">Dashboard</h2>
           <UDashboardSidebarCollapse />
         </template>
+
         <UNavigationMenu orientation="vertical" :items="items" />
       </UDashboardSidebar>
       <UDashboardPanel>
+        <UDashboardNavbar title="Dashboard" />
+
         <NuxtPage />
       </UDashboardPanel>
     </UDashboardGroup>

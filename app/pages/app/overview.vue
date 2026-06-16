@@ -24,8 +24,8 @@
         <div class="min-w-0">
           <p class="font-medium truncate">{{ r.title }}</p>
           <p class="text-xs text-muted">
-            Code: <code class="font-mono">{{ r.id }}</code>
-            · {{ r.queueCount }} song{{ r.queueCount === 1 ? "" : "s" }}
+            Code: <code class="font-mono">{{ r.id }}</code> ·
+            {{ r.queueCount }} song{{ r.queueCount === 1 ? "" : "s" }}
           </p>
         </div>
         <div class="flex items-center gap-2 shrink-0">

@@ -3,12 +3,18 @@ import { parseYtDlpError } from "../server/utils/yt-dlp-errors";
 
 describe("parseYtDlpError", () => {
   test("detects age-restricted videos", () => {
-    expect(parseYtDlpError("ERROR: Sign in to confirm your age")).toContain("age-restricted");
-    expect(parseYtDlpError("This video is age-restricted")).toContain("age-restricted");
+    expect(parseYtDlpError("ERROR: Sign in to confirm your age")).toContain(
+      "age-restricted",
+    );
+    expect(parseYtDlpError("This video is age-restricted")).toContain(
+      "age-restricted",
+    );
   });
 
   test("detects member-only videos", () => {
-    expect(parseYtDlpError("This video is only available to members")).toContain("members-only");
+    expect(
+      parseYtDlpError("This video is only available to members"),
+    ).toContain("members-only");
   });
 
   test("detects private videos", () => {
@@ -24,7 +30,9 @@ describe("parseYtDlpError", () => {
   });
 
   test("detects network errors", () => {
-    expect(parseYtDlpError("Unable to download webpage: network error")).toContain("Network error");
+    expect(
+      parseYtDlpError("Unable to download webpage: network error"),
+    ).toContain("Network error");
   });
 
   test("returns generic message for unknown errors", () => {

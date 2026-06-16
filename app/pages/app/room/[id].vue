@@ -5,15 +5,14 @@
   >
     Loading room...
   </div>
-  <div v-else class="max-w-2xl mx-auto space-y-6">
+  <div v-else class="mx-2 w-80vw md:mx-4 md:w-2xl space-y-6 py-6">
     <!-- Header -->
     <div class="flex items-center justify-between">
-      <div>
+      <UCard class="w-full rounded-xl border border-default p-4">
         <h1 class="text-2xl font-bold">{{ roomState.title || "Room" }}</h1>
         <p class="text-sm text-muted">
           <NuxtLink to="/app/room" class="hover:underline">Rooms</NuxtLink>
-          ·
-          Code:
+          · Code:
           <code
             class="font-mono font-bold text-primary cursor-pointer select-all"
             @click="copyRoomCode"
@@ -22,37 +21,37 @@
           </code>
           <span v-if="copied" class="ml-2 text-xs text-muted">Copied!</span>
         </p>
-      </div>
-      <div class="flex items-center gap-2">
-        <UButton
-          v-if="isHost"
-          size="sm"
-          variant="outline"
-          :icon="roomState.isPlaying ? 'i-lucide-pause' : 'i-lucide-play'"
-          :disabled="playDisabled"
-          @click="togglePlay"
-        >
-          {{ roomState.isPlaying ? "Pause" : "Play" }}
-        </UButton>
-        <UButton
-          v-if="isHost"
-          size="sm"
-          variant="outline"
-          icon="i-lucide-skip-forward"
-          :disabled="!roomState.currentSong"
-          @click="skip"
-        >
-          Skip
-        </UButton>
-        <UButton
-          size="sm"
-          variant="outline"
-          icon="i-lucide-download"
-          @click="exportQueue"
-        >
-          Export
-        </UButton>
-      </div>
+        <div class="flex items-center gap-2">
+          <UButton
+            v-if="isHost"
+            size="sm"
+            variant="outline"
+            :icon="roomState.isPlaying ? 'i-lucide-pause' : 'i-lucide-play'"
+            :disabled="playDisabled"
+            @click="togglePlay"
+          >
+            {{ roomState.isPlaying ? "Pause" : "Play" }}
+          </UButton>
+          <UButton
+            v-if="isHost"
+            size="sm"
+            variant="outline"
+            icon="i-lucide-skip-forward"
+            :disabled="!roomState.currentSong"
+            @click="skip"
+          >
+            Skip
+          </UButton>
+          <UButton
+            size="sm"
+            variant="outline"
+            icon="i-lucide-download"
+            @click="exportQueue"
+          >
+            Export
+          </UButton>
+        </div>
+      </UCard>
     </div>
 
     <!-- Audio Player (host only) -->
@@ -138,11 +137,11 @@
 
     <!-- Search / Add song -->
     <div class="search-container relative">
-      <div class="flex gap-2">
+      <div class="flex gap-2 flex-col sm:flex-row">
         <UInput
           v-model="searchQuery"
           placeholder="Search YouTube or paste a URL"
-          class="grow"
+          class="grow flex-5/6"
           :loading="searching"
           @input="onSearchInput"
           @keydown.down.prevent="highlightNext"
@@ -153,6 +152,7 @@
           :loading="addingSong"
           :disabled="!searchQuery.trim()"
           @click="addHighlighted"
+          class="flex-1/6"
         >
           Add to Queue
         </UButton>
@@ -296,7 +296,7 @@ async function fetchRoomState() {
 const playing = ref(false);
 const currentTime = ref(0);
 const duration = ref(0);
-const volume = ref(1);
+const volume = ref(0.33);
 const seekValue = ref(0);
 const audioEl = ref<HTMLAudioElement>();
 const seekBar = ref<HTMLInputElement>();

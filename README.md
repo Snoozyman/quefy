@@ -2,10 +2,12 @@
 
 [![CI](https://img.shields.io/github/actions/workflow/status/Snoozyman/quefy/ci.yml?logo=github)](https://github.com/Snoozyman/quefy/actions/workflows/ci.yml)
 [![Docker](https://img.shields.io/github/actions/workflow/status/Snoozyman/quefy/docker-publish.yml?logo=docker)](https://github.com/Snoozyman/quefy/actions/workflows/docker-publish.yml)
+
 <!--
 [![License](https://img.shields.io/github/license/Snoozyman/quefy)](LICENSE)
 ![GitHub Tag](https://img.shields.io/github/v/tag/Snoozyman/quefy)
 -->
+
 Multi-user YouTube audio streaming rooms. Host creates a room, share the code —
 joiners queue songs, host's device plays the audio.
 
@@ -45,9 +47,9 @@ See [docs/docker.md](docs/docker.md) for complete Docker documentation including
 
 All variables are optional:
 
-| Variable | Default | Description |
-|---|---|---|
-| `YT_DLP_PATH` | `yt-dlp` | Path to yt-dlp binary |
+| Variable         | Default  | Description                                                                                              |
+| ---------------- | -------- | -------------------------------------------------------------------------------------------------------- |
+| `YT_DLP_PATH`    | `yt-dlp` | Path to yt-dlp binary                                                                                    |
 | `YT_DLP_COOKIES` | _(none)_ | Path to a Netscape-format cookies file for authenticated requests (age-restricted or member-only videos) |
 
 ## Cookies (optional)

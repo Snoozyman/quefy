@@ -35,9 +35,11 @@ export async function getAudioStreamUrl(videoId: string): Promise<AudioStream> {
   let stderr: string;
   try {
     const result = await execFileAsync("yt-dlp", [
-      "-f", "bestaudio",
+      "-f",
+      "bestaudio",
       "--print-json",
-      "--print", "url",
+      "--print",
+      "url",
       ...getCookiesArgs(),
       `https://www.youtube.com/watch?v=${videoId}`,
     ]);

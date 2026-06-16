@@ -43,7 +43,10 @@ export default defineEventHandler(async (event) => {
     stdout = result.stdout;
   } catch (err: any) {
     const stderr = err.stderr || "";
-    throw createError({ statusCode: 500, statusMessage: parseYtDlpError(stderr) });
+    throw createError({
+      statusCode: 500,
+      statusMessage: parseYtDlpError(stderr),
+    });
   }
 
   const results: SearchResult[] = stdout
