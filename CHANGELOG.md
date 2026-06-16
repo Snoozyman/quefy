@@ -8,4 +8,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Commits
 
-- [`3a59817`](https://github.com/Snoozyman/quefy/commit/3a59817d63ec96594251633731828404d6205526) feat: add changelog generation to release script, fix Dockerfile curl install
+- [`12eeb0b`](https://github.com/Snoozyman/quefy/commit/12eeb0b59cf8d7c7c260ecdfc99b92103aec2f8e) fix: use yt-dlp_linux binary in Dockerfile, update docker docs
