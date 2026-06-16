@@ -26,15 +26,18 @@ bun test
 ## Docker
 
 ```bash
-docker build -t quefy .
-docker run -p 3000:3000 quefy
+docker pull snoozyman/quefy:latest
+docker run -d -p 3000:3000 snoozyman/quefy:latest
 ```
 
-Images are also published on tag:
+Or build from source:
 
 ```bash
-docker pull snoozyman/quefy:v1.0.0
+docker build -t quefy .
+docker run -d -p 3000:3000 quefy
 ```
+
+See [docs/docker.md](docs/docker.md) for complete Docker documentation including Docker Compose, volume mounts, and production deployment.
 
 ## Environment
 

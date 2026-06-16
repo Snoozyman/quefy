@@ -11,7 +11,7 @@ RUN bun install --frozen-lockfile
 
 COPY . .
 
-RUN curl -fsSL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
+RUN curl -fsSL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux \
   -o /tmp/yt-dlp && chmod +x /tmp/yt-dlp
 
 RUN bun run build
