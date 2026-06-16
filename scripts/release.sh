@@ -89,6 +89,20 @@ generate_changelog_entry() {
   echo
 }
 
+# Update package.json version
+update_package_json() {
+  local version="$1"
+  local pkg="package.json"
+
+  if [ ! -f "$pkg" ]; then
+    echo -e "${YELLOW}Warning: $pkg not found, skipping${NC}"
+    return
+  fi
+
+  sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$version\"/" "$pkg"
+  echo -e "${GREEN}✓ Updated package.json to $version${NC}"
+}
+
 # Update CHANGELOG.md
 update_changelog() {
   local version="$1"
@@ -193,9 +207,12 @@ main() {
   # Update CHANGELOG.md
   update_changelog "$new_version" "$latest_tag"
 
+  # Update package.json version
+  update_package_json "$new_version"
+
   # Commit changelog
   echo "Committing changelog update..."
-  git add CHANGELOG.md
+  git add CHANGELOG.md package.json
   git commit -m "chore: update changelog for $new_tag"
   echo -e "${GREEN}✓ Changelog committed${NC}"
   echo
