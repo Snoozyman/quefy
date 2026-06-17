@@ -60,10 +60,10 @@ tests/                # room.test.ts, yt-dlp-errors.test.ts
 
 ## API response format
 
-Endpoints return data directly (typed via shared types) or throw `createError` for errors:
+All API endpoints use `ApiResponse<T>` / `Result<T, E>` from `shared/utils/result.ts`:
 
-- **Success:** return the data object matching the type (e.g., `RoomState`, `SongData`, `SearchResult[]`)
-- **Error:** `throw createError({ statusCode, statusMessage })` — Nuxt serialises this as `{ statusCode, statusMessage, data? }`
+- **Success:** `return success(data)` — returns `{ success: true, data }`
+- **Error:** `throw createError({ statusCode, statusMessage })` _or_ `return failure(error)` — returns `{ success: false, error }`
 
 Key response types in `shared/types/`:
 
