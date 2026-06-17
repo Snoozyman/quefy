@@ -23,17 +23,6 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
-  runtimeConfig: {
-    public: {
-      spotifyClientId: '',
-      spotifyRedirectUri: ''
-    },
-    spotify: {
-      clientId: '',
-      clientSecret: ''
-    }
-  },
-
   routeRules: {
     '/': { prerender: true },
     '/api/**': { cors: true },

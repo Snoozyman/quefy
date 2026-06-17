@@ -46,34 +46,32 @@ export function useSpotifyAuth() {
   }
 
   async function login(roomId: string) {
-    const config = useRuntimeConfig()
-    const clientId = config.public.spotifyClientId
-    if (!clientId) {
+    loading.value = true
+    try {
+      const { clientId, redirectUri } = await $fetch<{ clientId: string, redirectUri: string }>('/api/spotify/client-id')
+      const state = `${roomId}:${crypto.randomUUID()}`
+      const scopes = [
+        'streaming',
+        'user-read-email',
+        'user-read-private',
+        'user-read-playback-state',
+        'user-modify-playback-state'
+      ].join(' ')
+
+      const params = new URLSearchParams({
+        client_id: clientId,
+        response_type: 'code',
+        redirect_uri: redirectUri,
+        state,
+        scope: scopes
+      })
+
+      window.location.href = `https://accounts.spotify.com/authorize?${params.toString()}`
+    } catch {
       throw new Error(
-        'Spotify Client ID not configured. Add NUXT_PUBLIC_SPOTIFY_CLIENT_ID to .env.local'
+        'Spotify Client ID not configured. Set SPOTIFY_CLIENT_ID in the server environment.'
       )
     }
-
-    loading.value = true
-    const state = `${roomId}:${crypto.randomUUID()}`
-    const redirectUri = `${window.location.origin}/api/spotify/callback`
-    const scopes = [
-      'streaming',
-      'user-read-email',
-      'user-read-private',
-      'user-read-playback-state',
-      'user-modify-playback-state'
-    ].join(' ')
-
-    const params = new URLSearchParams({
-      client_id: clientId,
-      response_type: 'code',
-      redirect_uri: redirectUri,
-      state,
-      scope: scopes
-    })
-
-    window.location.href = `https://accounts.spotify.com/authorize?${params.toString()}`
   }
 
   function logout() {

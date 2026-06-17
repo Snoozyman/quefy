@@ -7,7 +7,7 @@ interface CachedToken {
 
 let clientToken: CachedToken | null = null
 
-function getClientId(): string {
+export function getClientId(): string {
   return process.env.SPOTIFY_CLIENT_ID ?? ''
 }
 
