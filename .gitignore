@@ -13,6 +13,9 @@ node_modules
 logs
 *.log
 
+# Runtime data (uploaded cookies, etc.)
+data
+
 # Misc
 .DS_Store
 .fleet
