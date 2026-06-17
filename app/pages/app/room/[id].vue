@@ -241,11 +241,7 @@ let lastSongId: string | null = null
 
 function handleSongChange(song: SongData) {
   if (!isHost.value) return
-  if (
-    song.source === 'spotify'
-    && spotifyPlayer.isReady.value
-    && song.trackUri
-  ) {
+  if (song.source === 'spotify' && song.trackUri) {
     transferSpotifyPlayback(song.trackUri)
   }
   if (song.source === 'youtube' && song.url) {
@@ -314,21 +310,18 @@ watch(
 )
 
 async function transferSpotifyPlayback(trackUri: string) {
-  const token = spotifyAuth.getAccessToken()
+  let token = spotifyAuth.getAccessToken()
+  if (!token) {
+    const refreshed = await spotifyAuth.refreshToken()
+    if (!refreshed) return
+    token = spotifyAuth.getAccessToken()
+    if (!token) return
+  }
   const deviceId = spotifyPlayer.deviceId.value
-  if (!token || !deviceId) return
+  if (!deviceId) return
   const headers = {
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json'
-  }
-
-  const devices = await fetch('https://api.spotify.com/v1/me/player/devices', {
-    headers: { Authorization: `Bearer ${token}` }
-  }).then(r => r.ok ? r.json() : { devices: [] }).catch(() => ({ devices: [] }))
-  const deviceExists = (devices.devices ?? []).some((d: { id: string }) => d.id === deviceId)
-  if (!deviceExists) {
-    console.warn('Spotify device not found in available devices. Try refreshing or reconnecting.')
-    return
   }
 
   const transferRes = await fetch('https://api.spotify.com/v1/me/player', {
