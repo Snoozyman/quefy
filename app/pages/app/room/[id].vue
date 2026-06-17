@@ -214,6 +214,7 @@ function handleSongChange(song: SongData) {
 
 let eventSource: EventSource | null = null;
 let pollTimer: ReturnType<typeof setInterval> | null = null;
+let pageLeaving = false;
 
 function connectSSE() {
   eventSource = new EventSource(`/api/room/${roomId}/events`);
@@ -233,6 +234,7 @@ function connectSSE() {
   });
 
   eventSource.onerror = () => {
+    if (pageLeaving) return;
     console.warn("SSE connection failed, falling back to polling");
     eventSource?.close();
     eventSource = null;
@@ -398,9 +400,12 @@ onMounted(async () => {
   }
   loading.value = false;
   connectSSE();
+
+  window.addEventListener("beforeunload", () => { pageLeaving = true; });
 });
 
 onUnmounted(() => {
+  pageLeaving = true;
   eventSource?.close();
   if (pollTimer) clearInterval(pollTimer);
   spotifyPlayer.destroy();
