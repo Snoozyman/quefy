@@ -39,6 +39,8 @@ async function getClientCredentialsToken(): Promise<string> {
   })
 
   if (!res.ok) {
+    const body = await res.text().catch(() => '(no body)')
+    console.error(`[${new Date().toISOString()}] Spotify token fetch failed: ${res.status} — ${body.slice(0, 200)}`)
     throw new Error(`Failed to get Spotify token: ${res.status}`)
   }
 
@@ -71,7 +73,8 @@ export async function searchTracks(
   )
 
   if (!res.ok) {
-    throw new Error(`Spotify search failed: ${res.status}`)
+    const body = await res.text().catch(() => '(no body)')
+    throw new Error(`Spotify search failed: ${res.status} — ${body.slice(0, 200)}`)
   }
 
   const data = (await res.json()) as SpotifySearchResponse
