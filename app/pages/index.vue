@@ -9,7 +9,7 @@
           to: 'https://ui.nuxt.com/docs/getting-started/installation/nuxt',
           target: '_blank',
           trailingIcon: 'i-lucide-arrow-right',
-          size: 'xl',
+          size: 'xl'
         },
         {
           label: 'Use this template',
@@ -18,8 +18,8 @@
           icon: 'i-simple-icons-github',
           size: 'xl',
           color: 'neutral',
-          variant: 'subtle',
-        },
+          variant: 'subtle'
+        }
       ]"
     />
   </div>

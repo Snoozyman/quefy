@@ -8,7 +8,11 @@
 
     <UNavigationMenu :items="items" />
     <template #body>
-      <UNavigationMenu :items="items" orientation="vertical" class="-mx-2.5" />
+      <UNavigationMenu
+        :items="items"
+        orientation="vertical"
+        class="-mx-2.5"
+      />
     </template>
     <template #right>
       <UColorModeButton />
@@ -19,12 +23,12 @@
 <script lang="ts" setup>
 const items = [
   {
-    label: "Home",
-    to: "/",
+    label: 'Home',
+    to: '/'
   },
   {
-    label: "App",
-    to: "/app",
-  },
-];
+    label: 'App',
+    to: '/app'
+  }
+]
 </script>

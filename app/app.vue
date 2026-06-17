@@ -1,25 +1,25 @@
 <script setup>
 useHead({
   htmlAttrs: {
-    lang: "en",
-  },
-});
+    lang: 'en'
+  }
+})
 
-const title = "Quefy";
-const description =
-  "Quefy is a queue for Youtube music for everyone. Create a room, share the link and enjoy music together with your friends.";
+const title = 'Quefy'
+const description
+  = 'Quefy is a queue for Youtube music for everyone. Create a room, share the link and enjoy music together with your friends.'
 
 useSeoMeta({
   title,
   description,
   ogTitle: title,
   ogDescription: description,
-  ogImage: "https://quefy.app/og-image.png",
-  twitterCard: "summary_large_image",
-});
+  ogImage: 'https://quefy.app/og-image.png',
+  twitterCard: 'summary_large_image'
+})
 
-const route = useRoute();
-const isApp = computed(() => route.path.startsWith("/app"));
+const route = useRoute()
+const isApp = computed(() => route.path.startsWith('/app'))
 </script>
 
 <template>
