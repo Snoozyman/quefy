@@ -15,6 +15,12 @@
           orientation="vertical"
           :items="items"
         />
+
+        <template #footer="{ collapsed }">
+          <p v-if="!collapsed" class="text-xs text-muted px-3 py-2">
+            v{{ appVersion }} ({{ commitHash }})
+          </p>
+        </template>
       </UDashboardSidebar>
       <UDashboardPanel>
         <UDashboardNavbar title="Dashboard" />
@@ -27,6 +33,8 @@
 
 <script lang="ts" setup>
 import type { NavigationMenuItem } from '@nuxt/ui'
+
+const { appVersion, commitHash } = useRuntimeConfig().public
 
 const items = computed<NavigationMenuItem[]>(() => [
   {

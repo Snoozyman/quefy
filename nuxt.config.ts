@@ -1,4 +1,8 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { execSync } from 'node:child_process'
+
+const commitHash = execSync('git rev-parse --short HEAD', { encoding: 'utf-8' }).trim()
+
 export default defineNuxtConfig({
   modules: ['@nuxt/eslint', '@nuxt/ui', '@nuxt/image', '@vite-pwa/nuxt'],
 
@@ -27,6 +31,13 @@ export default defineNuxtConfig({
     '/': { prerender: true },
     '/api/**': { cors: true },
     '/app/**': { ssr: false }
+  },
+
+  runtimeConfig: {
+    public: {
+      appVersion: '0.1.0',
+      commitHash
+    }
   },
 
   compatibilityDate: '2025-01-15',
