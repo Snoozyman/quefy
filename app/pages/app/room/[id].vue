@@ -383,6 +383,10 @@ async function togglePlay() {
 
 async function skip() {
   if (!isHost.value || !hostData.value?.hostToken) return
+
+  spotifyPlayer.pause()
+  ytPlayerRef.value?.pause()
+
   try {
     const res = await $fetch<{
       currentSong: SongData | null
