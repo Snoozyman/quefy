@@ -16,6 +16,9 @@ logs
 # Runtime data (uploaded cookies, etc.)
 data
 
+# Session files
+session-*.md
+
 # Misc
 .DS_Store
 .fleet
