@@ -9,8 +9,13 @@ services:
       - NODE_ENV=production
       # Path to yt-dlp (default resolves from PATH)
       # - YT_DLP_PATH=yt-dlp
-      # Uncomment and adjust to enable authenticated YouTube requests
+      # YouTube cookies (optional — can also upload via the room UI)
       # - YT_DLP_COOKIES=/data/cookies.txt
-    # Uncomment to mount a cookies file for authenticated requests
-    # volumes:
-    #   - ./cookies.txt:/data/cookies.txt:ro
+      # Spotify (optional — requires Premium account)
+      # - SPOTIFY_CLIENT_ID=
+      # - SPOTIFY_CLIENT_SECRET=
+      # - SPOTIFY_REDIRECT_URI=https://yourdomain.com/api/spotify/callback
+      # - NUXT_PUBLIC_SPOTIFY_CLIENT_ID=
+    volumes:
+      # Persist uploaded cookies and other data
+      # - ./data:/app/data

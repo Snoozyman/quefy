@@ -37,10 +37,17 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      # Optional: Enable authenticated YouTube requests
+      # YouTube cookies (optional — can also upload via the room UI)
       # - YT_DLP_COOKIES=/data/cookies.txt
-    # Optional: Mount cookies file for age-restricted videos
+      # Spotify (optional — requires Premium account)
+      # - SPOTIFY_CLIENT_ID=
+      # - SPOTIFY_CLIENT_SECRET=
+      # - SPOTIFY_REDIRECT_URI=https://yourdomain.com/api/spotify/callback
+      # - NUXT_PUBLIC_SPOTIFY_CLIENT_ID=
     # volumes:
+    #   # Persist uploaded cookies and other data
+    #   - ./data:/app/data
+    #   # Or mount a cookies file directly (overrides UI upload)
     #   - ./cookies.txt:/data/cookies.txt:ro
 ```
 
@@ -77,23 +84,36 @@ Pass environment variables using `-e` flag or in `docker-compose.yml`:
 docker run -d \
   -p 3000:3000 \
   -e YT_DLP_COOKIES=/data/cookies.txt \
+  -e SPOTIFY_CLIENT_ID=... \
   snoozyman/quefy:latest
 ```
 
-| Variable         | Default      | Description                           |
-| ---------------- | ------------ | ------------------------------------- |
-| `NODE_ENV`       | `production` | Node environment                      |
-| `YT_DLP_COOKIES` | _(none)_     | Path to cookies file inside container |
+| Variable | Default | Description |
+|---|---|---|
+| `NODE_ENV` | `production` | Node environment |
+| `YT_DLP_COOKIES` | `data/cookies.txt` | Path to cookies file (or upload via room UI) |
+| `SPOTIFY_CLIENT_ID` | _(optional)_ | Spotify App Client ID |
+| `SPOTIFY_CLIENT_SECRET` | _(optional)_ | Spotify App Client Secret |
+| `SPOTIFY_REDIRECT_URI` | `http://localhost:3000/api/spotify/callback` | OAuth redirect URI |
+| `NUXT_PUBLIC_SPOTIFY_CLIENT_ID` | _(optional)_ | Same as SPOTIFY_CLIENT_ID, exposed to frontend |
+| `SPOTIFY_MARKET` | `US` | Market code for Spotify search results |
 
 ## Volume Mounts
 
-### Cookies File (Optional)
+### Data Directory (Recommended)
 
-For age-restricted or member-only videos, mount a YouTube cookies file:
+Mount a persistent `data/` directory to preserve uploaded cookies across container restarts:
 
-1. Export cookies using a browser extension (e.g., "Get cookies.txt LO")
-2. Save as `cookies.txt` on your host machine
-3. Mount into the container:
+```bash
+docker run -d \
+  -p 3000:3000 \
+  -v ./data:/app/data \
+  snoozyman/quefy:latest
+```
+
+### Cookies File (Optional — legacy method)
+
+Mount a YouTube cookies file directly (alternative to the UI upload):
 
 ```bash
 docker run -d \
@@ -103,7 +123,7 @@ docker run -d \
   snoozyman/quefy:latest
 ```
 
-> **Note:** YouTube cookies expire periodically. If videos stop working, re-export and restart the container.
+> **Note:** YouTube cookies expire periodically. If using the UI upload, you can re-upload without restarting the container.
 
 ## Production Deployment
 
@@ -170,7 +190,12 @@ docker logs quefy
 
 ### yt-dlp errors
 
-Some videos require authentication. See [Cookies File](#cookies-file-optional) section above.
+Some videos require authentication. Upload cookies via the room UI, or mount a cookies file — see [Cookies File](#cookies-file-optional) section above.
+
+### Spotify playback fails
+
+- **Firefox** — the Web Playback SDK does not work in Firefox. Use Chrome or Edge.
+- **403 / license errors** — the track may not be available in your region. Try setting `SPOTIFY_MARKET` to match your account country.
 
 ### Port already in use
 

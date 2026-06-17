@@ -1,0 +1,37 @@
+export interface SongData {
+  id: string
+  source: 'youtube' | 'spotify'
+  title: string
+  addedBy: string
+  addedAt: number
+  videoId?: string
+  url?: string
+  trackUri?: string
+  artists?: string[]
+  albumName?: string
+  albumImageUrl?: string
+  durationMs?: number
+}
+
+export interface SearchResult {
+  id: string
+  title: string
+  channel?: string
+  duration?: number
+  durationString?: string
+  thumbnail: string
+  source: 'youtube' | 'spotify'
+  uri?: string
+  artists?: string[]
+  albumName?: string
+  durationMs?: number
+}
+
+export interface RoomState {
+  id: string
+  title: string
+  currentSong: SongData | null
+  queue: SongData[]
+  isPlaying: boolean
+  createdAt: number
+}
