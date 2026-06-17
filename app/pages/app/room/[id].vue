@@ -281,24 +281,29 @@ async function transferSpotifyPlayback(trackUri: string) {
   const token = spotifyAuth.getAccessToken()
   const deviceId = spotifyPlayer.deviceId.value
   if (!token || !deviceId) return
-  try {
-    const headers = {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
+  const headers = {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+  const transferRes = await fetch('https://api.spotify.com/v1/me/player', {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify({ device_ids: [deviceId], play: false })
+  })
+  if (!transferRes.ok) {
+    if (transferRes.status === 404) {
+      console.warn('No active Spotify device found — start playback on a device first')
     }
-    await fetch('https://api.spotify.com/v1/me/player', {
-      method: 'PUT',
-      headers,
-      body: JSON.stringify({ device_ids: [deviceId], play: false })
-    })
-    await new Promise(r => setTimeout(r, 200))
-    await fetch('https://api.spotify.com/v1/me/player/play', {
-      method: 'PUT',
-      headers,
-      body: JSON.stringify({ uris: [trackUri] })
-    })
-  } catch (err) {
-    console.error('Failed to transfer Spotify playback:', err)
+    return
+  }
+  await new Promise(r => setTimeout(r, 200))
+  const playRes = await fetch('https://api.spotify.com/v1/me/player/play', {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify({ uris: [trackUri] })
+  })
+  if (!playRes.ok && playRes.status !== 404) {
+    console.error('Spotify play request failed:', playRes.status)
   }
 }
 
