@@ -27,6 +27,7 @@
       </div>
       <UInput
         v-model="query"
+        variant="subtle"
         :placeholder="mode === 'youtube' ? 'Search YouTube or paste a URL' : 'Search Spotify tracks...'"
         class="grow"
         :loading="searching"
@@ -47,9 +48,15 @@
         :class="{ 'bg-muted/50': i === highlightIdx }"
         @click="selectResult(r)"
       >
-        <img :src="r.thumbnail" alt="" class="size-10 rounded object-cover shrink-0">
+        <img
+          :src="r.thumbnail"
+          alt=""
+          class="size-10 rounded object-cover shrink-0"
+        >
         <div class="min-w-0 grow">
-          <p class="text-sm truncate">{{ r.title }}</p>
+          <p class="text-sm truncate">
+            {{ r.title }}
+          </p>
           <p class="text-xs text-muted truncate">
             <template v-if="r.source === 'youtube'">
               {{ r.channel }} · {{ r.durationString }}

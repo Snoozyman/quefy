@@ -148,6 +148,7 @@ export async function refreshAccessToken(
 export function formatTrackResult(item: SpotifySearchResponse['tracks']['items'][number]) {
   return {
     id: item.id,
+    thumbnail: item.album.images?.[0]?.url ?? '',
     uri: item.uri,
     title: item.name,
     artists: item.artists.map(a => a.name),
