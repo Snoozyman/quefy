@@ -43,7 +43,7 @@ const isApp = computed(() => route.path.startsWith('/app'))
 
         <template #right>
           <UButton
-            to="https://github.com/nuxt-ui-templates/starter"
+            to="https://github.com/Snoozyman/quefy"
             target="_blank"
             icon="i-simple-icons-github"
             aria-label="GitHub"

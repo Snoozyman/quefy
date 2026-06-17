@@ -15,6 +15,14 @@
       />
     </template>
     <template #right>
+      <UButton
+        to="https://github.com/Snoozyman/quefy"
+        target="_blank"
+        icon="i-simple-icons-github"
+        aria-label="GitHub"
+        color="neutral"
+        variant="ghost"
+      />
       <UColorModeButton />
     </template>
   </UHeader>
