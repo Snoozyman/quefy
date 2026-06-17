@@ -1,12 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import { execSync } from 'node:child_process'
 
-let commitHash = ''
-try {
-  commitHash = execSync('git rev-parse --short HEAD', { encoding: 'utf-8' }).trim()
-} catch {
-  commitHash = 'unknown'
-}
+const commitHash = execSync('git rev-parse --short HEAD', { encoding: 'utf-8' }).trim()
 
 export default defineNuxtConfig({
   modules: ['@nuxt/eslint', '@nuxt/ui', '@nuxt/image', '@vite-pwa/nuxt'],
