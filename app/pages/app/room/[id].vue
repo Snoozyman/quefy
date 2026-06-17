@@ -285,26 +285,29 @@ async function transferSpotifyPlayback(trackUri: string) {
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json'
   }
+
+  const devices = await fetch('https://api.spotify.com/v1/me/player/devices', {
+    headers: { Authorization: `Bearer ${token}` }
+  }).then(r => r.ok ? r.json() : { devices: [] }).catch(() => ({ devices: [] }))
+  const deviceExists = (devices.devices ?? []).some((d: { id: string }) => d.id === deviceId)
+  if (!deviceExists) {
+    console.warn('Spotify device not found in available devices. Try refreshing or reconnecting.')
+    return
+  }
+
   const transferRes = await fetch('https://api.spotify.com/v1/me/player', {
     method: 'PUT',
     headers,
     body: JSON.stringify({ device_ids: [deviceId], play: false })
   })
-  if (!transferRes.ok) {
-    if (transferRes.status === 404) {
-      console.warn('No active Spotify device found — start playback on a device first')
-    }
-    return
-  }
+  if (!transferRes.ok) return
+
   await new Promise(r => setTimeout(r, 200))
-  const playRes = await fetch('https://api.spotify.com/v1/me/player/play', {
+  await fetch('https://api.spotify.com/v1/me/player/play', {
     method: 'PUT',
     headers,
     body: JSON.stringify({ uris: [trackUri] })
   })
-  if (!playRes.ok && playRes.status !== 404) {
-    console.error('Spotify play request failed:', playRes.status)
-  }
 }
 
 async function addSongByVideoId(videoId: string) {

@@ -175,13 +175,39 @@ export function useSpotifyPlayer() {
       }
 
       const ready = await readyPromise
-      isReady.value = ready
+      if (!ready) {
+        isConnecting.value = false
+        return false
+      }
+
+      const devices = await listDevices(accessToken)
+      const found = devices.some((d: { id: string }) => d.id === deviceId.value)
+      if (!found) {
+        error.value = 'Spotify device was created but not found in your available devices. Try opening Spotify and playing a song first.'
+        isConnecting.value = false
+        return false
+      }
+
+      isReady.value = true
       isConnecting.value = false
-      return ready
+      return true
     } catch (err: any) {
       error.value = err.message || 'Failed to initialize Spotify player'
       isConnecting.value = false
       return false
+    }
+  }
+
+  async function listDevices(token: string): Promise<Array<{ id: string }>> {
+    try {
+      const res = await fetch('https://api.spotify.com/v1/me/player/devices', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (!res.ok) return []
+      const data = await res.json() as { devices: Array<{ id: string }> }
+      return data.devices ?? []
+    } catch {
+      return []
     }
   }
 
