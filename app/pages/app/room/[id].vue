@@ -161,7 +161,7 @@ const currentSongIsYoutube = computed(
 const spotifyAuth = useSpotifyAuth()
 const spotifyPlayer = useSpotifyPlayer()
 
-const ytPlayerRef = ref<{ play: (url: string) => void }>()
+const ytPlayerRef = ref<{ play: (url: string) => void, pause: () => void }>()
 
 const fallbackTrack = {
   name: '',
