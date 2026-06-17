@@ -1,4 +1,5 @@
 import { verifyHost, togglePlay, getRoom, skipSong } from '#server/utils/room'
+import { emitRoomUpdate } from '#server/utils/room-events'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
@@ -29,6 +30,8 @@ export default defineEventHandler(async (event) => {
   }
 
   room.isPlaying = !room.isPlaying
+
+  emitRoomUpdate(id, room)
 
   return {
     isPlaying: room.isPlaying,

@@ -1,5 +1,6 @@
 import { getRoom, addToQueue } from '#server/utils/room'
 import { getAudioStreamUrl } from '#server/utils/youtube'
+import { emitRoomUpdate } from '#server/utils/room-events'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
@@ -47,6 +48,9 @@ export default defineEventHandler(async (event) => {
 
     if (!song)
       throw createError({ statusCode: 500, statusMessage: 'Failed to add song' })
+
+    emitRoomUpdate(id, room)
+
     return song
   }
 
@@ -74,6 +78,8 @@ export default defineEventHandler(async (event) => {
 
   if (!song)
     throw createError({ statusCode: 500, statusMessage: 'Failed to add song' })
+
+  emitRoomUpdate(id, room)
 
   return song
 })

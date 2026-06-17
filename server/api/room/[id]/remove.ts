@@ -1,4 +1,5 @@
-import { verifyHost, removeFromQueue } from '#server/utils/room'
+import { verifyHost, removeFromQueue, getRoom } from '#server/utils/room'
+import { emitRoomUpdate } from '#server/utils/room-events'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
@@ -23,6 +24,11 @@ export default defineEventHandler(async (event) => {
   const ok = removeFromQueue(id, body.songId, body.hostToken)
   if (!ok)
     throw createError({ statusCode: 404, statusMessage: 'Song not found' })
+
+  const room = getRoom(id)
+  if (room) {
+    emitRoomUpdate(id, room)
+  }
 
   return { success: true }
 })
