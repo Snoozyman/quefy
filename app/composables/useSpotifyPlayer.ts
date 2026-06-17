@@ -17,14 +17,14 @@ interface SpotifyPlaybackState {
   paused: boolean
   position: number
   duration: number
-  trackWindow: {
-    currentTrack: {
+  track_window: {
+    current_track: {
       id: string
       uri: string
       name: string
       artists: Array<{ name: string }>
       album: { name: string, images: Array<{ url: string }> }
-      durationMs: number
+      duration_ms: number
     } | null
   }
 }
@@ -48,7 +48,7 @@ const isReady = ref(false)
 const isConnecting = ref(false)
 const error = ref<string>('')
 const playerState = ref<SpotifyPlaybackState | null>(null)
-const currentTrack = computed(() => playerState.value?.trackWindow?.currentTrack ?? null)
+const currentTrack = computed(() => playerState.value?.track_window?.current_track ?? null)
 const paused = computed(() => playerState.value?.paused ?? true)
 const position = computed(() => playerState.value?.position ?? 0)
 const duration = computed(() => playerState.value?.duration ?? 0)
