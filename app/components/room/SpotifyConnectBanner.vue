@@ -53,7 +53,7 @@ async function connect() {
   try {
     await spotifyAuth.login(props.roomId)
   } catch (err: any) {
-    spotifyError.value = err.message || 'Failed to connect Spotify'
+    spotifyError.value = err.message || 'Failed to connect to Spotify'
     connecting.value = false
   }
 }

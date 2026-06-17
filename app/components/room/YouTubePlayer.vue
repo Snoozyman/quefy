@@ -40,7 +40,7 @@
       <UIcon
         :name="volume === 0 ? 'i-lucide-volume-x' : 'i-lucide-volume-2'"
         class="size-5 text-muted shrink-0 cursor-pointer"
-        @click="volume = volume === 0 ? 1 : 0"
+        @click="toggleMute"
       />
       <input
         type="range"
@@ -137,6 +137,11 @@ function onSeek(e: Event) {
 
 function onVolumeChange(e: Event) {
   volume.value = Number((e.target as HTMLInputElement).value)
+  if (audioEl.value) audioEl.value.volume = volume.value
+}
+
+function toggleMute() {
+  volume.value = volume.value === 0 ? 1 : 0
   if (audioEl.value) audioEl.value.volume = volume.value
 }
 

@@ -151,9 +151,11 @@ export function listRooms(): RoomSummary[] {
   const now = Date.now()
   const entries = Array.from(rooms.values())
   entries.sort((a, b) => b.createdAt - a.createdAt)
-  // Prune rooms older than 24h
-  const pruned = entries.filter(r => now - r.createdAt < 86_400_000)
-  return pruned.map(r => ({
+  const expiry = 86_400_000
+  for (const [id, r] of rooms) {
+    if (now - r.createdAt >= expiry) rooms.delete(id)
+  }
+  return entries.filter(r => now - r.createdAt < expiry).map(r => ({
     id: r.id,
     title: r.title,
     queueCount: r.queue.length + (r.currentSong ? 1 : 0),

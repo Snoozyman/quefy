@@ -35,7 +35,7 @@
             <input
               ref="fileInput"
               type="file"
-              accept=".txt,.cookies"
+              accept=".txt"
               class="hidden"
               @change="onFilePicked"
             >

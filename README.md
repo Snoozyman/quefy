@@ -46,15 +46,16 @@ See [docs/docker.md](docs/docker.md) for complete Docker documentation including
 
 ## Environment
 
-| Variable | Default | Description |
-|---|---|---|
-| `YT_DLP_PATH` | `yt-dlp` | Path to yt-dlp binary |
-| `YT_DLP_COOKIES` | `data/cookies.txt` | Path to Netscape cookies file (can also be uploaded via the room UI) |
-| `SPOTIFY_CLIENT_ID` | _(required for Spotify)_ | Spotify App Client ID |
-| `SPOTIFY_CLIENT_SECRET` | _(required for Spotify)_ | Spotify App Client Secret |
-| `SPOTIFY_REDIRECT_URI` | `http://localhost:3000/api/spotify/callback` | OAuth redirect URI (must match Spotify App config) |
-| `NUXT_PUBLIC_SPOTIFY_CLIENT_ID` | _(required for Spotify)_ | Same as `SPOTIFY_CLIENT_ID` — exposed to the frontend for OAuth |
-| `SPOTIFY_MARKET` | `US` | Market code for Spotify search results (ISO 3166-1 alpha-2) |
+| Variable                        | Default                                      | Description                                                          |
+| ------------------------------- | -------------------------------------------- | -------------------------------------------------------------------- |
+| `PORT`                          | `3000`                                       | HTTP server port                                                     |
+| `YT_DLP_PATH`                   | `yt-dlp`                                     | Path to yt-dlp binary                                                |
+| `YT_DLP_COOKIES`                | `data/cookies.txt`                           | Path to Netscape cookies file (can also be uploaded via the room UI) |
+| `SPOTIFY_CLIENT_ID`             | _(required for Spotify)_                     | Spotify App Client ID                                                |
+| `SPOTIFY_CLIENT_SECRET`         | _(required for Spotify)_                     | Spotify App Client Secret                                            |
+| `SPOTIFY_REDIRECT_URI`          | `http://127.0.0.1:3000/api/spotify/callback` | OAuth redirect URI (must match Spotify App config)                   |
+| `NUXT_PUBLIC_SPOTIFY_CLIENT_ID` | _(required for Spotify)_                     | Same as `SPOTIFY_CLIENT_ID` — exposed to the frontend for OAuth      |
+| `SPOTIFY_MARKET`                | `US`                                         | Market code for Spotify search results (ISO 3166-1 alpha-2)          |
 
 ## Cookies (optional)
 
@@ -67,7 +68,7 @@ your `cookies.txt` file. Cookies are saved server-side and used immediately.
 
 ### Option B: File mount + env var
 
-1. Install a browser extension like **Get cookies.txt LO** (Chrome/Firefox)
+1. Install a browser extension like **Get cookies.txt LOCALLY** (Chrome/Firefox)
 2. Log into YouTube in your browser
 3. Export cookies while on `youtube.com` → save as `cookies.txt`
 4. Place the file on the server, e.g. `/data/cookies.txt`
@@ -100,6 +101,7 @@ Play Spotify tracks alongside YouTube in the same queue. Requires a **Spotify Pr
 4. Set the environment variables:
 
 ```bash
+PORT=3000
 SPOTIFY_CLIENT_ID=your_client_id
 SPOTIFY_CLIENT_SECRET=your_client_secret
 NUXT_PUBLIC_SPOTIFY_CLIENT_ID=your_client_id
