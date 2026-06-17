@@ -169,6 +169,33 @@ const fallbackTrack = {
   artists: [] as Array<{ name: string }>
 }
 
+function updateMediaSession(song: SongData | null) {
+  if (!song) {
+    document.title = `Room ${roomId} — Quefy`
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = null
+    }
+    return
+  }
+
+  document.title = `${song.title} — Room ${roomId} — Quefy`
+
+  if ('mediaSession' in navigator) {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: song.title,
+      artist: song.artists?.join(', ') || song.addedBy,
+      album: song.albumName || '',
+      artwork: song.albumImageUrl
+        ? [{ src: song.albumImageUrl, sizes: '512x512', type: 'image/png' }]
+        : []
+    })
+
+    navigator.mediaSession.setActionHandler('play', () => spotifyPlayer.play())
+    navigator.mediaSession.setActionHandler('pause', () => spotifyPlayer.pause())
+    navigator.mediaSession.setActionHandler('nexttrack', () => skip())
+  }
+}
+
 function copyRoomCode() {
   navigator.clipboard.writeText(roomId)
   copied.value = true
@@ -275,6 +302,14 @@ watch(
   (val) => {
     if (val) error.value = val
   }
+)
+
+watch(
+  () => roomState.value.currentSong,
+  (song) => {
+    updateMediaSession(song)
+  },
+  { immediate: true }
 )
 
 async function transferSpotifyPlayback(trackUri: string) {
