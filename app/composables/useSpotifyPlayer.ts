@@ -112,66 +112,72 @@ export function useSpotifyPlayer() {
         throw new Error('Spotify Web Playback SDK failed to load')
       }
 
-      return new Promise((resolve) => {
-        const p = new window.Spotify!.Player({
-          name: 'Quefy Room Player',
-          getOAuthToken: (cb: (token: string) => void) => { cb(accessToken) },
-          volume: 0.33
-        })
-
-        p.addListener('ready', ({ device_id }: { device_id: string }) => {
-          deviceId.value = device_id
-          isReady.value = true
-          isConnecting.value = false
-          resolve(true)
-        })
-
-        p.addListener('not_ready', () => { isReady.value = false })
-
-        p.addListener('player_state_changed', (state: SpotifyPlaybackState | null) => {
-          playerState.value = state
-        })
-
-        p.addListener('initialization_error', (e: { message: string }) => {
-          error.value = `Spotify init error: ${e.message}`
-          isConnecting.value = false
-          resolve(false)
-        })
-
-        p.addListener('authentication_error', (e: { message: string }) => {
-          error.value = `Spotify auth error: ${e.message}`
-          isConnecting.value = false
-          resolve(false)
-        })
-
-        p.addListener('account_error', (e: { message: string }) => {
-          error.value = `Spotify Premium required: ${e.message}`
-          isConnecting.value = false
-          resolve(false)
-        })
-
-        p.addListener('playback_error', () => {
-          if (destroyedByErrors) return
-
-          const now = Date.now()
-          playbackErrorWindow = playbackErrorWindow.filter(t => now - t < 10000)
-          playbackErrorWindow.push(now)
-          playbackErrorCount++
-
-          if (playbackErrorWindow.length >= 3) {
-            destroyedByErrors = true
-            p.disconnect()
-            player.value = null
-            isReady.value = false
-            deviceId.value = ''
-            playerState.value = null
-            error.value = 'Spotify playback keeps failing. Try a different track or check your account/region.'
-          }
-        })
-
-        p.connect()
-        player.value = p
+      const p = new window.Spotify!.Player({
+        name: 'Quefy Room Player',
+        getOAuthToken: (cb: (token: string) => void) => { cb(accessToken) },
+        volume: 0.33
       })
+      player.value = p
+
+      let readyResolve: (ok: boolean) => void
+      const readyPromise = new Promise<boolean>((resolve) => { readyResolve = resolve })
+
+      p.addListener('ready', ({ device_id }: { device_id: string }) => {
+        deviceId.value = device_id
+        readyResolve(true)
+      })
+
+      p.addListener('not_ready', () => { isReady.value = false })
+
+      p.addListener('player_state_changed', (state: SpotifyPlaybackState | null) => {
+        playerState.value = state
+      })
+
+      p.addListener('initialization_error', (e: { message: string }) => {
+        error.value = `Spotify init error: ${e.message}`
+        readyResolve(false)
+      })
+
+      p.addListener('authentication_error', (e: { message: string }) => {
+        error.value = `Spotify auth error: ${e.message}`
+        readyResolve(false)
+      })
+
+      p.addListener('account_error', (e: { message: string }) => {
+        error.value = `Spotify Premium required: ${e.message}`
+        readyResolve(false)
+      })
+
+      p.addListener('playback_error', () => {
+        if (destroyedByErrors) return
+
+        const now = Date.now()
+        playbackErrorWindow = playbackErrorWindow.filter(t => now - t < 10000)
+        playbackErrorWindow.push(now)
+        playbackErrorCount++
+
+        if (playbackErrorWindow.length >= 3) {
+          destroyedByErrors = true
+          p.disconnect()
+          player.value = null
+          isReady.value = false
+          deviceId.value = ''
+          playerState.value = null
+          error.value = 'Spotify playback keeps failing. Try a different track or check your account/region.'
+        }
+      })
+
+      const connected = await p.connect()
+      if (!connected) {
+        error.value = 'Spotify device failed to register'
+        isConnecting.value = false
+        return false
+      }
+
+      const ready = await readyPromise
+      isReady.value = ready
+      isConnecting.value = false
+      return ready
     } catch (err: any) {
       error.value = err.message || 'Failed to initialize Spotify player'
       isConnecting.value = false
