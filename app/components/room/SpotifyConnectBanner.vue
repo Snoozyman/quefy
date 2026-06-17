@@ -5,7 +5,9 @@
       class="rounded-xl border border-primary/30 bg-primary/5 p-4 flex items-center justify-between"
     >
       <div>
-        <p class="font-semibold text-sm">Connect Spotify to play music</p>
+        <p class="font-semibold text-sm">
+          Connect Spotify to play music
+        </p>
         <p class="text-xs text-muted">
           Premium account required. The host must authenticate with Spotify.
         </p>
@@ -17,20 +19,34 @@
         @click="connect"
       >
         <template #leading>
-          <UIcon name="i-lucide-music" class="size-4" />
+          <UIcon
+            name="i-lucide-music"
+            class="size-4"
+          />
         </template>
         Connect Spotify
       </UButton>
     </div>
 
-    <div v-if="connecting" class="rounded-xl border border-default p-4 space-y-3">
+    <div
+      v-if="connecting"
+      class="rounded-xl border border-default p-4 space-y-3"
+    >
       <div class="flex items-center gap-3">
-        <UIcon name="i-lucide-loader-circle" class="size-5 animate-spin text-muted" />
+        <UIcon
+          name="i-lucide-loader-circle"
+          class="size-5 animate-spin text-muted"
+        />
         <span class="text-sm">Connecting to Spotify...</span>
       </div>
     </div>
 
-    <p v-if="spotifyError" class="text-sm text-red-500">{{ spotifyError }}</p>
+    <p
+      v-if="spotifyError"
+      class="text-sm text-red-500"
+    >
+      {{ spotifyError }}
+    </p>
   </div>
 </template>
 

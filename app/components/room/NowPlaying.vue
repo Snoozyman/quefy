@@ -47,6 +47,4 @@ import type { SongData } from '#shared/types/room'
 defineProps<{
   song: SongData | null
 }>()
-
-
 </script>

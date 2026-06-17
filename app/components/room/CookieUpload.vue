@@ -14,10 +14,16 @@
         <div class="p-4 space-y-4">
           <h2 class="text-lg font-semibold">
             YouTube Cookies
-            <span v-if="cookieExists" class="text-sm text-muted font-normal">
+            <span
+              v-if="cookieExists"
+              class="text-sm text-muted font-normal"
+            >
               ({{ cookieSize }} bytes)
             </span>
-            <span v-else class="text-sm text-muted font-normal">
+            <span
+              v-else
+              class="text-sm text-muted font-normal"
+            >
               (not set)
             </span>
           </h2>
@@ -29,7 +35,11 @@
           </p>
 
           <div class="flex items-center gap-2">
-            <UButton size="sm" variant="outline" @click="triggerFilePick">
+            <UButton
+              size="sm"
+              variant="outline"
+              @click="triggerFilePick"
+            >
               Choose File
             </UButton>
             <input
@@ -39,7 +49,10 @@
               class="hidden"
               @change="onFilePicked"
             >
-            <span v-if="fileName" class="text-xs text-muted truncate">{{ fileName }}</span>
+            <span
+              v-if="fileName"
+              class="text-xs text-muted truncate"
+            >{{ fileName }}</span>
           </div>
 
           <textarea
@@ -48,9 +61,21 @@
             class="w-full h-32 rounded-lg border border-default bg-muted/30 p-2 text-xs font-mono resize-none"
           />
 
-          <div v-if="saveMsg" class="flex items-center gap-2 text-sm" :class="saveOk ? 'text-green-600' : 'text-red-500'">
-            <UIcon v-if="saveOk" name="i-lucide-check-circle" class="size-4" />
-            <UIcon v-else name="i-lucide-alert-circle" class="size-4" />
+          <div
+            v-if="saveMsg"
+            class="flex items-center gap-2 text-sm"
+            :class="saveOk ? 'text-green-600' : 'text-red-500'"
+          >
+            <UIcon
+              v-if="saveOk"
+              name="i-lucide-check-circle"
+              class="size-4"
+            />
+            <UIcon
+              v-else
+              name="i-lucide-alert-circle"
+              class="size-4"
+            />
             <span>{{ saveMsg }}</span>
           </div>
 
