@@ -58,6 +58,23 @@ tests/                # room.test.ts, yt-dlp-errors.test.ts
 - **Cookies** are stored at `data/cookies.txt` (global, single file for all rooms), cleared/verified on upload
 - **Firefox** is detected at Spotify init — shows error message, never loads the SDK
 
+## API response format
+
+Endpoints return data directly (typed via shared types) or throw `createError` for errors:
+
+- **Success:** return the data object matching the type (e.g., `RoomState`, `SongData`, `SearchResult[]`)
+- **Error:** `throw createError({ statusCode, statusMessage })` — Nuxt serialises this as `{ statusCode, statusMessage, data? }`
+
+Key response types in `shared/types/`:
+
+| Type | Used by |
+|---|---|
+| `RoomState` | `GET /api/room/:id` |
+| `SongData` | `POST /api/room/:id/queue`, room state arrays |
+| `SearchResult` | `GET /api/youtube/search`, `GET /api/spotify/search` |
+| `TokenResponse` | `POST /api/spotify/refresh`, OAuth callback |
+| `SpotifyPlayerState` | Web Playback SDK state (client-side only) |
+
 ## Code style reminders
 
 - Use `err: unknown` in catch blocks, check `err instanceof Error`, preserve `cause` on rethrow
