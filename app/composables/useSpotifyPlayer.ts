@@ -63,6 +63,8 @@ let destroyedByErrors = false
 let lastSyncPosition = 0
 let lastSyncTime = 0
 let tickTimer: ReturnType<typeof setInterval> | null = null
+let wasPlaying = false
+let onTrackEnd: (() => void) | null = null
 
 function startTick() {
   stopTick()
@@ -156,7 +158,12 @@ export function useSpotifyPlayer() {
           position.value = state.position
           if (state.paused) {
             stopTick()
+            if (wasPlaying && state.duration > 0 && state.position >= state.duration - 1500) {
+              onTrackEnd?.()
+            }
+            wasPlaying = false
           } else {
+            wasPlaying = true
             startTick()
           }
         }
@@ -273,9 +280,13 @@ export function useSpotifyPlayer() {
     playerState.value = null
   }
 
+  function setOnTrackEnd(cb: () => void) {
+    onTrackEnd = cb
+  }
+
   return {
     deviceId, isReady, isConnecting, error,
     playerState, currentTrack, paused, position, duration,
-    init, play, pause, seek, nextTrack, destroy
+    init, play, pause, seek, nextTrack, destroy, setOnTrackEnd
   }
 }

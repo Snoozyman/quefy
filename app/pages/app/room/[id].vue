@@ -222,6 +222,7 @@ async function exportQueue() {
 }
 
 function onSpotifyPlayerReady() {
+  spotifyPlayer.setOnTrackEnd(skip)
   if (
     roomState.value.currentSong?.source === 'spotify'
     && roomState.value.currentSong.trackUri
