@@ -43,7 +43,6 @@ services:
       # - SPOTIFY_CLIENT_ID=
       # - SPOTIFY_CLIENT_SECRET=
       # - SPOTIFY_REDIRECT_URI=https://yourdomain.com/api/spotify/callback
-      # - NUXT_PUBLIC_SPOTIFY_CLIENT_ID=
     # volumes:
     #   # Persist uploaded cookies and other data
     #   - ./data:/app/data
@@ -95,7 +94,6 @@ docker run -d \
 | `SPOTIFY_CLIENT_ID` | _(optional)_ | Spotify App Client ID |
 | `SPOTIFY_CLIENT_SECRET` | _(optional)_ | Spotify App Client Secret |
 | `SPOTIFY_REDIRECT_URI` | `http://localhost:3000/api/spotify/callback` | OAuth redirect URI |
-| `NUXT_PUBLIC_SPOTIFY_CLIENT_ID` | _(optional)_ | Same as SPOTIFY_CLIENT_ID, exposed to frontend |
 | `SPOTIFY_MARKET` | `US` | Market code for Spotify search results |
 
 ## Volume Mounts

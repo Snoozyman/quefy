@@ -54,7 +54,6 @@ See [docs/docker.md](docs/docker.md) for complete Docker documentation including
 | `SPOTIFY_CLIENT_ID`             | _(required for Spotify)_                     | Spotify App Client ID                                                |
 | `SPOTIFY_CLIENT_SECRET`         | _(required for Spotify)_                     | Spotify App Client Secret                                            |
 | `SPOTIFY_REDIRECT_URI`          | `http://127.0.0.1:3000/api/spotify/callback` | OAuth redirect URI (must match Spotify App config)                   |
-| `NUXT_PUBLIC_SPOTIFY_CLIENT_ID` | _(required for Spotify)_                     | Same as `SPOTIFY_CLIENT_ID` — exposed to the frontend for OAuth      |
 | `SPOTIFY_MARKET`                | `US`                                         | Market code for Spotify search results (ISO 3166-1 alpha-2)          |
 
 ## Cookies (optional)
@@ -104,7 +103,6 @@ Play Spotify tracks alongside YouTube in the same queue. Requires a **Spotify Pr
 PORT=3000
 SPOTIFY_CLIENT_ID=your_client_id
 SPOTIFY_CLIENT_SECRET=your_client_secret
-NUXT_PUBLIC_SPOTIFY_CLIENT_ID=your_client_id
 ```
 
 5. Restart the dev server and open a room
