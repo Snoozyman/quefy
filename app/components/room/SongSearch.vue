@@ -39,12 +39,12 @@
     </div>
     <div
       v-if="showResults && results.length"
-      class="absolute z-10 mt-1 w-full rounded-xl border border-default bg-background shadow-lg max-h-72 overflow-y-auto"
+      class="absolute z-10 mt-1 w-full rounded-xl border border-default bg-default shadow-lg max-h-72 overflow-y-auto"
     >
       <button
         v-for="(r, i) in results"
         :key="r.id"
-        class="flex items-center gap-3 w-full px-3 py-2 text-left hover:bg-muted/50 transition-colors"
+        class="flex items-center gap-3 w-full px-3 py-2 text-left bg-default hover:bg-muted/50 transition-colors"
         :class="{ 'bg-muted/50': i === highlightIdx }"
         @click="selectResult(r)"
       >
