@@ -50,7 +50,7 @@ const error = ref<string>('')
 const playerState = ref<SpotifyPlaybackState | null>(null)
 const currentTrack = computed(() => playerState.value?.track_window?.current_track ?? null)
 const paused = computed(() => playerState.value?.paused ?? true)
-const position = computed(() => playerState.value?.position ?? 0)
+const position = ref(0)
 const duration = computed(() => playerState.value?.duration ?? 0)
 
 let sdkLoaded = false
@@ -60,6 +60,25 @@ let loadPromise: Promise<void> | null = null
 let playbackErrorCount = 0
 let playbackErrorWindow: number[] = []
 let destroyedByErrors = false
+let lastSyncPosition = 0
+let lastSyncTime = 0
+let tickTimer: ReturnType<typeof setInterval> | null = null
+
+function startTick() {
+  stopTick()
+  tickTimer = setInterval(() => {
+    if (paused.value || !playerState.value) return
+    const elapsed = Date.now() - lastSyncTime
+    position.value = lastSyncPosition + elapsed
+  }, 250)
+}
+
+function stopTick() {
+  if (tickTimer) {
+    clearInterval(tickTimer)
+    tickTimer = null
+  }
+}
 
 function isFirefox(): boolean {
   return navigator.userAgent.includes('Firefox')
@@ -131,6 +150,16 @@ export function useSpotifyPlayer() {
 
       p.addListener('player_state_changed', (state: SpotifyPlaybackState | null) => {
         playerState.value = state
+        if (state) {
+          lastSyncPosition = state.position
+          lastSyncTime = Date.now()
+          position.value = state.position
+          if (state.paused) {
+            stopTick()
+          } else {
+            startTick()
+          }
+        }
       })
 
       p.addListener('initialization_error', (e: { message: string }) => {
@@ -220,7 +249,12 @@ export function useSpotifyPlayer() {
   }
 
   async function seek(positionMs: number): Promise<void> {
-    try { await player.value?.seek(positionMs) } catch {}
+    try {
+      await player.value?.seek(positionMs)
+      lastSyncPosition = positionMs
+      lastSyncTime = Date.now()
+      position.value = positionMs
+    } catch {}
   }
 
   async function nextTrack(): Promise<void> {
@@ -228,6 +262,7 @@ export function useSpotifyPlayer() {
   }
 
   function destroy() {
+    stopTick()
     playbackErrorCount = 0
     playbackErrorWindow = []
     destroyedByErrors = false
