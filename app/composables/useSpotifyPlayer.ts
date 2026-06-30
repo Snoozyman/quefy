@@ -5,6 +5,8 @@ interface SpotifyPlayerInstance {
   pause: () => Promise<void>
   resume: () => Promise<void>
   seek: (positionMs: number) => Promise<void>
+  setVolume: (volume: number) => Promise<void>
+  getVolume: () => Promise<number>
   nextTrack: () => Promise<void>
   previousTrack: () => Promise<void>
   getCurrentState: () => Promise<SpotifyPlaybackState | null>
@@ -49,6 +51,7 @@ const deviceId = ref<string>('')
 const isReady = ref(false)
 const isConnecting = ref(false)
 const error = ref<string>('')
+const volume = ref(0.33)
 const playerState = ref<SpotifyPlaybackState | null>(null)
 const currentTrack = computed(() => playerState.value?.track_window?.current_track ?? null)
 const paused = computed(() => playerState.value?.paused ?? true)
@@ -283,6 +286,23 @@ export function useSpotifyPlayer() {
     try { await player.value?.nextTrack() } catch {}
   }
 
+  function setVolume(v: number) {
+    volume.value = Math.max(0, Math.min(1, v))
+    player.value?.setVolume(volume.value).catch(() => {})
+  }
+
+  async function getVolume(): Promise<number> {
+    try {
+      const v = await player.value?.getVolume()
+      if (typeof v === 'number' && v >= 0 && v <= 1) {
+        volume.value = v
+      }
+      return volume.value
+    } catch {
+      return volume.value
+    }
+  }
+
   function destroy() {
     stopTick()
     playbackErrorCount = 0
@@ -300,8 +320,8 @@ export function useSpotifyPlayer() {
   }
 
   return {
-    deviceId, isReady, isConnecting, error,
+    deviceId, isReady, isConnecting, error, volume,
     playerState, currentTrack, paused, position, duration,
-    init, play, pause, seek, nextTrack, destroy, setOnTrackEnd
+    init, play, pause, seek, nextTrack, setVolume, destroy, setOnTrackEnd
   }
 }

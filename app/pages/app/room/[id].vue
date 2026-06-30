@@ -245,6 +245,7 @@ function onSpotifyPlayerReady() {
     roomState.value.currentSong.trackUri &&
     roomState.value.isPlaying
   ) {
+    audioPlayerRef.value?.pause();
     transferSpotifyPlayback(roomState.value.currentSong.trackUri);
   }
 }
@@ -485,6 +486,7 @@ async function togglePlay() {
       if (!song) return;
       if (song.id === prevSongId) {
         if (song.source === "spotify" && song.trackUri) {
+          audioPlayerRef.value?.pause();
           const sdkTrackUri = spotifyPlayer.currentTrack.value?.uri;
           if (sdkTrackUri === song.trackUri) {
             spotifyPlayer.play();
@@ -492,6 +494,7 @@ async function togglePlay() {
             transferSpotifyPlayback(song.trackUri);
           }
         } else if ((song.source === "youtube" || song.source === "soundcloud") && song.url) {
+          spotifyPlayer.pause();
           audioPlayerRef.value?.play(song.url);
         }
       }

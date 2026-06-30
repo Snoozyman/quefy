@@ -44,12 +44,27 @@
         name="i-simple-icons-spotify"
         class="size-5 text-primary shrink-0"
       />
-      <span class="text-xs text-muted">Spotify</span>
+      <UIcon
+        :name="spotifyPlayer.volume.value === 0 ? 'i-lucide-volume-x' : 'i-lucide-volume-2'"
+        class="size-5 text-muted shrink-0 cursor-pointer"
+        @click="toggleMute"
+      />
+      <input
+        type="range"
+        min="0"
+        max="1"
+        step="0.05"
+        :value="spotifyPlayer.volume.value"
+        class="w-20 accent-primary"
+        @input="onVolumeChange"
+      >
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
+const spotifyPlayer = useSpotifyPlayer()
+
 const props = defineProps<{
   show: boolean
   track: { name: string, album: { images: Array<{ url: string }> }, artists: Array<{ name: string }> }
@@ -70,6 +85,15 @@ function togglePlay() {
   } else {
     emit('pause')
   }
+}
+
+function onVolumeChange(e: Event) {
+  spotifyPlayer.setVolume(Number((e.target as HTMLInputElement).value))
+}
+
+function toggleMute() {
+  const prev = spotifyPlayer.volume.value
+  spotifyPlayer.setVolume(prev === 0 ? 1 : 0)
 }
 
 function formatTime(s: number): string {
