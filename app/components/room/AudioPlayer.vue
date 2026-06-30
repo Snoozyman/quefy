@@ -56,11 +56,14 @@
         variant="solid"
         @click="togglePlay"
       />
-      <UIcon
-        :name="volume === 0 ? 'i-lucide-volume-x' : 'i-lucide-volume-2'"
-        class="size-5 text-muted shrink-0 cursor-pointer"
+      <button
+        class="shrink-0 cursor-pointer bg-transparent border-none p-0"
         @click="toggleMute"
-      />
+      >
+        <UIcon
+          :name="volume === 0 ? 'i-lucide-volume-x' : 'i-lucide-volume-2'"
+          class="size-5 text-muted"
+        />
       <input
         type="range"
         min="0"
@@ -69,11 +72,13 @@
         :value="volume"
         class="w-20 accent-primary"
         @input="onVolumeChange"
+        @change="onVolumeChange"
       >
     </div>
     <audio
       ref="audioEl"
       hidden
+      playsinline
       @timeupdate="onTimeUpdate"
       @loadedmetadata="onLoadedMetadata"
       @ended="onEnded"
