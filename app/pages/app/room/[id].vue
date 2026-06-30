@@ -190,14 +190,14 @@ const fallbackTrack = {
 
 function updateMediaSession(song: SongData | null) {
   if (!song) {
-    document.title = `Room ${roomId} — Quefy`;
+    document.title = 'Quefy';
     if ("mediaSession" in navigator) {
       navigator.mediaSession.metadata = null;
     }
     return;
   }
 
-  document.title = `${song.title} — Room ${roomId} — Quefy`;
+  document.title = `${song.title} — ${song.artists?.join(", ") || song.addedBy} — Quefy`;
 
   if ("mediaSession" in navigator) {
     navigator.mediaSession.metadata = new MediaMetadata({
