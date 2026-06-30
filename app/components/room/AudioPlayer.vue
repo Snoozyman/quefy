@@ -126,6 +126,18 @@ function play(url: string) {
       })
       instance.loadSource(url)
       instance.attachMedia(audioEl.value)
+      instance.on(Hls.Events.MANIFEST_PARSED, () => {
+        playing.value = true
+        audioEl.value?.play().catch((err: unknown) => {
+          const name = err instanceof DOMException ? err.name : ''
+          if (name === 'NotAllowedError') {
+            playing.value = false
+            return
+          }
+          playing.value = false
+          emit('error', 'Playback blocked. Try clicking play again.')
+        })
+      })
       instance.on(Hls.Events.ERROR, (_event, data) => {
         if (data.fatal) {
           errorEmitted = true
@@ -142,11 +154,11 @@ function play(url: string) {
       emit('error', 'HLS audio is not supported in this browser.')
       return
     }
-  } else {
-    audioEl.value.src = url
-    audioEl.value.load()
+    return
   }
 
+  audioEl.value.src = url
+  audioEl.value.load()
   playing.value = true
   audioEl.value.play().catch((err: unknown) => {
     const name = err instanceof DOMException ? err.name : ''
