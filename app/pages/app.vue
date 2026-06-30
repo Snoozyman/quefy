@@ -17,7 +17,10 @@
         />
 
         <template #footer="{ collapsed }">
-          <p v-if="!collapsed" class="text-xs text-muted px-3 py-2">
+          <p
+            v-if="!collapsed"
+            class="text-xs text-muted px-3 py-2"
+          >
             v{{ appVersion }} ({{ commitHash }})
           </p>
         </template>
