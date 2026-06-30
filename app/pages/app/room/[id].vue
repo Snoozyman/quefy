@@ -5,11 +5,11 @@
   >
     Loading room...
   </div>
-  <div v-else class="mx-2 w-80vw md:mx-4 md:w-2xl space-y-6 py-6">
+  <div v-else class="mx-2 w-50vw md:mx-4 md:w-2xl space-y-6 py-6">
     <UCard>
       <template #header>
-        <div class="flex items-center justify-between">
-          <div>
+        <div class="flex flex-col justify-between">
+          <div class="flex-1 space-y-1 mb-2">
             <h1 class="text-2xl font-bold">
               {{ roomState.title || "Room" }}
             </h1>
@@ -24,7 +24,7 @@
               <span v-if="copied" class="ml-2 text-xs text-muted">Copied!</span>
             </p>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex flex-row items-center gap-2">
             <UButton
               v-if="isHost"
               size="sm"
@@ -55,6 +55,7 @@
               Export
             </UButton>
             <UButton
+              v-if="isHost"
               size="sm"
               color="warning"
               icon="i-lucide-trash"
@@ -63,6 +64,16 @@
               Delete
             </UButton>
           </div>
+        </div>
+      </template>
+      <template #default>
+        <div class="flex flex-col gap-2">
+          <p class="text-sm text-muted">
+            {{ roomState.queue.length }} song(s) in queue
+          </p>
+          <p v-if="!isHost" class="text-sm text-muted">
+            You are a guest. Only the host can control playback.
+          </p>
         </div>
       </template>
     </UCard>
@@ -355,11 +366,14 @@ async function transferSpotifyPlayback(trackUri: string) {
       await new Promise((r) => setTimeout(r, 500 * attempt));
     }
 
-    const playRes = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-      method: "PUT",
-      headers,
-      body: JSON.stringify({ uris: [trackUri] }),
-    });
+    const playRes = await fetch(
+      `https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`,
+      {
+        method: "PUT",
+        headers,
+        body: JSON.stringify({ uris: [trackUri] }),
+      },
+    );
     if (playRes.ok) return;
 
     if (playRes.status === 403) {
