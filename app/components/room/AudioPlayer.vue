@@ -150,7 +150,6 @@ function play(url: string) {
 }
 
 function pause() {
-  destroyHls()
   audioEl.value?.pause()
   playing.value = false
 }
