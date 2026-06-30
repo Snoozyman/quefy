@@ -26,6 +26,7 @@ export interface Room {
   queue: QueuedSong[]
   currentSong: QueuedSong | null
   isPlaying: boolean
+  spotifyConnected: boolean
   createdAt: number
 }
 
@@ -51,6 +52,7 @@ export function createRoom(title?: string): Room {
     queue: [],
     currentSong: null,
     isPlaying: false,
+    spotifyConnected: false,
     createdAt: Date.now()
   }
   rooms.set(room.id, room)
@@ -68,6 +70,13 @@ export function deleteRoom(id: string): boolean {
 export function verifyHost(roomId: string, token: string): boolean {
   const room = rooms.get(roomId)
   return room?.hostToken === token
+}
+
+export function setSpotifyConnected(roomId: string, connected: boolean): boolean {
+  const room = rooms.get(roomId)
+  if (!room) return false
+  room.spotifyConnected = connected
+  return true
 }
 
 export function addToQueue(
