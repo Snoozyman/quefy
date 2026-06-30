@@ -4,6 +4,52 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.1.1] - 2026-06-30
+
+### Commits
+
+- [`1675dac`](https://github.com/Snoozyman/quefy/commit/1675dac71a59f54a6e6267c48ad48a707075125a) docs: add project overview and conventions to AGENTS.md
+- [`9992c86`](https://github.com/Snoozyman/quefy/commit/9992c863dd6f90a8cb188f1e1aee5f60aec964c3) docs: add API response format to AGENTS.md
+- [`8b83ac1`](https://github.com/Snoozyman/quefy/commit/8b83ac1cefb89d6094645c30d363aaf247b2abd0) docs: document ApiResponse/Result pattern from shared/utils/result.ts
+- [`f3fc093`](https://github.com/Snoozyman/quefy/commit/f3fc093fe49ec571a876dc5e103d14b3eadd3faa) fix: let Nuxt auto-map env vars to runtimeConfig at runtime
+- [`e30b075`](https://github.com/Snoozyman/quefy/commit/e30b075966307d6f0d7529087351ecbe92a78d94) feat: fetch Spotify client ID from server API at runtime
+- [`7978f07`](https://github.com/Snoozyman/quefy/commit/7978f0746af7f7d53a7a37593537f109ff67d69b) docs: remove NUXT_PUBLIC_SPOTIFY_CLIENT_ID references
+- [`a3d8840`](https://github.com/Snoozyman/quefy/commit/a3d88403fab68096c02a8772f3cd856a53413ebd) fix: prevent service worker from intercepting OAuth callbacks
+- [`e583b4b`](https://github.com/Snoozyman/quefy/commit/e583b4b75d328a5811e75ffc41577978cd577e5c) fix(pwa): set navigateFallback to /app/overview to match PWA scope
+- [`d3a8214`](https://github.com/Snoozyman/quefy/commit/d3a8214d80b62b0dd31e74564788fc1e94971557) fix: restructure SSE endpoint and fix event push signature
+- [`ae1966e`](https://github.com/Snoozyman/quefy/commit/ae1966e1c4bb9d4f8995a293d3799f46c43eba27) fix: add SSE with poll fallback and dedup song change handling in room page
+- [`d442922`](https://github.com/Snoozyman/quefy/commit/d442922600e748ff397e1d5550a680416a484b76) fix: suppress SSE error when page is navigating away for Spotify OAuth
+- [`4631a33`](https://github.com/Snoozyman/quefy/commit/4631a33e262d84a1bb6f7fda940f7d158ba68c69) fix: add thumbnail field to Spotify search results and make search input visible
+- [`f186de9`](https://github.com/Snoozyman/quefy/commit/f186de9847db41f8229f87d7341ee6cd09ad0074) fix: use bg-default instead of bg-background for search results
+- [`26273f5`](https://github.com/Snoozyman/quefy/commit/26273f5cbdea09bd57d136a4fa57d8f0c8ee9151) chore: apply eslint formatting fixes
+- [`16df733`](https://github.com/Snoozyman/quefy/commit/16df73399d0bfd576d329dd118f296cb8a7a4d30) chore: ignore session-*.md files
+- [`9db801e`](https://github.com/Snoozyman/quefy/commit/9db801e9051f81125b5e5dc1afe7cb852a55f024) feat: add request logging middleware and detailed error logging to Spotify endpoints
+- [`5a2129e`](https://github.com/Snoozyman/quefy/commit/5a2129e5ebd3329311b1f9d1cc64e40dcbcaa841) fix: remove broken workbox navigateFallback and handle Spotify 404 gracefully
+- [`7d5c14f`](https://github.com/Snoozyman/quefy/commit/7d5c14f70cd2bc7d3e46d2b7b63029aa9443fa26) fix: await Spotify connect() and verify device registration succeeds
+- [`8f58694`](https://github.com/Snoozyman/quefy/commit/8f58694576720ab224415e7474a711ae747c3d87) fix: verify Spotify device appears in API device list before declaring ready
+- [`442758f`](https://github.com/Snoozyman/quefy/commit/442758ff9206314531ffcffedf48203b12f0b8fd) fix: match Spotify SDK snake_case property names for playback state
+- [`fe50166`](https://github.com/Snoozyman/quefy/commit/fe5016669f41683d960c74dbed2d6d174fa1b3ef) fix: stop current Spotify playback before skip
+- [`ae0b834`](https://github.com/Snoozyman/quefy/commit/ae0b8346006209f75b098aa1b531d892ac82a4b2) fix: tick position during Spotify playback to keep seek bar in sync
+- [`f104f12`](https://github.com/Snoozyman/quefy/commit/f104f12ab82a580b6b5c18cce9f01722db5a5ed4) feat: expose current song via page title and Media Session API
+- [`4a61105`](https://github.com/Snoozyman/quefy/commit/4a61105f6462021c680166c4a065d07c54344f83) fix: auto-skip when Spotify track ends naturally
+- [`88134a8`](https://github.com/Snoozyman/quefy/commit/88134a8b418e436efa21f52bd9c11845a9e08157) fix: add YouTube video thumbnail as albumImageUrl for Media Session art
+- [`b5cc09d`](https://github.com/Snoozyman/quefy/commit/b5cc09d50c53a31d563dedf0c3779635a6bfae6b) feat: show version and commit hash in sidebar footer
+- [`68283d3`](https://github.com/Snoozyman/quefy/commit/68283d3fbc4b1a09bc7875404d49261768d66d19) feat: add GitHub icon linking to repo in both navbars
+- [`0b2ef57`](https://github.com/Snoozyman/quefy/commit/0b2ef5710de6fb07b9c5d95520c691fc47759d96) fix: add pause to ytPlayerRef type to fix CI typecheck
+- [`433ad04`](https://github.com/Snoozyman/quefy/commit/433ad0459cdf75cd891289f9e1d69e184324fd3b) fix: handle missing git in Docker build for commit hash
+- [`eaa1764`](https://github.com/Snoozyman/quefy/commit/eaa176457238b4078694b791d450a8ab6726862f) fix: install git in Docker build stage for commit hash
+- [`2ebb5c5`](https://github.com/Snoozyman/quefy/commit/2ebb5c5bf787b6b2481059d5010159db6fb8ff29) fix: remove .git from .dockerignore
+- [`0628739`](https://github.com/Snoozyman/quefy/commit/0628739543b37501d6350fe23f70dbb756d1657f) fix: re-add navigateFallbackDenylist to prevent SW from intercepting OAuth callback
+- [`deeac58`](https://github.com/Snoozyman/quefy/commit/deeac586b2c8746f8fc3ac9bfc011afbbb9f5063) fix: resume Spotify playback after idle periods (token refresh, remove ready check, drop device-list bailout)
+- [`6e3a0d8`](https://github.com/Snoozyman/quefy/commit/6e3a0d889e32d40cd7eef37e05d8a7e2e272967a) feat: redesign landing page with hero, features, how-it-works, CTA
+- [`4e235b4`](https://github.com/Snoozyman/quefy/commit/4e235b4171714dad9c1505fa795796c2735b10fa) feat: enhance room index page layout with inline input and button row
+- [`723f01c`](https://github.com/Snoozyman/quefy/commit/723f01c611903d3e56244efdee95c87082e36dd1) fix: rework Spotify playback logic — skip, toggle, transfer, track-end detection
+- [`6f4d83a`](https://github.com/Snoozyman/quefy/commit/6f4d83a1dad8b1c4acc0828940267bd48d30b3f9) feat: stateless host verification and token-in-URL OAuth flow
+- [`4f1b4ce`](https://github.com/Snoozyman/quefy/commit/4f1b4ce644b0a65088b8f2944aa8ae8cb119600c) refactor: replace node-tls-client with curl for cookie fetching
+- [`57bfa68`](https://github.com/Snoozyman/quefy/commit/57bfa68d19c370a1076d154f8b3d77fe4d49eb37) feat: add room deletion endpoint and deleteRoom utility
+- [`d9ae50e`](https://github.com/Snoozyman/quefy/commit/d9ae50e486e24b174e7fce256407321bcfd60bee) feat: add YouTube audio duration field and reject zero-length streams
+- [`25fbf01`](https://github.com/Snoozyman/quefy/commit/25fbf0189edd99420f477636b6ba742031576cdd) chore: update nuxt config, app layout, PWA settings, and fix file endings
+- [`ac2a7f3`](https://github.com/Snoozyman/quefy/commit/ac2a7f3cb912629135dba10df5df4cc82b4212c3) fix: improve YouTube player resilience and expose pause method
 ## [0.1.0] - 2026-06-17
 
 ### Commits
