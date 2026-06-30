@@ -16,6 +16,8 @@
             :color="mode === 'spotify' ? 'primary' : 'neutral'"
             variant="solid"
             icon="i-simple-icons-spotify"
+            :disabled="!spotifyConnected"
+            :title="spotifyConnected ? '' : 'Host must connect Spotify first'"
             @click="mode = 'spotify'"
             class="text-xs"
           >
@@ -108,6 +110,7 @@ import type { SearchResult } from "#shared/types/room";
 const props = defineProps<{
   roomId: string;
   addingSong: boolean;
+  spotifyConnected: boolean;
 }>();
 
 const emit = defineEmits<{

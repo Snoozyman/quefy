@@ -28,6 +28,7 @@ export default defineEventHandler(async (event) => {
       durationMs: s.durationMs
     })),
     isPlaying: room.isPlaying,
+    spotifyConnected: room.spotifyConnected,
     createdAt: room.createdAt
   }
 })

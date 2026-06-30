@@ -43,6 +43,7 @@ export function emitRoomUpdate(roomId: string, room: Room) {
       durationMs: s.durationMs
     })),
     isPlaying: room.isPlaying,
+    spotifyConnected: room.spotifyConnected,
     createdAt: room.createdAt
   }
 
