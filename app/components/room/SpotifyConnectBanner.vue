@@ -136,6 +136,12 @@ function retryPlayerInit() {
 
 function reconnect() {
   spotifyError.value = ''
+  if (storageHostData.value?.hostToken) {
+    $fetch(`/api/room/${props.roomId}/spotify-disconnect`, {
+      method: 'POST',
+      body: { hostToken: storageHostData.value.hostToken }
+    }).catch(() => {})
+  }
   spotifyAuth.logout()
 }
 

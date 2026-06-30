@@ -115,6 +115,7 @@
     <RoomSongSearch
       :room-id="roomId"
       :adding-song="addingSong"
+      :spotify-connected="roomState.spotifyConnected"
       @add-youtube="addSongByVideoId"
       @add-spotify="addSpotifyTrack"
       @add-soundcloud="addSongBySoundcloudUrl"
@@ -155,6 +156,7 @@ const roomState = ref<RoomState>({
   currentSong: null,
   queue: [],
   isPlaying: false,
+  spotifyConnected: false,
   createdAt: 0,
 });
 
@@ -252,6 +254,10 @@ async function exportQueue() {
 
 function onSpotifyPlayerReady() {
   if (!isHost.value) return;
+  $fetch(`/api/room/${roomId}/spotify-ready`, {
+    method: 'POST',
+    body: { hostToken: hostData.value?.hostToken }
+  }).catch(() => {})
   spotifyPlayer.setOnTrackEnd(skip);
   if (
     roomState.value.currentSong?.source === "spotify" &&
@@ -617,6 +623,12 @@ onMounted(async () => {
 
 onUnmounted(() => {
   pageLeaving = true;
+  if (isHost.value && hostData.value?.hostToken) {
+    $fetch(`/api/room/${roomId}/spotify-disconnect`, {
+      method: 'POST',
+      body: { hostToken: hostData.value.hostToken }
+    }).catch(() => {})
+  }
   eventSource?.close();
   if (pollTimer) clearInterval(pollTimer);
   spotifyPlayer.destroy();
