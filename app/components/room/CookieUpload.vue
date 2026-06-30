@@ -29,9 +29,9 @@
           </h2>
 
           <p class="text-sm text-muted">
-            Export cookies from your browser as a Netscape-format <code>cookies.txt</code> file
-            (use "Get cookies.txt" extension), then upload or paste them here.
-            This helps yt-dlp access age-restricted or private videos.
+            Cookies help yt-dlp access age-restricted or private videos.
+            You can auto-fetch session cookies, or manually upload a Netscape-format
+            <code>cookies.txt</code> file.
           </p>
 
           <div class="flex items-center gap-2">
@@ -90,6 +90,14 @@
               Save Cookies
             </UButton>
             <UButton
+              size="sm"
+              variant="outline"
+              :loading="fetching"
+              @click="autoFetch"
+            >
+              Auto-Fetch
+            </UButton>
+            <UButton
               v-if="cookieExists"
               size="sm"
               variant="outline"
@@ -121,6 +129,7 @@ const fileInput = ref<HTMLInputElement | undefined>()
 const fileName = ref('')
 const pasteText = ref('')
 const saving = ref(false)
+const fetching = ref(false)
 const deleting = ref(false)
 const saveMsg = ref('')
 const saveOk = ref(false)
@@ -185,6 +194,22 @@ async function save() {
     saveMsg.value = 'Failed to save cookies.'
   } finally {
     saving.value = false
+  }
+}
+
+async function autoFetch() {
+  fetching.value = true
+  saveMsg.value = ''
+  try {
+    const res = await $fetch<{ ok: boolean, count: number }>('/api/cookies/refresh')
+    saveOk.value = true
+    saveMsg.value = `Fetched ${res.count} cookies from YouTube.`
+    await fetchStatus()
+  } catch (err: any) {
+    saveOk.value = false
+    saveMsg.value = err?.data?.statusMessage || err?.message || 'Failed to auto-fetch cookies.'
+  } finally {
+    fetching.value = false
   }
 }
 
