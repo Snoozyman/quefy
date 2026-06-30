@@ -59,6 +59,10 @@ export function getRoom(id: string): Room | undefined {
   return rooms.get(id)
 }
 
+export function deleteRoom(id: string): boolean {
+  return rooms.delete(id)
+}
+
 export function verifyHost(roomId: string, token: string): boolean {
   const room = rooms.get(roomId)
   return room?.hostToken === token
@@ -155,12 +159,14 @@ export function listRooms(): RoomSummary[] {
   for (const [id, r] of rooms) {
     if (now - r.createdAt >= expiry) rooms.delete(id)
   }
-  return entries.filter(r => now - r.createdAt < expiry).map(r => ({
-    id: r.id,
-    title: r.title,
-    queueCount: r.queue.length + (r.currentSong ? 1 : 0),
-    createdAt: r.createdAt
-  }))
+  return entries
+    .filter(r => now - r.createdAt < expiry)
+    .map(r => ({
+      id: r.id,
+      title: r.title,
+      queueCount: r.queue.length + (r.currentSong ? 1 : 0),
+      createdAt: r.createdAt
+    }))
 }
 
 interface RoomSummary {
