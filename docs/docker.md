@@ -37,7 +37,7 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      # YouTube cookies (optional — can also upload via the room UI)
+      # YouTube / SoundCloud cookies (optional — can also upload via the room UI)
       # - YT_DLP_COOKIES=/data/cookies.txt
       # Spotify (optional — requires Premium account)
       # - SPOTIFY_CLIENT_ID=
@@ -111,7 +111,7 @@ docker run -d \
 
 ### Cookies File (Optional — legacy method)
 
-Mount a YouTube cookies file directly (alternative to the UI upload):
+Mount a cookies file directly (alternative to the UI upload):
 
 ```bash
 docker run -d \
@@ -121,7 +121,7 @@ docker run -d \
   snoozyman/quefy:latest
 ```
 
-> **Note:** YouTube cookies expire periodically. If using the UI upload, you can re-upload without restarting the container.
+> **Note:** YouTube and SoundCloud cookies expire periodically. If cookies stop working, re-upload via the UI or mount a fresh cookies file.
 
 ## Production Deployment
 
@@ -186,9 +186,11 @@ Check logs:
 docker logs quefy
 ```
 
-### yt-dlp errors
+### yt-dlp / SoundCloud errors
 
-Some videos require authentication. Upload cookies via the room UI, or mount a cookies file — see [Cookies File](#cookies-file-optional) section above.
+Some videos and tracks require authentication. Upload cookies via the room UI, or mount a cookies file — see [Cookies File](#cookies-file-optional) section above.
+
+SoundCloud DRM-protected tracks cannot be played on any platform. These tracks will show a clear error message when queued.
 
 ### Spotify playback fails
 
@@ -209,7 +211,7 @@ Access at `http://localhost:8080`
 
 - **Base image:** `node:22-bookworm-slim`
 - **Build stage:** `oven/bun:latest`
-- **Includes:** yt-dlp, ffmpeg, ca-certificates
+- **Includes:** yt-dlp, ffmpeg, curl, ca-certificates
 - **Exposes:** Port 3000
 
 ## Source
