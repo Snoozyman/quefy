@@ -134,6 +134,10 @@ function play(url: string) {
       hls.value = instance
     } else if (audioEl.value.canPlayType('application/vnd.apple.mpegurl')) {
       audioEl.value.src = url
+    } else {
+      playing.value = false
+      emit('error', 'HLS audio is not supported in this browser.')
+      return
     }
   } else {
     audioEl.value.src = url
