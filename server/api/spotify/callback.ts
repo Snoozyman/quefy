@@ -1,4 +1,4 @@
-import { exchangeCode, getRedirectUri } from '#server/utils/spotify'
+import { exchangeCode } from '#server/utils/spotify'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)

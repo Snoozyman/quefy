@@ -1,7 +1,7 @@
 <template>
   <div>
     <div
-      v-if="!spotifyAuth.isAuthenticated.value && !connecting"
+      v-if="!processing && !spotifyAuth.isAuthenticated.value && isHost"
       class="rounded-xl border border-primary/30 bg-primary/5 p-4 flex items-center justify-between"
     >
       <div>
@@ -29,7 +29,7 @@
     </div>
 
     <div
-      v-if="connecting"
+      v-if="processing"
       class="rounded-xl border border-default p-4 space-y-3"
     >
       <div class="flex items-center gap-3">
@@ -41,8 +41,34 @@
       </div>
     </div>
 
+    <div
+      v-if="spotifyError && spotifyAuth.isAuthenticated.value && !processing"
+      class="rounded-xl border border-warning/30 bg-warning/5 p-4 space-y-3"
+    >
+      <p class="text-sm">
+        {{ spotifyError }}
+      </p>
+      <div class="flex gap-2">
+        <UButton
+          size="sm"
+          color="warning"
+          @click="retryPlayerInit"
+        >
+          Retry
+        </UButton>
+        <UButton
+          size="sm"
+          color="neutral"
+          variant="outline"
+          @click="reconnect"
+        >
+          Reconnect
+        </UButton>
+      </div>
+    </div>
+
     <p
-      v-if="spotifyError"
+      v-else-if="spotifyError"
       class="text-sm text-red-500"
     >
       {{ spotifyError }}
@@ -57,30 +83,45 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'player-ready': []
+  'host-verified': [value: boolean]
 }>()
 
 const spotifyAuth = useSpotifyAuth()
 const spotifyPlayer = useSpotifyPlayer()
-const connecting = ref(false)
+const processing = ref(false)
 const spotifyError = ref('')
 
+const storageHostData = ref<{ roomId: string, hostToken: string } | null>(null)
+try {
+  const raw = localStorage.getItem('quefy-host')
+  if (raw) storageHostData.value = JSON.parse(raw)
+} catch { /* localStorage access denied */ }
+
+const isHost = computed(
+  () => storageHostData.value?.roomId === props.roomId && !!storageHostData.value?.hostToken
+)
+
 async function connect() {
-  connecting.value = true
+  processing.value = true
   try {
     await spotifyAuth.login(props.roomId)
   } catch (err: any) {
     spotifyError.value = err.message || 'Failed to connect to Spotify'
-    connecting.value = false
+    processing.value = false
   }
 }
 
 async function initSpotifyPlayer() {
   const token = spotifyAuth.getAccessToken()
-  if (!token) return
-  connecting.value = true
+  processing.value = false
+  if (!token) {
+    spotifyError.value = 'Spotify session expired. Reconnect Spotify.'
+    return
+  }
+  processing.value = true
   spotifyError.value = ''
   const ok = await spotifyPlayer.init(token)
-  connecting.value = false
+  processing.value = false
   if (ok) {
     emit('player-ready')
   } else {
@@ -88,30 +129,77 @@ async function initSpotifyPlayer() {
   }
 }
 
-function handleOAuthCallback() {
+function retryPlayerInit() {
+  spotifyError.value = ''
+  initSpotifyPlayer()
+}
+
+function reconnect() {
+  spotifyError.value = ''
+  spotifyAuth.logout()
+}
+
+async function verifyHost() {
+  if (!storageHostData.value?.hostToken) {
+    emit('host-verified', false)
+    return
+  }
+  try {
+    const res = await $fetch<{ isHost: boolean }>('/api/auth/verify-host', {
+      method: 'POST',
+      body: { roomId: props.roomId, hostToken: storageHostData.value.hostToken }
+    })
+    emit('host-verified', res.isHost)
+  } catch {
+    emit('host-verified', false)
+  }
+}
+
+async function handleOAuthCallback() {
   const params = new URLSearchParams(window.location.search)
-  const accessToken = params.get('access_token')
-  const refreshToken = params.get('refresh_token')
-  const expiresIn = params.get('expires_in')
   const spotifyErr = params.get('spotify_error')
 
   if (spotifyErr) {
     spotifyError.value = spotifyErr
+    window.history.replaceState({}, '', `/app/room/${props.roomId}`)
+    return
   }
 
-  if (accessToken && refreshToken && expiresIn) {
+  const accessToken = params.get('access_token')
+  const refreshToken = params.get('refresh_token')
+  const expiresIn = params.get('expires_in')
+
+  if (!accessToken || !refreshToken || !expiresIn) return
+
+  processing.value = true
+  spotifyError.value = ''
+
+  try {
+    window.history.replaceState({}, '', `/app/room/${props.roomId}`)
+
     spotifyAuth.save({
       accessToken,
       refreshToken,
-      expiresIn: Number(expiresIn)
+      expiresIn: parseInt(expiresIn, 10)
     })
-    window.history.replaceState({}, '', `/app/room/${props.roomId}`)
-    initSpotifyPlayer()
+
+    await verifyHost()
+
+    await initSpotifyPlayer()
+  } catch (err: any) {
+    processing.value = false
+    spotifyError.value = err?.message || 'Failed to complete Spotify authentication'
+    emit('host-verified', false)
   }
 }
 
 onMounted(() => {
-  handleOAuthCallback()
+  const hasTokens = !!new URLSearchParams(window.location.search).get('access_token')
+  if (hasTokens) {
+    handleOAuthCallback()
+    return
+  }
+  verifyHost()
   if (spotifyAuth.isAuthenticated.value && !spotifyPlayer.isReady.value) {
     initSpotifyPlayer()
   }
