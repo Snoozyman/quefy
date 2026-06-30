@@ -30,6 +30,10 @@ export function clearSoundcloudAudioCache(): void {
   cache.clear()
 }
 
+export function clearSoundcloudAudioCacheFor(url: string): void {
+  cache.delete(url)
+}
+
 export async function getSoundcloudAudioStreamUrl(trackUrl: string): Promise<AudioStream> {
   const cached = cache.get(trackUrl)
   if (cached && Date.now() - cached.ts < CACHE_TTL) {

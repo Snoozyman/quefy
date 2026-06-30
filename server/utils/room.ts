@@ -11,6 +11,8 @@ export interface QueuedSong {
   url?: string
   // Spotify
   trackUri?: string
+  // SoundCloud
+  trackUrl?: string
   artists?: string[]
   albumName?: string
   albumImageUrl?: string
@@ -77,6 +79,7 @@ export function addToQueue(
     videoId?: string
     url?: string
     trackUri?: string
+    trackUrl?: string
     artists?: string[]
     albumName?: string
     albumImageUrl?: string
@@ -94,6 +97,7 @@ export function addToQueue(
     videoId: data.videoId,
     url: data.url,
     trackUri: data.trackUri,
+    trackUrl: data.trackUrl,
     artists: data.artists,
     albumName: data.albumName,
     albumImageUrl: data.albumImageUrl,
