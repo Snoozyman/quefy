@@ -24,7 +24,15 @@ export default defineEventHandler(async (event) => {
 
   try {
     const data = await $fetch<SoundcloudSearchResponse>(
-      `https://api-v2.soundcloud.com/search/tracks?q=${encodeURIComponent(q)}&limit=${maxResults}&client_id=${SC_CLIENT_ID}`
+      `https://api-v2.soundcloud.com/search/tracks?q=${encodeURIComponent(q)}&limit=${maxResults}&client_id=${SC_CLIENT_ID}`,
+      {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+          'Accept': 'application/json',
+          'Origin': 'https://soundcloud.com',
+          'Referer': 'https://soundcloud.com/'
+        }
+      }
     )
 
     const results: SearchResult[] = data.collection.map((item) => ({
@@ -41,7 +49,8 @@ export default defineEventHandler(async (event) => {
 
     return results
   } catch (err: any) {
-    console.error('[soundcloud search]', err.message)
+    const detail = err.statusMessage || err.data?.message || err.data?.error || err.message
+    console.error('[soundcloud search]', detail)
     throw createError({
       statusCode: 502,
       statusMessage: 'SoundCloud search failed'
