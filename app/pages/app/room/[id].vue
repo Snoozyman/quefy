@@ -55,6 +55,7 @@
               Export
             </UButton>
             <UButton
+              v-if="isHost"
               size="sm"
               color="warning"
               icon="i-lucide-trash"
@@ -355,11 +356,14 @@ async function transferSpotifyPlayback(trackUri: string) {
       await new Promise((r) => setTimeout(r, 500 * attempt));
     }
 
-    const playRes = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-      method: "PUT",
-      headers,
-      body: JSON.stringify({ uris: [trackUri] }),
-    });
+    const playRes = await fetch(
+      `https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`,
+      {
+        method: "PUT",
+        headers,
+        body: JSON.stringify({ uris: [trackUri] }),
+      },
+    );
     if (playRes.ok) return;
 
     if (playRes.status === 403) {
