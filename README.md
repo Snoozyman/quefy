@@ -8,12 +8,14 @@
 ![GitHub Tag](https://img.shields.io/github/v/tag/Snoozyman/quefy)
 -->
 
-Multi-user YouTube and Spotify audio streaming rooms. Host creates a room, share the code —
-joiners queue songs, host's device plays the audio.
+Multi-user YouTube, Spotify, and SoundCloud audio streaming rooms. Host creates a room,
+share the code — joiners queue songs, host's device plays the audio.
 
 Built with [Nuxt](https://nuxt.com), [Nuxt UI](https://ui.nuxt.com),
 [yt-dlp](https://github.com/yt-dlp/yt-dlp),
-[Spotify Web Playback SDK](https://developer.spotify.com/documentation/web-playback-sdk).
+[HLS.js](https://github.com/video-dev/hls.js),
+[Spotify Web Playback SDK](https://developer.spotify.com/documentation/web-playback-sdk),
+[SoundCloud API v2](https://developers.soundcloud.com).
 
 ## Quick Start
 
@@ -58,7 +60,8 @@ See [docs/docker.md](docs/docker.md) for complete Docker documentation including
 
 ## Cookies (optional)
 
-Some videos (age-restricted, member-only, private) require YouTube authentication.
+Some videos and SoundCloud tracks (age-restricted, member-only, private) require
+authentication. Cookies are used by yt-dlp for both YouTube and SoundCloud requests.
 
 ### Option A: Upload via the room UI
 
@@ -112,7 +115,7 @@ SPOTIFY_CLIENT_SECRET=your_client_secret
 
 - **Search** uses the Spotify Web API (Client Credentials flow — no user auth needed)
 - **Playback** uses the Web Playback SDK (Authorization Code flow — host must log in)
-- The queue is hybrid: YouTube and Spotify songs play in sequence, the player switches automatically
+- The queue is hybrid: YouTube, Spotify, and SoundCloud songs play in sequence, the player switches automatically
 
 ### Limitations
 

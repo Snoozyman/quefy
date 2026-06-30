@@ -10,7 +10,7 @@
 
 # Project: Quefy
 
-Multi-user YouTube / Spotify audio streaming rooms.
+Multi-user YouTube / Spotify / SoundCloud audio streaming rooms.
 
 ## Tech stack
 
@@ -20,7 +20,7 @@ Multi-user YouTube / Spotify audio streaming rooms.
 - **Lint:** ESLint with `@nuxt/eslint` (stylistic: comma-dangle never, brace 1tbs)
 - **Test:** Bun test (no Jest/Vitest)
 - **PWA:** `@vite-pwa/nuxt`
-- **Media:** yt-dlp (YouTube), Spotify Web Playback SDK / Web API (Spotify)
+- **Media:** yt-dlp (YouTube, SoundCloud), Spotify Web Playback SDK / Web API (Spotify), SoundCloud API v2, HLS.js (SoundCloud audio)
 
 ## Commands
 
@@ -38,12 +38,12 @@ Multi-user YouTube / Spotify audio streaming rooms.
 
 ```
 app/
-  components/room/    # UI components: NowPlaying, SongSearch, SongQueue, etc.
+  components/room/    # UI components: NowPlaying, SongSearch, SongQueue, AudioPlayer, SpotifyPlayer, SpotifyConnectBanner, CookieUpload
   composables/        # useSpotifyAuth, useSpotifyPlayer (singleton module refs)
-  pages/app/room/     # [id].vue — main room page (orchestrator, ~295 lines)
+  pages/app/room/     # [id].vue — main room page (orchestrator, ~590 lines)
 server/
-  api/                # API endpoints: room/*, spotify/*, youtube/*, cookies.*
-  utils/              # room.ts, spotify.ts, youtube.ts, cookies.ts, yt-dlp-errors.ts
+  api/                # API endpoints: room/*, spotify/*, youtube/*, soundcloud/*, cookies.*
+  utils/              # room.ts, spotify.ts, youtube.ts, soundcloud.ts, cookies.ts, cookie-fetcher.ts, yt-dlp-errors.ts, room-events.ts, logger.ts
 shared/types/         # room.ts, spotify.ts — shared TypeScript types
 tests/                # room.test.ts, yt-dlp-errors.test.ts
 ```
@@ -51,10 +51,10 @@ tests/                # room.test.ts, yt-dlp-errors.test.ts
 ## Architecture notes
 
 - **Room state** is in-memory (`Map<string, Room>`), not persisted
-- **Queue is hybrid** — songs have a `source` field (`youtube` | `spotify`), player switches automatically
+- **Queue is hybrid** — songs have a `source` field (`youtube` | `spotify` | `soundcloud`), player switches automatically
 - **Spotify search** uses Client Credentials flow (no user auth); **playback** uses Authorization Code flow (Web Playback SDK, Premium required)
 - **useSpotifyAuth / useSpotifyPlayer** are module-level singletons so page and all components share the same auth/player state
-- **YouTube player** is an `<audio>` element in YouTubePlayer.vue — owns all audio state internally, exposes `play(url)` / `pause()`
+- **Audio player** is an `<audio>` element in AudioPlayer.vue — handles YouTube direct audio and SoundCloud HLS streams, exposes `play(url)` / `pause()`
 - **Cookies** are stored at `data/cookies.txt` (global, single file for all rooms), cleared/verified on upload
 - **Firefox** is detected at Spotify init — shows error message, never loads the SDK
 
