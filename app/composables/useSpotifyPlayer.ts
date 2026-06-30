@@ -199,6 +199,7 @@ export function useSpotifyPlayer() {
 
       p.addListener('playback_error', () => {
         if (destroyedByErrors) return
+        if (!playerState.value || playerState.value.paused) return
 
         const now = Date.now()
         playbackErrorWindow = playbackErrorWindow.filter(t => now - t < 10000)
@@ -315,6 +316,12 @@ export function useSpotifyPlayer() {
     playerState.value = null
   }
 
+  function resetErrors() {
+    playbackErrorCount = 0
+    playbackErrorWindow = []
+    destroyedByErrors = false
+  }
+
   function setOnTrackEnd(cb: () => void) {
     onTrackEnd = cb
   }
@@ -322,6 +329,6 @@ export function useSpotifyPlayer() {
   return {
     deviceId, isReady, isConnecting, error, volume,
     playerState, currentTrack, paused, position, duration,
-    init, play, pause, seek, nextTrack, setVolume, destroy, setOnTrackEnd
+    init, play, pause, seek, nextTrack, setVolume, destroy, resetErrors, setOnTrackEnd
   }
 }
