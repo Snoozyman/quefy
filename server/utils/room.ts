@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 
 export interface QueuedSong {
   id: string
-  source: 'youtube' | 'spotify'
+  source: 'youtube' | 'spotify' | 'soundcloud'
   title: string
   addedBy: string
   addedAt: number
@@ -71,7 +71,7 @@ export function verifyHost(roomId: string, token: string): boolean {
 export function addToQueue(
   roomId: string,
   data: {
-    source: 'youtube' | 'spotify'
+    source: 'youtube' | 'spotify' | 'soundcloud'
     title: string
     addedBy: string
     videoId?: string

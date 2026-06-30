@@ -1,6 +1,6 @@
 export interface SongData {
   id: string
-  source: 'youtube' | 'spotify'
+  source: 'youtube' | 'spotify' | 'soundcloud'
   title: string
   addedBy: string
   addedAt: number
@@ -20,7 +20,7 @@ export interface SearchResult {
   duration?: number
   durationString?: string
   thumbnail: string
-  source: 'youtube' | 'spotify'
+  source: 'youtube' | 'spotify' | 'soundcloud'
   uri?: string
   artists?: string[]
   albumName?: string

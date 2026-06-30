@@ -31,6 +31,10 @@ export function parseYtDlpError(stderr: string): string {
     return 'Network error while fetching video. Check your connection and try again.'
   }
 
+  if (lower.includes('drm protected')) {
+    return 'This track is DRM protected and cannot be played.'
+  }
+
   if (lower.includes('cookie') || lower.includes('not logged in') || lower.includes('sign in')) {
     return 'Authentication required. Upload fresh YouTube cookies from your browser.'
   }

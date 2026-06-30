@@ -83,6 +83,7 @@
 </template>
 
 <script lang="ts" setup>
+import Hls from 'hls.js'
 import type { SongData } from '#shared/types/room'
 
 const props = defineProps<{
@@ -97,16 +98,48 @@ const emit = defineEmits<{
 }>()
 
 const audioEl = ref<HTMLAudioElement | undefined>()
+const hls = ref<Hls | null>(null)
 const playing = ref(false)
 const currentTime = ref(0)
 const duration = ref(0)
 const volume = ref(0.33)
 const seekValue = ref(0)
 
+function destroyHls() {
+  if (hls.value) {
+    hls.value.destroy()
+    hls.value = null
+  }
+}
+
 function play(url: string) {
   if (!audioEl.value) return
-  audioEl.value.src = url
-  audioEl.value.load()
+  destroyHls()
+
+  if (url.includes('m3u8')) {
+    if (Hls.isSupported()) {
+      const instance = new Hls({
+        maxBufferLength: 30,
+        maxMaxBufferLength: 60
+      })
+      instance.loadSource(url)
+      instance.attachMedia(audioEl.value)
+      instance.on(Hls.Events.ERROR, (_event, data) => {
+        if (data.fatal) {
+          destroyHls()
+          playing.value = false
+          emit('error', 'HLS playback failed.')
+        }
+      })
+      hls.value = instance
+    } else if (audioEl.value.canPlayType('application/vnd.apple.mpegurl')) {
+      audioEl.value.src = url
+    }
+  } else {
+    audioEl.value.src = url
+    audioEl.value.load()
+  }
+
   playing.value = true
   audioEl.value.play().catch((err: unknown) => {
     const name = err instanceof DOMException ? err.name : ''
@@ -117,6 +150,7 @@ function play(url: string) {
 }
 
 function pause() {
+  destroyHls()
   audioEl.value?.pause()
   playing.value = false
 }
@@ -176,15 +210,21 @@ function toggleMute() {
 }
 
 function onEnded() {
+  destroyHls()
   playing.value = false
   emit('ended')
 }
 
 function onError() {
+  destroyHls()
   playing.value = false
   const msg = audioEl.value?.error?.message
   emit('error', msg || 'Audio playback failed.')
 }
 
 defineExpose({ play, pause, state: { playing, currentTime, duration, volume, seekValue } })
+
+onUnmounted(() => {
+  destroyHls()
+})
 </script>
