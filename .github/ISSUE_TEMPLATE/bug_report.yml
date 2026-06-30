@@ -1,0 +1,59 @@
+name: Bug Report
+description: Something isn't working
+title: "bug: "
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened and what did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: |
+        1. Go to '...'
+        2. Click '...'
+        3. See error
+    validations:
+      required: true
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      options:
+        - Chrome
+        - Safari
+        - Firefox
+        - Edge
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Desktop
+        - PWA (installed)
+        - Docker
+        - Development
+  - type: dropdown
+    id: source
+    attributes:
+      label: Source
+      description: Which audio source is involved?
+      options:
+        - YouTube
+        - Spotify
+        - SoundCloud
+        - Multiple
+        - Not applicable
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Paste any relevant logs or error messages
