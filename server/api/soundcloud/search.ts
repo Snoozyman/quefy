@@ -1,7 +1,35 @@
 import type { SearchResult } from '#shared/types/room'
 import { getSoundcloudCookieHeader } from '#server/utils/cookies'
 
-const SC_CLIENT_ID = 'a3e059563d7fd3372b49b37f00a00bcf'
+const SC_CLIENT_ID = 'OtK8FaCIITOnTBrgmv05bTkLTrcKKcuc'
+
+let cachedClientId = ''
+let cachedClientIdAt = 0
+const CLIENT_ID_TTL = 3_600_000
+
+async function scrapeClientId(): Promise<string> {
+  const html = await $fetch<string>('https://soundcloud.com', {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+    }
+  })
+  const match = html.match(/"apiClient"[^}]*"id":"([^"]+)"/)
+  if (match?.[1]) return match[1]
+  throw new Error('client_id not found in homepage')
+}
+
+async function getClientId(): Promise<string> {
+  if (cachedClientId && Date.now() - cachedClientIdAt < CLIENT_ID_TTL) {
+    return cachedClientId
+  }
+  try {
+    cachedClientId = await scrapeClientId()
+    cachedClientIdAt = Date.now()
+    return cachedClientId
+  } catch {
+    return SC_CLIENT_ID
+  }
+}
 
 interface SoundcloudSearchResponse {
   collection: Array<{
@@ -25,6 +53,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const cookieHeader = getSoundcloudCookieHeader()
+    const clientId = await getClientId()
     const headers: Record<string, string> = {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
       'Accept': 'application/json',
@@ -36,7 +65,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const data = await $fetch<SoundcloudSearchResponse>(
-      `https://api-v2.soundcloud.com/search/tracks?q=${encodeURIComponent(q)}&limit=${maxResults}&client_id=${SC_CLIENT_ID}`,
+      `https://api-v2.soundcloud.com/search/tracks?q=${encodeURIComponent(q)}&limit=${maxResults}&client_id=${clientId}`,
       { headers }
     )
 
