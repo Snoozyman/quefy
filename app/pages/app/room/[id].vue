@@ -240,6 +240,7 @@ async function exportQueue() {
 }
 
 function onSpotifyPlayerReady() {
+  if (!isHost.value) return
   spotifyPlayer.setOnTrackEnd(skip);
   if (
     roomState.value.currentSong?.source === "spotify" &&
