@@ -490,6 +490,7 @@ async function removeSong(songId: string) {
 
 async function togglePlay() {
   if (!isHost.value || !hostData.value?.hostToken) return;
+  const prevSongId = roomState.value.currentSong?.id;
   try {
     const res = await $fetch<{
       isPlaying: boolean;
@@ -499,7 +500,6 @@ async function togglePlay() {
       body: { hostToken: hostData.value.hostToken },
     });
 
-    const prevSongId = roomState.value.currentSong?.id;
     roomState.value.isPlaying = res.isPlaying;
     if (res.currentSong) {
       roomState.value.currentSong = res.currentSong;
