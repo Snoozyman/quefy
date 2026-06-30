@@ -74,7 +74,8 @@ export default defineEventHandler(async (event) => {
     addedBy: body.addedBy ?? 'Anonymous',
     videoId: body.videoId,
     url: audio.url,
-    albumImageUrl: `https://img.youtube.com/vi/${body.videoId}/hqdefault.jpg`
+    albumImageUrl: `https://img.youtube.com/vi/${body.videoId}/hqdefault.jpg`,
+    durationMs: Math.round(audio.duration * 1000)
   })
 
   if (!song)

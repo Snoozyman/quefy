@@ -13,6 +13,7 @@ interface AudioStream {
   audioQuality: string
   itag: number
   title: string
+  duration: number
 }
 
 const cache = new Map<string, { data: AudioStream, ts: number }>()
@@ -62,13 +63,17 @@ export async function getAudioStreamUrl(videoId: string): Promise<AudioStream> {
 
   if (!url) throw new Error('No audio URL returned from yt-dlp')
 
+  const duration = Number(meta.duration) || 0
+  if (!duration) throw new Error('Video has no duration (live stream or unavailable)')
+
   const data: AudioStream = {
     url,
     mimeType: meta.ext ? `audio/${meta.ext}` : 'audio/webm',
     contentLength: String(meta.filesize ?? meta.filesize_approx ?? 0),
     audioQuality: meta.quality ?? '',
     itag: meta.format_id ?? 0,
-    title: meta.title ?? ''
+    title: meta.title ?? '',
+    duration
   }
 
   cache.set(videoId, { data, ts: Date.now() })
