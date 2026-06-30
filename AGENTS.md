@@ -8,6 +8,20 @@
 - Avoid "oops" / "fixup" / "wip" commits — amend or rebase instead
 - Keep messages under 72 characters for the first line
 
+## Workflow
+
+1. **Create a branch** — `type/descriptive-name` (e.g., `fix/toggleplay-race`, `feat/soundcloud-support`, `docs/standalone-binary`)
+2. **Make atomic commits** — one logical change per commit, no bullet points in bodies
+3. **Typecheck** — `bun run typecheck` before committing
+4. **Push the branch** — `git push -u origin <branch>`
+5. **Create a PR** — `gh pr create --base main --head <branch> --title "type: description" --body "what and why"`
+6. **Merge** — `gh pr merge <number> --merge --delete-branch`
+7. **Clean up** — `git checkout main && git pull origin main`, prune remote branches
+
+- Don't push directly to `main` — always go through a PR
+- Test locally before pushing when fixing runtime bugs
+- Use `git remote set-url origin https://github.com/Snoozyman/quefy.git` if SSH auth fails
+
 # Project: Quefy
 
 Multi-user YouTube / Spotify / SoundCloud audio streaming rooms.
