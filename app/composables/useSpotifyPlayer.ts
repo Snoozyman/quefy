@@ -322,7 +322,7 @@ export function useSpotifyPlayer() {
     destroyedByErrors = false
   }
 
-  function setOnTrackEnd(cb: () => void) {
+  function setOnTrackEnd(cb: (() => void) | null) {
     onTrackEnd = cb
   }
 

@@ -271,9 +271,11 @@ function handleSongChange(song: SongData) {
   currentPlayingId = song.id
   if (song.source === "spotify" && song.trackUri) {
     audioPlayerRef.value?.pause();
+    spotifyPlayer.setOnTrackEnd(skip);
     transferSpotifyPlayback(song.trackUri);
   }
   if ((song.source === "youtube" || song.source === "soundcloud") && song.url) {
+    spotifyPlayer.setOnTrackEnd(null);
     spotifyPlayer.resetErrors();
     spotifyPlayer.pause();
     if (roomState.value.isPlaying) {
