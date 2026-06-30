@@ -24,7 +24,7 @@
               <span v-if="copied" class="ml-2 text-xs text-muted">Copied!</span>
             </p>
           </div>
-          <div class="flex flex-row items-center gap-2">
+          <div class="flex flex-row items-center gap-2 flex-wrap">
             <UButton
               v-if="isHost"
               size="sm"
@@ -177,7 +177,10 @@ const currentSongIsAudio = computed(
 const spotifyAuth = useSpotifyAuth();
 const spotifyPlayer = useSpotifyPlayer();
 
-const audioPlayerRef = ref<{ play: (url: string) => void; pause: () => void }>();
+const audioPlayerRef = ref<{
+  play: (url: string) => void;
+  pause: () => void;
+}>();
 
 const fallbackTrack = {
   name: "",
@@ -240,7 +243,7 @@ async function exportQueue() {
 }
 
 function onSpotifyPlayerReady() {
-  if (!isHost.value) return
+  if (!isHost.value) return;
   spotifyPlayer.setOnTrackEnd(skip);
   if (
     roomState.value.currentSong?.source === "spotify" &&
@@ -267,7 +270,7 @@ function handleSongChange(song: SongData) {
     transferSpotifyPlayback(song.trackUri);
   }
   if ((song.source === "youtube" || song.source === "soundcloud") && song.url) {
-    spotifyPlayer.resetErrors()
+    spotifyPlayer.resetErrors();
     spotifyPlayer.pause();
     if (roomState.value.isPlaying) {
       audioPlayerRef.value?.play(song.url);
@@ -409,7 +412,7 @@ async function addSongByVideoId(videoId: string) {
     });
     await fetchRoomState();
   } catch (e: any) {
-    error.value = e?.data?.statusMessage || 'Failed to add song.';
+    error.value = e?.data?.statusMessage || "Failed to add song.";
   } finally {
     addingSong.value = false;
   }
@@ -432,7 +435,7 @@ async function addSpotifyTrack(track: {
     });
     await fetchRoomState();
   } catch (e: any) {
-    error.value = e?.data?.statusMessage || 'Failed to add song.';
+    error.value = e?.data?.statusMessage || "Failed to add song.";
   } finally {
     addingSong.value = false;
   }
@@ -448,7 +451,8 @@ async function addSongBySoundcloudUrl(trackUrl: string) {
     });
     await fetchRoomState();
   } catch (e: any) {
-    error.value = e?.data?.statusMessage || e?.message || 'Failed to add SoundCloud track.';
+    error.value =
+      e?.data?.statusMessage || e?.message || "Failed to add SoundCloud track.";
   } finally {
     addingSong.value = false;
   }
@@ -496,7 +500,10 @@ async function togglePlay() {
           } else {
             transferSpotifyPlayback(song.trackUri);
           }
-        } else if ((song.source === "youtube" || song.source === "soundcloud") && song.url) {
+        } else if (
+          (song.source === "youtube" || song.source === "soundcloud") &&
+          song.url
+        ) {
           spotifyPlayer.pause();
           audioPlayerRef.value?.play(song.url);
         }
