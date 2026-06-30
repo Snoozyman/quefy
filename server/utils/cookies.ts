@@ -35,3 +35,24 @@ export function deleteCookieFile(): void {
     unlinkSync(path)
   }
 }
+
+export function getSoundcloudCookieHeader(): string {
+  const path = getCookiePath()
+  if (!existsSync(path)) return ''
+
+  const content = readFileSync(path, 'utf-8')
+  const cookies: string[] = []
+
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith('#')) continue
+    const fields = trimmed.split('\t')
+    if (fields.length < 7) continue
+    const domain = fields[0]!
+    if (domain.includes('soundcloud.com')) {
+      cookies.push(`${fields[5]}=${fields[6]}`)
+    }
+  }
+
+  return cookies.join('; ')
+}

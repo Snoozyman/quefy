@@ -1,4 +1,5 @@
 import type { SearchResult } from '#shared/types/room'
+import { getSoundcloudCookieHeader } from '#server/utils/cookies'
 
 const SC_CLIENT_ID = 'a3e059563d7fd3372b49b37f00a00bcf'
 
@@ -23,16 +24,20 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
+    const cookieHeader = getSoundcloudCookieHeader()
+    const headers: Record<string, string> = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+      'Accept': 'application/json',
+      'Origin': 'https://soundcloud.com',
+      'Referer': 'https://soundcloud.com/'
+    }
+    if (cookieHeader) {
+      headers['Cookie'] = cookieHeader
+    }
+
     const data = await $fetch<SoundcloudSearchResponse>(
       `https://api-v2.soundcloud.com/search/tracks?q=${encodeURIComponent(q)}&limit=${maxResults}&client_id=${SC_CLIENT_ID}`,
-      {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-          'Accept': 'application/json',
-          'Origin': 'https://soundcloud.com',
-          'Referer': 'https://soundcloud.com/'
-        }
-      }
+      { headers }
     )
 
     const results: SearchResult[] = data.collection.map((item) => ({
