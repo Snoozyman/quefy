@@ -88,6 +88,7 @@
       :show="
         isHost &&
         !!roomState.currentSong &&
+        roomState.currentSong.source === 'spotify' &&
         spotifyPlayer.isReady.value &&
         !!spotifyPlayer.currentTrack.value
       "
