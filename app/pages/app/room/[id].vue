@@ -179,6 +179,17 @@ const audioPlayerRef = ref<{
   pause: () => void;
 }>();
 
+const userActivated = ref(false)
+let userActivateDone = false
+
+function activateUser() {
+  if (userActivateDone) return
+  userActivateDone = true
+  userActivated.value = true
+  document.removeEventListener('pointerdown', activateUser)
+  document.removeEventListener('keydown', activateUser)
+}
+
 const fallbackTrack = {
   name: "",
   album: { images: [] as Array<{ url: string }> },
@@ -275,6 +286,7 @@ function handleSongChange(song: SongData) {
     spotifyPlayer.resetErrors();
     spotifyPlayer.pause();
     if (roomState.value.isPlaying) {
+      if (!userActivated.value) return
       const url = song.url!
       nextTick(() => {
         audioPlayerRef.value?.play(url);
@@ -572,7 +584,9 @@ async function onAudioExpired() {
       }
     )
     song.url = refreshed.url
-    audioPlayerRef.value?.play(refreshed.url)
+    if (userActivated.value) {
+      audioPlayerRef.value?.play(refreshed.url)
+    }
   } catch {
     skip()
   }
@@ -592,6 +606,9 @@ onMounted(async () => {
   }
   loading.value = false;
   connectSSE();
+
+  document.addEventListener("pointerdown", activateUser, { once: true });
+  document.addEventListener("keydown", activateUser, { once: true });
 
   window.addEventListener("beforeunload", () => {
     pageLeaving = true;
