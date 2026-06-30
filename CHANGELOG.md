@@ -29,6 +29,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [`90ad9d0`](https://github.com/Snoozyman/quefy/commit/90ad9d0695d37400a776881886db78f38cc04078) Merge pull request #7 from Snoozyman/bug-fix-audit
 - [`38a29de`](https://github.com/Snoozyman/quefy/commit/38a29de7d9eeab4883364fb1cf5ab50cfb05360d) docs: update for SoundCloud, HLS, and recent fixes
 - [`8b55c38`](https://github.com/Snoozyman/quefy/commit/8b55c38c03cd729942f0e4fedceb462934d5a42a) Merge pull request #8 from Snoozyman/docs/update
+- [`1c6a0cc`](https://github.com/Snoozyman/quefy/commit/1c6a0cc3d53360b5f5a7cb973d883b7903072e8a) chore: update changelog for v0.2.0
+## [0.2.0] - 2026-06-30
+
+### Commits
+
+- [`315434c`](https://github.com/Snoozyman/quefy/commit/315434c0ced4ea4d08a567aaf6b12868c3cab04f) fix: delete button show only if host
+- [`e7a2907`](https://github.com/Snoozyman/quefy/commit/e7a29071057d9ae7c5086c560661c83bc11085b2) fix: room buttons
+- [`75fa508`](https://github.com/Snoozyman/quefy/commit/75fa50845ab3fb616fc86eb58a5332ae7b540483) Merge pull request #2 from Snoozyman:bug-mobile-ui-layout
+- [`dbd816b`](https://github.com/Snoozyman/quefy/commit/dbd816b2a012793ce4fd63b2bed46a41addfb16f) feat: SoundCloud support
+- [`ccf847c`](https://github.com/Snoozyman/quefy/commit/ccf847cdb364a615c9e3ac9ae8ba4b96ba845ad5) feat: add HLS support for SoundCloud audio
+- [`06405ff`](https://github.com/Snoozyman/quefy/commit/06405ffe79caba50991425af83f6682187106d7d) fix: better SoundCloud error handling and format fallback
+- [`f656742`](https://github.com/Snoozyman/quefy/commit/f656742f0072eb736beea9bab8cd9588c17d0c34) Merge pull request #3 from Snoozyman:soundcloud-support
+- [`a583e5e`](https://github.com/Snoozyman/quefy/commit/a583e5ebb89012278b4b2921c630b8e686baf92d) feat: add volume slider to Spotify player
+- [`5187ae4`](https://github.com/Snoozyman/quefy/commit/5187ae42e5d16d150609cb640959e99004b28a90) fix: prevent multiple players from playing simultaneously
+- [`5f67ca9`](https://github.com/Snoozyman/quefy/commit/5f67ca98def3ee12f32e023538af840ef4da05b0) Merge pull request #4 from Snoozyman/bug-fix-multiple-players
+- [`551cce0`](https://github.com/Snoozyman/quefy/commit/551cce00d359067ff5bddb44f58d96da7a1ba76b) fix: hide Spotify player when current song is not spotify
+- [`efa4846`](https://github.com/Snoozyman/quefy/commit/efa484688ec3ea3e750f9161d528429dccb9b5e4) fix: show SoundCloud search thumbnails
+- [`63c6030`](https://github.com/Snoozyman/quefy/commit/63c6030967c26a2d3e7d5d3c539421103385a23a) Merge pull request #5 from Snoozyman/fix/spotify-player-hide
+- [`34867b9`](https://github.com/Snoozyman/quefy/commit/34867b98710a2802e6f83144a64f8b4c57d8d0b9) Merge pull request #6 from Snoozyman/fix/soundcloud-thumbnails
+- [`182ae41`](https://github.com/Snoozyman/quefy/commit/182ae418926b623e8f19fb7fdb45d1b6146c7050) fix: guard onSpotifyPlayerReady with isHost check
+- [`297fa7a`](https://github.com/Snoozyman/quefy/commit/297fa7a4a265a03b148754a142c7d853bed029c4) fix: stop destroying HLS stream on pause
+- [`d6bd4e2`](https://github.com/Snoozyman/quefy/commit/d6bd4e2a050b1c664a3668aaa5b0dd98e77fcb49) fix: emit error when HLS is unsupported
+- [`78e53a3`](https://github.com/Snoozyman/quefy/commit/78e53a38f150b27586cb851c7eab1f1196aa4fc4) fix: prevent duplicate error from HLS destruction
+- [`90ad9d0`](https://github.com/Snoozyman/quefy/commit/90ad9d0695d37400a776881886db78f38cc04078) Merge pull request #7 from Snoozyman/bug-fix-audit
+- [`38a29de`](https://github.com/Snoozyman/quefy/commit/38a29de7d9eeab4883364fb1cf5ab50cfb05360d) docs: update for SoundCloud, HLS, and recent fixes
+- [`8b55c38`](https://github.com/Snoozyman/quefy/commit/8b55c38c03cd729942f0e4fedceb462934d5a42a) Merge pull request #8 from Snoozyman/docs/update
 ## [0.1.1] - 2026-06-30
 
 ### Commits
