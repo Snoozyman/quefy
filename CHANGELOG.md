@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.2.1] - 2026-06-30
+
+### Commits
+
+- [`a115310`](https://github.com/Snoozyman/quefy/commit/a1153103ff74cd8f1c05e6e4c7ccf759a3def75a) fix: add browser headers to SoundCloud search
+- [`111eaff`](https://github.com/Snoozyman/quefy/commit/111eaff91beb875319c13eedd485c0b5d74fb7f7) Merge pull request #9 from Snoozyman/fix/soundcloud-search-502
+- [`472e7f9`](https://github.com/Snoozyman/quefy/commit/472e7f9c2bb48c9a6cfc70e88f0ec02e61aba7e9) fix: use cookies for SoundCloud API requests
+- [`d3b42a8`](https://github.com/Snoozyman/quefy/commit/d3b42a8a5bd7689b0408f451ffa6f272a43e2cb1) Merge pull request #10 from Snoozyman/fix/soundcloud-cookies
+- [`c2dccb5`](https://github.com/Snoozyman/quefy/commit/c2dccb5e1ec4afc604ab78a126843fbeac264976) fix: scrape fresh SoundCloud client_id from homepage
+- [`7a146be`](https://github.com/Snoozyman/quefy/commit/7a146be60293e8c3f07e59d9348339a9a229052e) Merge pull request #11 from Snoozyman/fix/soundcloud-client-id
 ## [0.2.0] - 2026-06-30
 
 ### Commits
