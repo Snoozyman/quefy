@@ -93,7 +93,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   ended: []
-  error: []
+  error: [message: string]
 }>()
 
 const audioEl = ref<HTMLAudioElement | undefined>()
@@ -107,8 +107,13 @@ function play(url: string) {
   if (!audioEl.value) return
   audioEl.value.src = url
   audioEl.value.load()
-  audioEl.value.play()
   playing.value = true
+  audioEl.value.play().catch((err: unknown) => {
+    const name = err instanceof DOMException ? err.name : ''
+    if (name === 'NotAllowedError') return
+    playing.value = false
+    emit('error', 'Playback blocked. Try clicking play again.')
+  })
 }
 
 function pause() {
@@ -143,7 +148,13 @@ function onTimeUpdate() {
 
 function onLoadedMetadata() {
   if (!audioEl.value) return
-  duration.value = audioEl.value.duration
+  const d = audioEl.value.duration
+  if (!d || !isFinite(d)) {
+    playing.value = false
+    emit('error', 'Song has no duration (live or unavailable). Skipping.')
+    return
+  }
+  duration.value = d
 }
 
 function onSeek(e: Event) {
@@ -171,7 +182,8 @@ function onEnded() {
 
 function onError() {
   playing.value = false
-  emit('error')
+  const msg = audioEl.value?.error?.message
+  emit('error', msg || 'Audio playback failed.')
 }
 
 defineExpose({ play, pause, state: { playing, currentTime, duration, volume, seekValue } })
