@@ -140,20 +140,14 @@ function reconnect() {
 }
 
 async function verifyHost() {
-  if (!storageHostData.value?.hostToken) {
-    emit('host-verified', false)
-    return
-  }
+  if (!storageHostData.value?.hostToken) return
   try {
     const res = await $fetch<{ isHost: boolean }>('/api/auth/verify-host', {
       method: 'POST',
       body: { roomId: props.roomId, hostToken: storageHostData.value.hostToken }
     })
-    emit('host-verified', res.isHost)
-  } catch {
-    emit('host-verified', false)
-  }
-}
+    if (res.isHost) emit('host-verified', true)
+  } catch {}
 
 async function handleOAuthCallback() {
   const params = new URLSearchParams(window.location.search)
@@ -189,7 +183,6 @@ async function handleOAuthCallback() {
   } catch (err: any) {
     processing.value = false
     spotifyError.value = err?.message || 'Failed to complete Spotify authentication'
-    emit('host-verified', false)
   }
 }
 

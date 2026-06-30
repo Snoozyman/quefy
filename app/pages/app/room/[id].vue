@@ -81,7 +81,6 @@
     <RoomSpotifyConnectBanner
       :room-id="roomId"
       @player-ready="onSpotifyPlayerReady"
-      @host-verified="(v: boolean) => (hostVerified = v)"
     />
 
     <RoomSpotifyPlayer
@@ -160,11 +159,8 @@ const roomState = ref<RoomState>({
 });
 
 const hostData = ref<{ roomId: string; hostToken: string } | null>(null);
-const hostVerified = ref(false);
 const isHost = computed(
-  () =>
-    (hostData.value?.roomId === roomId && !!hostData.value?.hostToken) ||
-    hostVerified.value,
+  () => hostData.value?.roomId === roomId && !!hostData.value?.hostToken,
 );
 const playDisabled = computed(
   () => !roomState.value.queue.length && !roomState.value.currentSong,
