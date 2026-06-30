@@ -79,7 +79,7 @@ export default defineEventHandler(async (event) => {
       title: body.title || audio.title,
       addedBy: body.addedBy ?? 'Anonymous',
       url: audio.url,
-      albumImageUrl: body.albumImageUrl || '',
+      albumImageUrl: body.albumImageUrl || audio.thumbnail || '',
       durationMs: Math.round(audio.duration * 1000)
     })
 

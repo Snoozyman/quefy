@@ -12,6 +12,7 @@ interface AudioStream {
   contentLength: string
   title: string
   duration: number
+  thumbnail: string
 }
 
 const cache = new Map<string, { data: AudioStream, ts: number }>()
@@ -69,7 +70,8 @@ export async function getSoundcloudAudioStreamUrl(trackUrl: string): Promise<Aud
     mimeType: meta.ext ? `audio/${meta.ext}` : 'audio/webm',
     contentLength: String(meta.filesize ?? meta.filesize_approx ?? 0),
     title: meta.title ?? '',
-    duration
+    duration,
+    thumbnail: meta.thumbnail || ''
   }
 
   cache.set(trackUrl, { data, ts: Date.now() })

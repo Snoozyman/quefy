@@ -1,8 +1,17 @@
-import { execFile } from 'node:child_process'
-import { promisify } from 'node:util'
 import type { SearchResult } from '#shared/types/room'
 
-const execFileAsync = promisify(execFile)
+const SC_CLIENT_ID = 'a3e059563d7fd3372b49b37f00a00bcf'
+
+interface SoundcloudSearchResponse {
+  collection: Array<{
+    id: number
+    title: string
+    duration: number
+    permalink_url: string
+    artwork_url: string | null
+    user: { username: string } | null
+  }>
+}
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -14,33 +23,25 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    const { stdout } = await execFileAsync('yt-dlp', [
-      '--flat-playlist',
-      '--print-json',
-      '--no-warnings',
-      `scsearch${maxResults}:${q}`
-    ])
+    const data = await $fetch<SoundcloudSearchResponse>(
+      `https://api-v2.soundcloud.com/search/tracks?q=${encodeURIComponent(q)}&limit=${maxResults}&client_id=${SC_CLIENT_ID}`
+    )
 
-    const lines = stdout.trim().split('\n').filter(Boolean)
-    const results: SearchResult[] = lines.map((line) => {
-      const item = JSON.parse(line)
-      return {
-        id: item.url || item.id,
-        title: item.title || 'Unknown Track',
-        channel: item.uploader || item.channel || 'Unknown Artist',
-        duration: item.duration ?? 0,
-        durationString: formatDuration(item.duration),
-        thumbnail: item.thumbnail || '',
-        source: 'soundcloud' as const,
-        artists: item.uploader ? [item.uploader] : undefined,
-        albumName: item.album ?? item.playlist_title,
-        durationMs: item.duration ? item.duration * 1000 : undefined
-      }
-    })
+    const results: SearchResult[] = data.collection.map((item) => ({
+      id: item.permalink_url || `${item.id}`,
+      title: item.title || 'Unknown Track',
+      channel: item.user?.username || 'Unknown Artist',
+      duration: Math.round((item.duration ?? 0) / 1000),
+      durationString: formatDuration(item.duration),
+      thumbnail: item.artwork_url?.replace('large', 't500x500') || '',
+      source: 'soundcloud' as const,
+      artists: item.user?.username ? [item.user.username] : undefined,
+      durationMs: item.duration ?? 0
+    }))
 
     return results
   } catch (err: any) {
-    console.error('[soundcloud search]', err.stderr || err.message)
+    console.error('[soundcloud search]', err.message)
     throw createError({
       statusCode: 502,
       statusMessage: 'SoundCloud search failed'
@@ -48,9 +49,10 @@ export default defineEventHandler(async (event) => {
   }
 })
 
-function formatDuration(seconds?: number): string {
-  if (!seconds) return ''
-  const m = Math.floor(seconds / 60)
-  const s = seconds % 60
-  return `${m}:${s.toString().padStart(2, '0')}`
+function formatDuration(ms?: number): string {
+  if (!ms) return ''
+  const s = Math.round(ms / 1000)
+  const m = Math.floor(s / 60)
+  const sec = s % 60
+  return `${m}:${sec.toString().padStart(2, '0')}`
 }
