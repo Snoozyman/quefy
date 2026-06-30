@@ -5,10 +5,7 @@
   >
     Loading room...
   </div>
-  <div
-    v-else
-    class="mx-2 w-80vw md:mx-4 md:w-2xl space-y-6 py-6"
-  >
+  <div v-else class="mx-2 w-80vw md:mx-4 md:w-2xl space-y-6 py-6">
     <UCard>
       <template #header>
         <div class="flex items-center justify-between">
@@ -17,19 +14,14 @@
               {{ roomState.title || "Room" }}
             </h1>
             <p class="text-sm text-muted">
-              <NuxtLink
-                to="/app/room"
-                class="hover:underline"
-              >Rooms</NuxtLink>
+              <NuxtLink to="/app/room" class="hover:underline">Rooms</NuxtLink>
               · Code:
               <code
                 class="font-mono font-bold text-primary cursor-pointer select-all"
                 @click="copyRoomCode"
-              >{{ roomId }}</code>
-              <span
-                v-if="copied"
-                class="ml-2 text-xs text-muted"
-              >Copied!</span>
+                >{{ roomId }}</code
+              >
+              <span v-if="copied" class="ml-2 text-xs text-muted">Copied!</span>
             </p>
           </div>
           <div class="flex items-center gap-2">
@@ -62,22 +54,31 @@
             >
               Export
             </UButton>
+            <UButton
+              size="sm"
+              color="warning"
+              icon="i-lucide-trash"
+              @click="deleteRoom"
+            >
+              Delete
+            </UButton>
           </div>
         </div>
       </template>
     </UCard>
 
     <RoomSpotifyConnectBanner
-      v-if="isHost"
       :room-id="roomId"
       @player-ready="onSpotifyPlayerReady"
+      @host-verified="(v: boolean) => (hostVerified = v)"
     />
 
     <RoomSpotifyPlayer
       :show="
-        isHost
-          && spotifyPlayer.isReady.value
-          && !!spotifyPlayer.currentTrack.value
+        isHost &&
+        !!roomState.currentSong &&
+        spotifyPlayer.isReady.value &&
+        !!spotifyPlayer.currentTrack.value
       "
       :track="spotifyPlayer.currentTrack.value ?? fallbackTrack"
       :paused="spotifyPlayer.paused.value"
@@ -94,13 +95,10 @@
       :current-song="roomState.currentSong"
       :is-playing="roomState.isPlaying"
       @ended="onYtEnded"
-      @error="onYtError"
+      @error="(msg: string) => onYtError(msg)"
     />
 
-    <RoomNowPlaying
-      v-if="!isHost"
-      :song="roomState.currentSong"
-    />
+    <RoomNowPlaying v-if="!isHost" :song="roomState.currentSong" />
 
     <RoomSongSearch
       :room-id="roomId"
@@ -127,341 +125,424 @@
 </template>
 
 <script lang="ts" setup>
-import type { SongData, RoomState } from '#shared/types/room'
+import type { SongData, RoomState } from "#shared/types/room";
 
-const route = useRoute()
-const router = useRouter()
-const roomId = route.params.id as string
+const route = useRoute();
+const router = useRouter();
+const roomId = route.params.id as string;
 
-const loading = ref(true)
-const addingSong = ref(false)
-const error = ref('')
-const copied = ref(false)
+const loading = ref(true);
+const addingSong = ref(false);
+const error = ref("");
+const copied = ref(false);
 
 const roomState = ref<RoomState>({
   id: roomId,
-  title: '',
+  title: "",
   currentSong: null,
   queue: [],
   isPlaying: false,
-  createdAt: 0
-})
+  createdAt: 0,
+});
 
-const hostData = ref<{ roomId: string, hostToken: string } | null>(null)
+const hostData = ref<{ roomId: string; hostToken: string } | null>(null);
+const hostVerified = ref(false);
 const isHost = computed(
-  () => hostData.value?.roomId === roomId && !!hostData.value?.hostToken
-)
+  () =>
+    (hostData.value?.roomId === roomId && !!hostData.value?.hostToken) ||
+    hostVerified.value,
+);
 const playDisabled = computed(
-  () => !roomState.value.queue.length && !roomState.value.currentSong
-)
+  () => !roomState.value.queue.length && !roomState.value.currentSong,
+);
 const currentSongIsYoutube = computed(
-  () => roomState.value.currentSong?.source === 'youtube'
-)
+  () => roomState.value.currentSong?.source === "youtube",
+);
 
-const spotifyAuth = useSpotifyAuth()
-const spotifyPlayer = useSpotifyPlayer()
+const spotifyAuth = useSpotifyAuth();
+const spotifyPlayer = useSpotifyPlayer();
 
-const ytPlayerRef = ref<{ play: (url: string) => void, pause: () => void }>()
+const ytPlayerRef = ref<{ play: (url: string) => void; pause: () => void }>();
 
 const fallbackTrack = {
-  name: '',
+  name: "",
   album: { images: [] as Array<{ url: string }> },
-  artists: [] as Array<{ name: string }>
-}
+  artists: [] as Array<{ name: string }>,
+};
 
 function updateMediaSession(song: SongData | null) {
   if (!song) {
-    document.title = `Room ${roomId} — Quefy`
-    if ('mediaSession' in navigator) {
-      navigator.mediaSession.metadata = null
+    document.title = `Room ${roomId} — Quefy`;
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.metadata = null;
     }
-    return
+    return;
   }
 
-  document.title = `${song.title} — Room ${roomId} — Quefy`
+  document.title = `${song.title} — Room ${roomId} — Quefy`;
 
-  if ('mediaSession' in navigator) {
+  if ("mediaSession" in navigator) {
     navigator.mediaSession.metadata = new MediaMetadata({
       title: song.title,
-      artist: song.artists?.join(', ') || song.addedBy,
-      album: song.albumName || '',
+      artist: song.artists?.join(", ") || song.addedBy,
+      album: song.albumName || "",
       artwork: song.albumImageUrl
-        ? [{ src: song.albumImageUrl, sizes: '512x512', type: 'image/png' }]
-        : []
-    })
+        ? [{ src: song.albumImageUrl, sizes: "512x512", type: "image/png" }]
+        : [],
+    });
 
-    navigator.mediaSession.setActionHandler('play', () => spotifyPlayer.play())
-    navigator.mediaSession.setActionHandler('pause', () => spotifyPlayer.pause())
-    navigator.mediaSession.setActionHandler('nexttrack', () => skip())
+    navigator.mediaSession.setActionHandler("play", () => spotifyPlayer.play());
+    navigator.mediaSession.setActionHandler("pause", () =>
+      spotifyPlayer.pause(),
+    );
+    navigator.mediaSession.setActionHandler("nexttrack", () => skip());
   }
 }
 
 function copyRoomCode() {
-  navigator.clipboard.writeText(roomId)
-  copied.value = true
+  navigator.clipboard.writeText(roomId);
+  copied.value = true;
   setTimeout(() => {
-    copied.value = false
-  }, 2000)
+    copied.value = false;
+  }, 2000);
 }
 
 async function exportQueue() {
   try {
-    const data = await $fetch(`/api/room/${roomId}/export`)
+    const data = await $fetch(`/api/room/${roomId}/export`);
     const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: 'application/json'
-    })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `room-${roomId}-queue.json`
-    a.click()
-    URL.revokeObjectURL(url)
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `room-${roomId}-queue.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   } catch {
-    error.value = 'Failed to export queue.'
+    error.value = "Failed to export queue.";
   }
 }
 
 function onSpotifyPlayerReady() {
-  spotifyPlayer.setOnTrackEnd(skip)
+  spotifyPlayer.setOnTrackEnd(skip);
   if (
-    roomState.value.currentSong?.source === 'spotify'
-    && roomState.value.currentSong.trackUri
+    roomState.value.currentSong?.source === "spotify" &&
+    roomState.value.currentSong.trackUri &&
+    roomState.value.isPlaying
   ) {
-    transferSpotifyPlayback(roomState.value.currentSong.trackUri)
+    transferSpotifyPlayback(roomState.value.currentSong.trackUri);
   }
 }
 
 async function fetchRoomState() {
   try {
-    roomState.value = await $fetch<RoomState>(`/api/room/${roomId}`)
+    roomState.value = await $fetch<RoomState>(`/api/room/${roomId}`);
   } catch {}
 }
 
-let lastSongId: string | null = null
+let lastSongId: string | null = null;
 
 function handleSongChange(song: SongData) {
-  if (!isHost.value) return
-  if (song.source === 'spotify' && song.trackUri) {
-    transferSpotifyPlayback(song.trackUri)
+  if (!isHost.value) return;
+  if (song.source === "spotify" && song.trackUri) {
+    ytPlayerRef.value?.pause();
+    transferSpotifyPlayback(song.trackUri);
   }
-  if (song.source === 'youtube' && song.url) {
-    ytPlayerRef.value?.play(song.url)
+  if (song.source === "youtube" && song.url) {
+    spotifyPlayer.pause();
+    if (roomState.value.isPlaying) {
+      ytPlayerRef.value?.play(song.url);
+    }
   }
 }
 
-let eventSource: EventSource | null = null
-let pollTimer: ReturnType<typeof setInterval> | null = null
-let pageLeaving = false
+let eventSource: EventSource | null = null;
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+let pageLeaving = false;
 
 function connectSSE() {
-  eventSource = new EventSource(`/api/room/${roomId}/events`)
+  eventSource = new EventSource(`/api/room/${roomId}/events`);
 
-  eventSource.addEventListener('room-update', (event) => {
-    const newState = JSON.parse(event.data) as RoomState
-    const songChanged
-      = newState.currentSong?.id !== roomState.value.currentSong?.id
-    roomState.value = newState
+  eventSource.addEventListener("room-update", (event) => {
+    const newState = JSON.parse(event.data) as RoomState;
+    const songChanged =
+      newState.currentSong?.id !== roomState.value.currentSong?.id;
+    roomState.value = newState;
 
     if (songChanged && newState.currentSong) {
-      lastSongId = newState.currentSong.id
-      handleSongChange(newState.currentSong)
+      lastSongId = newState.currentSong.id;
+      handleSongChange(newState.currentSong);
     } else if (!newState.currentSong) {
-      lastSongId = null
+      lastSongId = null;
     }
-  })
+  });
 
   eventSource.onerror = () => {
-    if (pageLeaving) return
-    console.warn('SSE connection failed, falling back to polling')
-    eventSource?.close()
-    eventSource = null
-    startPolling()
-  }
+    if (pageLeaving) return;
+    console.warn("SSE connection failed, falling back to polling");
+    eventSource?.close();
+    eventSource = null;
+    startPolling();
+  };
 }
 
 function startPolling() {
-  if (pollTimer) return
-  pollTimer = setInterval(fetchRoomState, 3000)
+  if (pollTimer) return;
+  pollTimer = setInterval(fetchRoomState, 3000);
 }
 
 watch(
   () => roomState.value.currentSong,
   (song) => {
-    if (!song || !isHost.value) return
-    if (song.id === lastSongId) return
-    lastSongId = song.id
-    handleSongChange(song)
-  }
-)
+    if (!song || !isHost.value) return;
+    if (song.id === lastSongId) return;
+    lastSongId = song.id;
+    handleSongChange(song);
+  },
+);
 
 watch(
   () => spotifyPlayer.error.value,
   (val) => {
-    if (val) error.value = val
-  }
-)
+    if (val) error.value = val;
+  },
+);
 
 watch(
   () => roomState.value.currentSong,
   (song) => {
-    updateMediaSession(song)
+    updateMediaSession(song);
   },
-  { immediate: true }
-)
+  { immediate: true },
+);
 
 async function transferSpotifyPlayback(trackUri: string) {
-  let token = spotifyAuth.getAccessToken()
+  if (!roomState.value.isPlaying) return;
+
+  spotifyPlayer.position.value = 0;
+
+  let token = spotifyAuth.getAccessToken();
   if (!token) {
-    const refreshed = await spotifyAuth.refreshToken()
-    if (!refreshed) return
-    token = spotifyAuth.getAccessToken()
-    if (!token) return
+    const refreshed = await spotifyAuth.refreshToken();
+    if (!refreshed) {
+      error.value = "Spotify session expired. Reconnect Spotify.";
+      return;
+    }
+    token = spotifyAuth.getAccessToken();
+    if (!token) {
+      error.value = "Spotify session expired. Reconnect Spotify.";
+      return;
+    }
   }
-  const deviceId = spotifyPlayer.deviceId.value
-  if (!deviceId) return
+
+  const deviceId = spotifyPlayer.deviceId.value;
+  /* if (!deviceId) {
+    error.value = 'Spotify device not ready. Reconnect Spotify.'
+    return
+  } */
+  if (!spotifyPlayer.deviceId.value) return;
+
   const headers = {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
+
+  for (let attempt = 0; attempt < 4; attempt++) {
+    if (!roomState.value.isPlaying) return;
+
+    if (attempt > 0) {
+      await new Promise((r) => setTimeout(r, 500 * attempt));
+    }
+
+    const playRes = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({ uris: [trackUri] }),
+    });
+    if (playRes.ok) return;
+
+    if (playRes.status === 403) {
+      const body = await playRes.text().catch(() => "");
+      error.value = `Spotify Premium required: ${body.slice(0, 200)}`;
+      return;
+    }
+
+    if (playRes.status !== 404) {
+      const body = await playRes.text().catch(() => "");
+      error.value = `Spotify play failed: ${body.slice(0, 200)}`;
+      return;
+    }
   }
 
-  const transferRes = await fetch('https://api.spotify.com/v1/me/player', {
-    method: 'PUT',
-    headers,
-    body: JSON.stringify({ device_ids: [deviceId], play: false })
-  })
-  if (!transferRes.ok) return
-
-  await new Promise(r => setTimeout(r, 200))
-  await fetch('https://api.spotify.com/v1/me/player/play', {
-    method: 'PUT',
-    headers,
-    body: JSON.stringify({ uris: [trackUri] })
-  })
+  error.value = "Spotify device did not become ready. Try again.";
 }
 
 async function addSongByVideoId(videoId: string) {
-  addingSong.value = true
-  error.value = ''
+  addingSong.value = true;
+  error.value = "";
   try {
     await $fetch(`/api/room/${roomId}/queue`, {
-      method: 'POST',
-      body: { videoId, addedBy: 'Guest' }
-    })
-    await fetchRoomState()
+      method: "POST",
+      body: { videoId, addedBy: "Guest" },
+    });
+    await fetchRoomState();
   } catch {
-    error.value = 'Failed to add song.'
+    error.value = "Failed to add song.";
   } finally {
-    addingSong.value = false
+    addingSong.value = false;
   }
 }
 
 async function addSpotifyTrack(track: {
-  trackUri: string
-  title: string
-  artists?: string[]
-  albumName?: string
-  albumImageUrl?: string
-  durationMs?: number
+  trackUri: string;
+  title: string;
+  artists?: string[];
+  albumName?: string;
+  albumImageUrl?: string;
+  durationMs?: number;
 }) {
-  addingSong.value = true
-  error.value = ''
+  addingSong.value = true;
+  error.value = "";
   try {
     await $fetch(`/api/room/${roomId}/queue`, {
-      method: 'POST',
-      body: { source: 'spotify', addedBy: 'Guest', ...track }
-    })
-    await fetchRoomState()
+      method: "POST",
+      body: { source: "spotify", addedBy: "Guest", ...track },
+    });
+    await fetchRoomState();
   } catch {
-    error.value = 'Failed to add song.'
+    error.value = "Failed to add song.";
   } finally {
-    addingSong.value = false
+    addingSong.value = false;
   }
 }
 
 async function removeSong(songId: string) {
-  if (!isHost.value || !hostData.value?.hostToken) return
+  if (!isHost.value || !hostData.value?.hostToken) return;
   try {
     await $fetch(`/api/room/${roomId}/remove`, {
-      method: 'POST',
-      body: { songId, hostToken: hostData.value.hostToken }
-    })
-    await fetchRoomState()
+      method: "POST",
+      body: { songId, hostToken: hostData.value.hostToken },
+    });
+    await fetchRoomState();
   } catch {
-    error.value = 'Failed to remove song.'
+    error.value = "Failed to remove song.";
   }
 }
 
 async function togglePlay() {
-  if (!isHost.value || !hostData.value?.hostToken) return
+  if (!isHost.value || !hostData.value?.hostToken) return;
   try {
     const res = await $fetch<{
-      isPlaying: boolean
-      currentSong: SongData | null
+      isPlaying: boolean;
+      currentSong: SongData | null;
     }>(`/api/room/${roomId}/play`, {
-      method: 'POST',
-      body: { hostToken: hostData.value.hostToken }
-    })
-    roomState.value.isPlaying = res.isPlaying
+      method: "POST",
+      body: { hostToken: hostData.value.hostToken },
+    });
+
+    const prevSongId = roomState.value.currentSong?.id;
+    roomState.value.isPlaying = res.isPlaying;
     if (res.currentSong) {
-      roomState.value.currentSong = res.currentSong
+      roomState.value.currentSong = res.currentSong;
+    }
+
+    if (res.isPlaying) {
+      const song = res.currentSong;
+      if (!song) return;
+      if (song.id === prevSongId) {
+        if (song.source === "spotify" && song.trackUri) {
+          const sdkTrackUri = spotifyPlayer.currentTrack.value?.uri;
+          if (sdkTrackUri === song.trackUri) {
+            spotifyPlayer.play();
+          } else {
+            transferSpotifyPlayback(song.trackUri);
+          }
+        } else if (song.source === "youtube" && song.url) {
+          ytPlayerRef.value?.play(song.url);
+        }
+      }
+    } else {
+      spotifyPlayer.pause();
+      ytPlayerRef.value?.pause();
     }
   } catch (e: any) {
-    error.value = e?.message || 'Playback failed.'
+    error.value = e?.message || "Playback failed.";
   }
 }
 
 async function skip() {
-  if (!isHost.value || !hostData.value?.hostToken) return
+  if (!isHost.value || !hostData.value?.hostToken) return;
 
-  spotifyPlayer.pause()
-  ytPlayerRef.value?.pause()
+  ytPlayerRef.value?.pause();
 
   try {
     const res = await $fetch<{
-      currentSong: SongData | null
-      isPlaying: boolean
+      currentSong: SongData | null;
+      isPlaying: boolean;
     }>(`/api/room/${roomId}/skip`, {
-      method: 'POST',
-      body: { hostToken: hostData.value.hostToken }
-    })
-    roomState.value.currentSong = res.currentSong
-    roomState.value.isPlaying = res.isPlaying
+      method: "POST",
+      body: { hostToken: hostData.value.hostToken },
+    });
+    roomState.value.currentSong = res.currentSong;
+    roomState.value.isPlaying = res.isPlaying;
+    if (res.currentSong) {
+      lastSongId = res.currentSong.id;
+      handleSongChange(res.currentSong);
+    } else {
+      spotifyPlayer.pause();
+    }
   } catch {
-    error.value = 'Failed to skip.'
+    error.value = "Failed to skip.";
   }
 }
 
 function onYtEnded() {
-  skip()
+  skip();
 }
 
-function onYtError() {
-  error.value
-    = 'Playback error. The stream URL may have expired. Try skipping.'
+function onYtError(msg: string) {
+  error.value = msg;
+  skip();
 }
 
 onMounted(async () => {
   try {
-    const raw = localStorage.getItem('quefy-host')
-    if (raw) hostData.value = JSON.parse(raw)
+    const raw = localStorage.getItem("quefy-host");
+    if (raw) hostData.value = JSON.parse(raw);
   } catch {}
 
   try {
-    roomState.value = await $fetch<RoomState>(`/api/room/${roomId}`)
+    roomState.value = await $fetch<RoomState>(`/api/room/${roomId}`);
   } catch {
-    router.push('/app/room')
-    return
+    router.push("/app/room");
+    return;
   }
-  loading.value = false
-  connectSSE()
+  loading.value = false;
+  connectSSE();
 
-  window.addEventListener('beforeunload', () => { pageLeaving = true })
-})
+  window.addEventListener("beforeunload", () => {
+    pageLeaving = true;
+  });
+});
 
 onUnmounted(() => {
-  pageLeaving = true
-  eventSource?.close()
-  if (pollTimer) clearInterval(pollTimer)
-  spotifyPlayer.destroy()
-})
+  pageLeaving = true;
+  eventSource?.close();
+  if (pollTimer) clearInterval(pollTimer);
+  spotifyPlayer.destroy();
+});
+
+async function deleteRoom() {
+  if (!isHost.value || !hostData.value?.hostToken) return;
+  try {
+    await $fetch(`/api/room/${roomId}`, {
+      method: "DELETE",
+      body: { hostToken: hostData.value.hostToken },
+    });
+    router.push("/app/room");
+  } catch {
+    error.value = "Failed to delete room.";
+  }
+}
 </script>

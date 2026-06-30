@@ -1,3 +1,5 @@
+import { useSpotifyAuth } from './useSpotifyAuth'
+
 interface SpotifyPlayerInstance {
   play: () => Promise<void>
   pause: () => Promise<void>
@@ -135,7 +137,15 @@ export function useSpotifyPlayer() {
 
       const p = new window.Spotify!.Player({
         name: 'Quefy Room Player',
-        getOAuthToken: (cb: (token: string) => void) => { cb(accessToken) },
+        getOAuthToken: async (cb: (token: string) => void) => {
+          const auth = useSpotifyAuth()
+          let token = auth.getAccessToken()
+          if (!token) {
+            try { await auth.refreshToken() } catch {}
+            token = auth.getAccessToken()
+          }
+          cb(token ?? accessToken)
+        },
         volume: 0.33
       })
       player.value = p
@@ -153,12 +163,9 @@ export function useSpotifyPlayer() {
       p.addListener('player_state_changed', (state: SpotifyPlaybackState | null) => {
         playerState.value = state
         if (state) {
-          lastSyncPosition = state.position
-          lastSyncTime = Date.now()
-          position.value = state.position
           if (state.paused) {
             stopTick()
-            if (wasPlaying && state.duration > 0 && state.position >= state.duration - 1500) {
+            if (wasPlaying && state.duration > 0 && (state.position >= state.duration - 1500 || position.value >= state.duration - 1500)) {
               onTrackEnd?.()
             }
             wasPlaying = false
@@ -166,6 +173,9 @@ export function useSpotifyPlayer() {
             wasPlaying = true
             startTick()
           }
+          lastSyncPosition = state.position
+          lastSyncTime = Date.now()
+          position.value = state.position
         }
       })
 
@@ -216,8 +226,13 @@ export function useSpotifyPlayer() {
         return false
       }
 
-      const devices = await listDevices(accessToken)
-      const found = devices.some((d: { id: string }) => d.id === deviceId.value)
+      let found = false
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const devices = await listDevices(accessToken)
+        found = devices.some((d: { id: string }) => d.id === deviceId.value)
+        if (found) break
+        if (attempt < 2) await new Promise(r => setTimeout(r, 500))
+      }
       if (!found) {
         error.value = 'Spotify device was created but not found in your available devices. Try opening Spotify and playing a song first.'
         isConnecting.value = false
