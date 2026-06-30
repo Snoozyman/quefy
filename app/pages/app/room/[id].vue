@@ -279,7 +279,10 @@ function handleSongChange(song: SongData) {
     spotifyPlayer.resetErrors();
     spotifyPlayer.pause();
     if (roomState.value.isPlaying) {
-      audioPlayerRef.value?.play(song.url);
+      const url = song.url!
+      nextTick(() => {
+        audioPlayerRef.value?.play(url);
+      });
     }
   }
 }
