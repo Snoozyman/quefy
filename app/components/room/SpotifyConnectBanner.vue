@@ -148,6 +148,7 @@ async function verifyHost() {
     })
     if (res.isHost) emit('host-verified', true)
   } catch {}
+}
 
 async function handleOAuthCallback() {
   const params = new URLSearchParams(window.location.search)
