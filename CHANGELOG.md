@@ -27,6 +27,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [`27ea30b`](https://github.com/Snoozyman/quefy/commit/27ea30b396929549909718f528ae02d78a77dd51) Merge pull request #19 from Snoozyman/fix/spotify-to-youtube
 - [`ef74d27`](https://github.com/Snoozyman/quefy/commit/ef74d27fcbf130760d55ebbdc3f8cc827c58a048) fix: prevent host privileges from being lost on refresh
 - [`07eab37`](https://github.com/Snoozyman/quefy/commit/07eab3706395edaec67c06b7f8cef96be82d12f2) Merge pull request #20 from Snoozyman/fix/host-privileges
+- [`a8c4150`](https://github.com/Snoozyman/quefy/commit/a8c4150abdbe051e8a56c22a95dcc3bfd542dfdf) chore: update changelog for v0.2.2
+## [0.2.2] - 2026-06-30
+
+### Commits
+
+- [`5e2fae7`](https://github.com/Snoozyman/quefy/commit/5e2fae778eb223d0448226ea5d53f4828cb16c8a) fix: suppress playback_error events when Spotify is paused
+- [`13e848c`](https://github.com/Snoozyman/quefy/commit/13e848c5ea5c0fe15d4189fc758e0ef66d9c9635) Merge pull request #12 from Snoozyman/fix/spotify-playback-error
+- [`27019d3`](https://github.com/Snoozyman/quefy/commit/27019d37565d4519b5d590544bd17dae4371a00b) Update nightly-docker.yml
+- [`5d7209a`](https://github.com/Snoozyman/quefy/commit/5d7209a3a68d5609be95fee1fca0af96967e4455) fix: wait for HLS manifest before playing audio
+- [`3b595b8`](https://github.com/Snoozyman/quefy/commit/3b595b873ba9a9db3a81b11b75571c16665a51ef) Merge pull request #13 from Snoozyman/fix/hls-playback-blocked
+- [`5805397`](https://github.com/Snoozyman/quefy/commit/5805397684eaf5e6814fbe0f0bee85ad853292dd) fix: align search source buttons evenly on mobile
+- [`8679a03`](https://github.com/Snoozyman/quefy/commit/8679a03a4c0fb326c9c052c2f5b58c2100ab27f8) Merge pull request #14 from Snoozyman/fix/search-button-layout
+- [`a0d1567`](https://github.com/Snoozyman/quefy/commit/a0d1567f75b9090241dba8500035014287be14d1) chore: consistent semicolons and formatting
+- [`e233b07`](https://github.com/Snoozyman/quefy/commit/e233b0785f20fbc79bb98596faaef845ebb6906e) Merge pull request #15 from Snoozyman/chore/formatting
+- [`1d4eb5a`](https://github.com/Snoozyman/quefy/commit/1d4eb5ab278378fc3f50138398766b7cf86c9aee) fix: simplify document title to song — artist — Quefy
+- [`440ed95`](https://github.com/Snoozyman/quefy/commit/440ed955f25444e28391ce5774ae6f46eaea794f) Merge pull request #16 from Snoozyman/fix/document-title
+- [`e065711`](https://github.com/Snoozyman/quefy/commit/e065711b83150f682d6c3306161333e67b02d347) fix: prevent double handleSongChange and handle expired SC URLs
+- [`c21c38b`](https://github.com/Snoozyman/quefy/commit/c21c38bd077232db1a2891c820e222a757a978f5) Merge pull request #17 from Snoozyman/fix/skip-autoplay-expired-url
+- [`0fa411a`](https://github.com/Snoozyman/quefy/commit/0fa411a3f4794333594c0188b5d65c2fe4bfcdd6) fix: disable onTrackEnd before pausing Spotify
+- [`97d4eba`](https://github.com/Snoozyman/quefy/commit/97d4eba34a1716724614279c77fc09d617f03cdd) Merge pull request #18 from Snoozyman/fix/spotify-to-youtube-autoplay
+- [`66b0d78`](https://github.com/Snoozyman/quefy/commit/66b0d784ea5a7fefeccfb177db9403e51adce1c5) fix: use nextTick for youtube playback after spotify
+- [`27ea30b`](https://github.com/Snoozyman/quefy/commit/27ea30b396929549909718f528ae02d78a77dd51) Merge pull request #19 from Snoozyman/fix/spotify-to-youtube
+- [`ef74d27`](https://github.com/Snoozyman/quefy/commit/ef74d27fcbf130760d55ebbdc3f8cc827c58a048) fix: prevent host privileges from being lost on refresh
+- [`07eab37`](https://github.com/Snoozyman/quefy/commit/07eab3706395edaec67c06b7f8cef96be82d12f2) Merge pull request #20 from Snoozyman/fix/host-privileges
 ## [0.2.1] - 2026-06-30
 
 ### Commits
