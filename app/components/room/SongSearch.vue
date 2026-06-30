@@ -2,30 +2,33 @@
   <div class="search-container relative">
     <div class="flex gap-2 flex-col">
       <div class="flex grow gap-2 items-center">
-        <div class="flex shrink-0 gap-2">
+        <div class="grid grid-cols-3 gap-2 w-full">
           <UButton
             :color="mode === 'youtube' ? 'primary' : 'neutral'"
             variant="solid"
             icon="i-simple-icons-youtube"
             @click="mode = 'youtube'"
+            class="text-xs"
           >
-            Search YouTube
+            YouTube
           </UButton>
           <UButton
             :color="mode === 'spotify' ? 'primary' : 'neutral'"
             variant="solid"
             icon="i-simple-icons-spotify"
             @click="mode = 'spotify'"
+            class="text-xs"
           >
-            Search Spotify
+            Spotify
           </UButton>
           <UButton
             :color="mode === 'soundcloud' ? 'primary' : 'neutral'"
             variant="solid"
             icon="i-simple-icons-soundcloud"
             @click="mode = 'soundcloud'"
+            class="text-xs"
           >
-            SoundCloud
+            SC
           </UButton>
         </div>
         <!-- <UButton
@@ -84,7 +87,7 @@
             </template>
           </p>
         </div>
-          <UIcon
+        <UIcon
           :name="
             r.source === 'spotify'
               ? 'i-simple-icons-spotify'
