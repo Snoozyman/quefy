@@ -104,12 +104,14 @@ const currentTime = ref(0)
 const duration = ref(0)
 const volume = ref(0.33)
 const seekValue = ref(0)
+let errorEmitted = false
 
 function destroyHls() {
   if (hls.value) {
     hls.value.destroy()
     hls.value = null
   }
+  errorEmitted = false
 }
 
 function play(url: string) {
@@ -126,6 +128,7 @@ function play(url: string) {
       instance.attachMedia(audioEl.value)
       instance.on(Hls.Events.ERROR, (_event, data) => {
         if (data.fatal) {
+          errorEmitted = true
           destroyHls()
           playing.value = false
           emit('error', 'HLS playback failed.')
@@ -219,6 +222,7 @@ function onEnded() {
 }
 
 function onError() {
+  if (errorEmitted) return
   destroyHls()
   playing.value = false
   const msg = audioEl.value?.error?.message
