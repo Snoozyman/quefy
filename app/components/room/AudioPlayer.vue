@@ -64,6 +64,7 @@
           :name="volume === 0 ? 'i-lucide-volume-x' : 'i-lucide-volume-2'"
           class="size-5 text-muted"
         />
+      </button>
       <input
         type="range"
         min="0"
