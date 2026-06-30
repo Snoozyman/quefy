@@ -76,7 +76,7 @@ function startTick() {
   tickTimer = setInterval(() => {
     if (paused.value || !playerState.value) return
     const elapsed = Date.now() - lastSyncTime
-    position.value = lastSyncPosition + elapsed
+    position.value = Math.min(lastSyncPosition + elapsed, duration.value)
   }, 250)
 }
 
