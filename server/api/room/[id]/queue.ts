@@ -1,5 +1,6 @@
 import { getRoom, addToQueue } from '#server/utils/room'
 import { getAudioStreamUrl } from '#server/utils/youtube'
+import { getSoundcloudAudioStreamUrl } from '#server/utils/soundcloud'
 import { emitRoomUpdate } from '#server/utils/room-events'
 
 export default defineEventHandler(async (event) => {
@@ -15,6 +16,7 @@ export default defineEventHandler(async (event) => {
     source?: string
     videoId?: string
     trackUri?: string
+    trackUrl?: string
     title?: string
     artists?: string[]
     albumName?: string
@@ -44,6 +46,41 @@ export default defineEventHandler(async (event) => {
       albumName: body.albumName,
       albumImageUrl: body.albumImageUrl,
       durationMs: body.durationMs
+    })
+
+    if (!song)
+      throw createError({ statusCode: 500, statusMessage: 'Failed to add song' })
+
+    emitRoomUpdate(id, room)
+
+    return song
+  }
+
+  if (source === 'soundcloud') {
+    if (!body.trackUrl) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Missing trackUrl for SoundCloud song'
+      })
+    }
+
+    let audio
+    try {
+      audio = await getSoundcloudAudioStreamUrl(body.trackUrl)
+    } catch (err: any) {
+      throw createError({
+        statusCode: 422,
+        statusMessage: err.message || 'Failed to fetch SoundCloud track'
+      })
+    }
+
+    const song = addToQueue(id, {
+      source: 'soundcloud',
+      title: body.title || audio.title,
+      addedBy: body.addedBy ?? 'Anonymous',
+      url: audio.url,
+      albumImageUrl: body.albumImageUrl || '',
+      durationMs: Math.round(audio.duration * 1000)
     })
 
     if (!song)

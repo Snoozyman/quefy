@@ -100,13 +100,13 @@
       @seek="(v: number) => spotifyPlayer.seek(v)"
     />
 
-    <RoomYouTubePlayer
-      ref="ytPlayerRef"
-      :show="isHost && currentSongIsYoutube"
+    <RoomAudioPlayer
+      ref="audioPlayerRef"
+      :show="isHost && currentSongIsAudio"
       :current-song="roomState.currentSong"
       :is-playing="roomState.isPlaying"
-      @ended="onYtEnded"
-      @error="(msg: string) => onYtError(msg)"
+      @ended="onAudioEnded"
+      @error="(msg: string) => onAudioError(msg)"
     />
 
     <RoomNowPlaying v-if="!isHost" :song="roomState.currentSong" />
@@ -116,6 +116,7 @@
       :adding-song="addingSong"
       @add-youtube="addSongByVideoId"
       @add-spotify="addSpotifyTrack"
+      @add-soundcloud="addSongBySoundcloudUrl"
     />
 
     <UAlert
@@ -136,7 +137,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { SongData, RoomState } from "#shared/types/room";
+import type { SongData, RoomState, SearchResult } from "#shared/types/room";
 
 const route = useRoute();
 const router = useRouter();
@@ -166,14 +167,16 @@ const isHost = computed(
 const playDisabled = computed(
   () => !roomState.value.queue.length && !roomState.value.currentSong,
 );
-const currentSongIsYoutube = computed(
-  () => roomState.value.currentSong?.source === "youtube",
+const currentSongIsAudio = computed(
+  () =>
+    roomState.value.currentSong?.source === "youtube" ||
+    roomState.value.currentSong?.source === "soundcloud",
 );
 
 const spotifyAuth = useSpotifyAuth();
 const spotifyPlayer = useSpotifyPlayer();
 
-const ytPlayerRef = ref<{ play: (url: string) => void; pause: () => void }>();
+const audioPlayerRef = ref<{ play: (url: string) => void; pause: () => void }>();
 
 const fallbackTrack = {
   name: "",
@@ -257,13 +260,13 @@ let lastSongId: string | null = null;
 function handleSongChange(song: SongData) {
   if (!isHost.value) return;
   if (song.source === "spotify" && song.trackUri) {
-    ytPlayerRef.value?.pause();
+    audioPlayerRef.value?.pause();
     transferSpotifyPlayback(song.trackUri);
   }
-  if (song.source === "youtube" && song.url) {
+  if ((song.source === "youtube" || song.source === "soundcloud") && song.url) {
     spotifyPlayer.pause();
     if (roomState.value.isPlaying) {
-      ytPlayerRef.value?.play(song.url);
+      audioPlayerRef.value?.play(song.url);
     }
   }
 }
@@ -431,6 +434,22 @@ async function addSpotifyTrack(track: {
   }
 }
 
+async function addSongBySoundcloudUrl(trackUrl: string) {
+  addingSong.value = true;
+  error.value = "";
+  try {
+    await $fetch(`/api/room/${roomId}/queue`, {
+      method: "POST",
+      body: { source: "soundcloud", trackUrl, addedBy: "Guest" },
+    });
+    await fetchRoomState();
+  } catch {
+    error.value = "Failed to add SoundCloud track.";
+  } finally {
+    addingSong.value = false;
+  }
+}
+
 async function removeSong(songId: string) {
   if (!isHost.value || !hostData.value?.hostToken) return;
   try {
@@ -472,13 +491,13 @@ async function togglePlay() {
           } else {
             transferSpotifyPlayback(song.trackUri);
           }
-        } else if (song.source === "youtube" && song.url) {
-          ytPlayerRef.value?.play(song.url);
+        } else if ((song.source === "youtube" || song.source === "soundcloud") && song.url) {
+          audioPlayerRef.value?.play(song.url);
         }
       }
     } else {
       spotifyPlayer.pause();
-      ytPlayerRef.value?.pause();
+      audioPlayerRef.value?.pause();
     }
   } catch (e: any) {
     error.value = e?.message || "Playback failed.";
@@ -488,7 +507,7 @@ async function togglePlay() {
 async function skip() {
   if (!isHost.value || !hostData.value?.hostToken) return;
 
-  ytPlayerRef.value?.pause();
+  audioPlayerRef.value?.pause();
 
   try {
     const res = await $fetch<{
@@ -511,11 +530,11 @@ async function skip() {
   }
 }
 
-function onYtEnded() {
+function onAudioEnded() {
   skip();
 }
 
-function onYtError(msg: string) {
+function onAudioError(msg: string) {
   error.value = msg;
   skip();
 }

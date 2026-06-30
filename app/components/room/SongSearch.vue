@@ -19,6 +19,14 @@
           >
             Search Spotify
           </UButton>
+          <UButton
+            :color="mode === 'soundcloud' ? 'primary' : 'neutral'"
+            variant="solid"
+            icon="i-simple-icons-soundcloud"
+            @click="mode = 'soundcloud'"
+          >
+            SoundCloud
+          </UButton>
         </div>
         <!-- <UButton
           :loading="addingSong"
@@ -35,7 +43,9 @@
         :placeholder="
           mode === 'youtube'
             ? 'Search YouTube or paste a URL'
-            : 'Search Spotify tracks...'
+            : mode === 'spotify'
+              ? 'Search Spotify tracks...'
+              : 'Search SoundCloud or paste a URL'
         "
         class="grow"
         :loading="searching"
@@ -74,11 +84,13 @@
             </template>
           </p>
         </div>
-        <UIcon
+          <UIcon
           :name="
             r.source === 'spotify'
               ? 'i-simple-icons-spotify'
-              : 'i-simple-icons-youtube'
+              : r.source === 'soundcloud'
+                ? 'i-simple-icons-soundcloud'
+                : 'i-simple-icons-youtube'
           "
           class="size-4 shrink-0 text-muted"
         />
@@ -107,9 +119,10 @@ const emit = defineEmits<{
       durationMs?: number;
     },
   ];
+  "add-soundcloud": [trackUrl: string];
 }>();
 
-const mode = ref<"youtube" | "spotify">("youtube");
+const mode = ref<"youtube" | "spotify" | "soundcloud">("youtube");
 const query = ref("");
 const results = ref<SearchResult[]>([]);
 const searching = ref(false);
@@ -126,10 +139,22 @@ function extractVideoId(input: string): string | null {
   return match ? (match[1] ?? null) : null;
 }
 
+function extractSoundcloudUrl(input: string): string | null {
+  const trimmed = input.trim();
+  const match = trimmed.match(/(https?:\/\/soundcloud\.com\/[^\s]+)/i);
+  return match ? match[1]! : null;
+}
+
 function onInput() {
   const q = query.value.trim();
 
   if (mode.value === "youtube" && extractVideoId(q)) {
+    showResults.value = false;
+    results.value = [];
+    return;
+  }
+
+  if (mode.value === "soundcloud" && extractSoundcloudUrl(q)) {
     showResults.value = false;
     results.value = [];
     return;
@@ -147,7 +172,9 @@ function onInput() {
     const endpoint =
       mode.value === "youtube"
         ? `/api/youtube/search?q=${encodeURIComponent(q)}&limit=8`
-        : `/api/spotify/search?q=${encodeURIComponent(q)}&limit=8`;
+        : mode.value === "spotify"
+          ? `/api/spotify/search?q=${encodeURIComponent(q)}&limit=8`
+          : `/api/soundcloud/search?q=${encodeURIComponent(q)}&limit=8`;
     try {
       results.value = await $fetch<SearchResult[]>(endpoint);
       highlightIdx.value = -1;
@@ -183,6 +210,15 @@ function addHighlighted() {
     }
   }
 
+  if (mode.value === "soundcloud") {
+    const trackUrl = extractSoundcloudUrl(q);
+    if (trackUrl) {
+      emit("add-soundcloud", trackUrl);
+      reset();
+      return;
+    }
+  }
+
   const idx = highlightIdx.value;
   const r =
     idx >= 0 && idx < results.value.length
@@ -202,6 +238,8 @@ function selectResult(r: SearchResult) {
       albumImageUrl: r.thumbnail,
       durationMs: r.durationMs,
     });
+  } else if (r.source === "soundcloud") {
+    emit("add-soundcloud", r.id);
   } else {
     emit("add-youtube", r.id);
   }
