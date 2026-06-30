@@ -122,3 +122,7 @@ SPOTIFY_CLIENT_SECRET=your_client_secret
 - **Firefox not supported** — the Web Playback SDK does not work in Firefox. Use Chrome or Edge.
 - Spotify songs play through the host's browser (similar to YouTube audio)
 - Volume and seeking use the Web Playback SDK controls
+
+## Bug Reports
+
+Found a bug? [Open an issue](https://github.com/Snoozyman/quefy/issues/new/choose) with the browser, platform, and steps to reproduce.
