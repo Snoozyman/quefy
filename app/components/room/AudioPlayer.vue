@@ -95,6 +95,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   ended: []
   error: [message: string]
+  expired: []
 }>()
 
 const audioEl = ref<HTMLAudioElement | undefined>()
@@ -143,7 +144,11 @@ function play(url: string) {
           errorEmitted = true
           destroyHls()
           playing.value = false
-          emit('error', 'HLS playback failed.')
+          if (data.response?.code === 403) {
+            emit('expired')
+          } else {
+            emit('error', 'HLS playback failed.')
+          }
         }
       })
       hls.value = instance

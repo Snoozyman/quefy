@@ -7,6 +7,7 @@ export interface SongData {
   videoId?: string
   url?: string
   trackUri?: string
+  trackUrl?: string
   artists?: string[]
   albumName?: string
   albumImageUrl?: string

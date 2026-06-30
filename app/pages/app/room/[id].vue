@@ -108,6 +108,7 @@
       :is-playing="roomState.isPlaying"
       @ended="onAudioEnded"
       @error="(msg: string) => onAudioError(msg)"
+      @expired="onAudioExpired"
     />
 
     <RoomNowPlaying v-if="!isHost" :song="roomState.currentSong" />
@@ -262,9 +263,12 @@ async function fetchRoomState() {
 }
 
 let lastSongId: string | null = null;
+let currentPlayingId = ''
 
 function handleSongChange(song: SongData) {
   if (!isHost.value) return;
+  if (song.id === currentPlayingId) return
+  currentPlayingId = song.id
   if (song.source === "spotify" && song.trackUri) {
     audioPlayerRef.value?.pause();
     transferSpotifyPlayback(song.trackUri);
@@ -550,6 +554,27 @@ function onAudioEnded() {
 function onAudioError(msg: string) {
   error.value = msg;
   skip();
+}
+
+async function onAudioExpired() {
+  const song = roomState.value.currentSong
+  if (!song?.trackUrl || !hostData.value?.hostToken) {
+    skip()
+    return
+  }
+  try {
+    const refreshed = await $fetch<{ url: string, title: string }>(
+      `/api/room/${roomId}/audio/refresh`,
+      {
+        method: 'POST',
+        body: { hostToken: hostData.value.hostToken, trackUrl: song.trackUrl }
+      }
+    )
+    song.url = refreshed.url
+    audioPlayerRef.value?.play(refreshed.url)
+  } catch {
+    skip()
+  }
 }
 
 onMounted(async () => {
