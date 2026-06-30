@@ -167,7 +167,10 @@ function play(url: string) {
   playing.value = true
   audioEl.value.play().catch((err: unknown) => {
     const name = err instanceof DOMException ? err.name : ''
-    if (name === 'NotAllowedError') return
+    if (name === 'NotAllowedError') {
+      playing.value = false
+      return
+    }
     playing.value = false
     emit('error', 'Playback blocked. Try clicking play again.')
   })
