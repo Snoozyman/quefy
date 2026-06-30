@@ -34,5 +34,6 @@ export interface RoomState {
   currentSong: SongData | null
   queue: SongData[]
   isPlaying: boolean
+  spotifyConnected: boolean
   createdAt: number
 }
