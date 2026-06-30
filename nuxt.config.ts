@@ -3,7 +3,9 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { execSync } from "node:child_process";
 
-const pkg = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf-8"));
+const pkg = JSON.parse(
+  readFileSync(join(process.cwd(), "package.json"), "utf-8"),
+);
 const commitHash = execSync("git rev-parse --short HEAD", {
   encoding: "utf-8",
 }).trim();
@@ -53,7 +55,12 @@ export default defineNuxtConfig({
   },
   vite: {
     optimizeDeps: {
-      include: ["@vue/devtools-core", "@vue/devtools-kit", "workbox-window"],
+      include: [
+        "@vue/devtools-core",
+        "@vue/devtools-kit",
+        "workbox-window",
+        "hls.js",
+      ],
     },
   },
 

@@ -19,7 +19,7 @@
     "@nuxt/image": "2.0.0",
     "@nuxt/ui": "^4.8.2",
     "@vite-pwa/nuxt": "^1.1.1",
-
+    "hls.js": "^1.6.16",
     "nuxt": "^4.4.8",
     "tailwindcss": "^4.3.1"
   },
