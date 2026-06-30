@@ -404,8 +404,8 @@ async function addSongByVideoId(videoId: string) {
       body: { videoId, addedBy: "Guest" },
     });
     await fetchRoomState();
-  } catch {
-    error.value = "Failed to add song.";
+  } catch (e: any) {
+    error.value = e?.data?.statusMessage || 'Failed to add song.';
   } finally {
     addingSong.value = false;
   }
@@ -427,8 +427,8 @@ async function addSpotifyTrack(track: {
       body: { source: "spotify", addedBy: "Guest", ...track },
     });
     await fetchRoomState();
-  } catch {
-    error.value = "Failed to add song.";
+  } catch (e: any) {
+    error.value = e?.data?.statusMessage || 'Failed to add song.';
   } finally {
     addingSong.value = false;
   }
@@ -443,8 +443,8 @@ async function addSongBySoundcloudUrl(trackUrl: string) {
       body: { source: "soundcloud", trackUrl, addedBy: "Guest" },
     });
     await fetchRoomState();
-  } catch {
-    error.value = "Failed to add SoundCloud track.";
+  } catch (e: any) {
+    error.value = e?.data?.statusMessage || e?.message || 'Failed to add SoundCloud track.';
   } finally {
     addingSong.value = false;
   }

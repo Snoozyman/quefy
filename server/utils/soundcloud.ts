@@ -40,7 +40,7 @@ export async function getSoundcloudAudioStreamUrl(trackUrl: string): Promise<Aud
   try {
     const result = await execFileAsync('yt-dlp', [
       '-f',
-      'bestaudio',
+      'bestaudio/best',
       '--print-json',
       '--print',
       'url',
