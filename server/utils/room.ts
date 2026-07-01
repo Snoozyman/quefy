@@ -178,7 +178,10 @@ export function listRooms(): RoomSummary[] {
       id: r.id,
       title: r.title,
       queueCount: r.queue.length + (r.currentSong ? 1 : 0),
-      createdAt: r.createdAt
+      createdAt: r.createdAt,
+      isPlaying: r.isPlaying,
+      currentSource: r.currentSong?.source ?? null,
+      currentThumbnail: r.currentSong?.albumImageUrl ?? null
     }))
 }
 
@@ -187,4 +190,7 @@ interface RoomSummary {
   title: string
   queueCount: number
   createdAt: number
+  isPlaying: boolean
+  currentSource: string | null
+  currentThumbnail: string | null
 }
