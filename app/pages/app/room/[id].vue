@@ -279,11 +279,8 @@ function handleSongChange(song: SongData) {
     if (roomState.value.isPlaying) {
       if (!userActivated.value) return
       const url = song.url!
-      const startTime = roomState.value.position > 0
-        ? roomState.value.position / 1000
-        : undefined
       nextTick(() => {
-        audioPlayerRef.value?.play(url, startTime)
+        audioPlayerRef.value?.play(url)
       })
     }
   }
