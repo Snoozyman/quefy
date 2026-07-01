@@ -1,8 +1,7 @@
 import { execFile } from 'node:child_process'
-import { existsSync } from 'node:fs'
 import { promisify } from 'node:util'
 import { parseYtDlpError } from './yt-dlp-errors'
-import { getCookiePath } from './cookies'
+import { getCookiesArgs } from './cookies'
 
 const execFileAsync = promisify(execFile)
 
@@ -17,14 +16,6 @@ interface AudioStream {
 
 const cache = new Map<string, { data: AudioStream, ts: number }>()
 const CACHE_TTL = 3_600_000
-
-function getCookiesArgs(): string[] {
-  const cookiesPath = getCookiePath()
-  if (existsSync(cookiesPath)) {
-    return ['--cookies', cookiesPath]
-  }
-  return []
-}
 
 export function clearSoundcloudAudioCache(): void {
   cache.clear()

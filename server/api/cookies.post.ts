@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { promisify } from 'node:util'
-import { saveCookieContent, deleteCookieFile, getCookiePath } from '#server/utils/cookies'
+import { saveCookieContent, deleteCookieFile, getCookiePath, isValidNetscapeFormat } from '#server/utils/cookies'
 import { clearAudioCache } from '#server/utils/youtube'
 
 const execFileAsync = promisify(execFile)
@@ -36,6 +36,10 @@ export default defineEventHandler(async (event) => {
     return { ok: true, size: 0, deleted: true }
   }
 
+  if (!isValidNetscapeFormat(content)) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid cookies format. Expected Netscape-format cookies (tab-separated fields).' })
+  }
+
   saveCookieContent(content)
 
   let verified = false
@@ -53,7 +57,7 @@ export default defineEventHandler(async (event) => {
       ], { timeout: 15000 })
       verified = true
     }
-  } catch (err: any) {
+  } catch {
     verifyError = 'Cookies saved but verification failed. They may be expired or in the wrong format.'
   }
 

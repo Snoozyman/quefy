@@ -7,11 +7,45 @@ export function getCookiePath(): string {
   return process.env.YT_DLP_COOKIES ?? join(DATA_DIR, 'cookies.txt')
 }
 
+export function isValidNetscapeFormat(content: string): boolean {
+  let hasCookie = false
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith('#')) continue
+    if (trimmed.split('\t').length < 7) return false
+    hasCookie = true
+  }
+  return hasCookie
+}
+
+export function getCookiesArgs(): string[] {
+  const cookiesPath = getCookiePath()
+  if (!existsSync(cookiesPath)) return []
+
+  try {
+    const content = readFileSync(cookiesPath, 'utf-8')
+    if (!isValidNetscapeFormat(content)) {
+      unlinkSync(cookiesPath)
+      console.warn('[cookies] deleted invalid cookies file at', cookiesPath)
+      return []
+    }
+    return ['--cookies', cookiesPath]
+  } catch {
+    try {
+      unlinkSync(cookiesPath)
+    } catch {
+      // file already gone or permissions — ignore
+    }
+    return []
+  }
+}
+
 export function saveCookieContent(content: string): { ok: true, size: number } {
   const path = getCookiePath()
+  const trimmed = content.trim()
   mkdirSync(DATA_DIR, { recursive: true })
-  writeFileSync(path, content, 'utf-8')
-  const size = Buffer.byteLength(content, 'utf-8')
+  writeFileSync(path, trimmed, 'utf-8')
+  const size = Buffer.byteLength(trimmed, 'utf-8')
   return { ok: true, size }
 }
 
