@@ -1,5 +1,22 @@
 import { execSync } from 'node:child_process'
 
+export interface CookieEntry {
+  name: string
+  domain: string
+}
+
+export function parseNetscapeCookies(content: string): CookieEntry[] {
+  const entries: CookieEntry[] = []
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith('#')) continue
+    const fields = trimmed.split('\t')
+    if (fields.length < 7) continue
+    entries.push({ domain: fields[0]!, name: fields[5]! })
+  }
+  return entries
+}
+
 export async function fetchYouTubeCookies(): Promise<{ cookies: string, count: number }> {
   try {
     const output = execSync(
