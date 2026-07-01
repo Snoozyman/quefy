@@ -315,7 +315,7 @@ watch(
 watch(
   () => spotifyPlayer.error.value,
   (val) => {
-    if (val) error.value = val
+    if (val && isHost.value) error.value = val
   }
 )
 
@@ -354,11 +354,17 @@ async function transferSpotifyPlayback(trackUri: string) {
     'Content-Type': 'application/json'
   }
 
+  await fetch('https://api.spotify.com/v1/me/player', {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify({ device_ids: [deviceId], play: false })
+  })
+
   for (let attempt = 0; attempt < 4; attempt++) {
     if (!roomState.value.isPlaying) return
 
     if (attempt > 0) {
-      await new Promise(r => setTimeout(r, 500 * attempt))
+      await new Promise(r => setTimeout(r, 1000 * attempt))
     }
 
     const playRes = await fetch(
