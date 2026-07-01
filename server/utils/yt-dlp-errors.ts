@@ -35,6 +35,10 @@ export function parseYtDlpError(stderr: string): string {
     return 'This track is DRM protected and cannot be played.'
   }
 
+  if (lower.includes('does not look like a netscape format')) {
+    return 'The cookies file is corrupt (wrong format). Delete it and re-upload a proper Netscape-format cookies.txt file.'
+  }
+
   if (lower.includes('cookie') || lower.includes('not logged in') || lower.includes('sign in')) {
     return 'Authentication required. Upload fresh YouTube cookies from your browser.'
   }

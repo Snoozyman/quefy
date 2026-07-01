@@ -1,8 +1,7 @@
 import { execFile } from 'node:child_process'
-import { existsSync } from 'node:fs'
 import { promisify } from 'node:util'
 import { parseYtDlpError } from '#server/utils/yt-dlp-errors'
-import { getCookiePath } from '#server/utils/cookies'
+import { getCookiesArgs } from '#server/utils/cookies'
 
 const execFileAsync = promisify(execFile)
 
@@ -13,14 +12,6 @@ interface SearchResult {
   duration: number
   durationString: string
   thumbnail: string
-}
-
-function getCookiesArgs(): string[] {
-  const cookiesPath = getCookiePath()
-  if (existsSync(cookiesPath)) {
-    return ['--cookies', cookiesPath]
-  }
-  return []
 }
 
 export default defineEventHandler(async (event) => {

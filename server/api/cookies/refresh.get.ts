@@ -1,5 +1,5 @@
 import { fetchYouTubeCookies, fetchSoundCloudCookies } from '#server/utils/cookie-fetcher'
-import { saveCookieContent } from '#server/utils/cookies'
+import { saveCookieContent, isValidNetscapeFormat } from '#server/utils/cookies'
 import { clearAudioCache } from '#server/utils/youtube'
 import { clearSoundcloudAudioCache } from '#server/utils/soundcloud'
 
@@ -10,21 +10,26 @@ export default defineEventHandler(async () => {
       fetchSoundCloudCookies()
     ])
 
-    let cookies = ''
+    const parts: string[] = []
     let totalCount = 0
 
     if (ytResult.status === 'fulfilled') {
-      cookies += ytResult.value.cookies
+      parts.push(ytResult.value.cookies)
       totalCount += ytResult.value.count
     }
 
     if (scResult.status === 'fulfilled') {
-      cookies += '\n' + scResult.value.cookies
+      parts.push(scResult.value.cookies)
       totalCount += scResult.value.count
     }
 
     if (totalCount === 0) {
       throw createError({ statusCode: 502, statusMessage: 'No cookies received' })
+    }
+
+    const cookies = parts.join('\n')
+    if (!isValidNetscapeFormat(cookies)) {
+      throw createError({ statusCode: 502, statusMessage: 'Auto-fetched cookies are not in valid Netscape format. Try manually uploading a cookies.txt file.' })
     }
 
     saveCookieContent(cookies)
