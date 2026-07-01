@@ -32,50 +32,14 @@
   >
     <UCard>
       <template #header>
-        <div class="flex flex-col justify-between">
-          <div class="flex-1 space-y-1 mb-2">
-            <h1 class="text-2xl font-bold">
-              {{ roomState.title || "Room" }}
-            </h1>
-            <p class="text-sm text-muted">
-              <NuxtLink
-                to="/app/room"
-                class="hover:underline"
-              >Rooms</NuxtLink>
-              · Code:
-              <code
-                class="font-mono font-bold text-primary cursor-pointer select-all"
-                @click="copyRoomCode"
-              >{{ roomId }}</code>
-              <span
-                v-if="copied"
-                class="ml-2 text-xs text-muted"
-              >Copied!</span>
-            </p>
-          </div>
-          <div class="flex flex-row items-center gap-2 flex-wrap">
-            <UButton
-              v-if="isHost"
-              size="sm"
-              variant="outline"
-              :icon="roomState.isPlaying ? 'i-lucide-pause' : 'i-lucide-play'"
-              :disabled="playDisabled"
-              @click="togglePlay"
-            >
-              {{ roomState.isPlaying ? "Pause" : "Play" }}
-            </UButton>
-            <UButton
-              v-if="isHost"
-              size="sm"
-              variant="outline"
-              icon="i-lucide-skip-forward"
-              :disabled="!roomState.currentSong"
-              @click="skip"
-            >
-              Skip
-            </UButton>
-          </div>
-        </div>
+        <RoomHeader
+          :room-id="roomId"
+          :room-state="roomState"
+          :is-host="isHost"
+          :play-disabled="playDisabled"
+          @play="togglePlay"
+          @skip="skip"
+        />
       </template>
       <template #default>
         <div class="flex flex-col gap-2 mb-4">
@@ -146,40 +110,11 @@
         </div>
 
         <div v-show="activeTab === 'settings'">
-          <div class="flex flex-col gap-3">
-            <div
-              v-if="isHost"
-              class="flex items-center justify-between"
-            >
-              <span class="text-sm">Cookies</span>
-              <RoomCookieUpload />
-            </div>
-            <div class="flex items-center justify-between">
-              <span class="text-sm">Export queue</span>
-              <UButton
-                size="sm"
-                variant="outline"
-                icon="i-lucide-download"
-                @click="exportQueue"
-              >
-                Export
-              </UButton>
-            </div>
-            <div
-              v-if="isHost"
-              class="flex items-center justify-between"
-            >
-              <span class="text-sm text-red-500">Delete room</span>
-              <UButton
-                size="sm"
-                color="warning"
-                icon="i-lucide-trash"
-                @click="deleteRoom"
-              >
-                Delete
-              </UButton>
-            </div>
-          </div>
+          <RoomSettingsTab
+            :is-host="isHost"
+            @export="exportQueue"
+            @delete="deleteRoom"
+          />
         </div>
       </template>
     </UCard>
@@ -216,34 +151,19 @@
 </template>
 
 <script lang="ts" setup>
-import type { SongData, RoomState, SearchResult } from '#shared/types/room'
+import type { SongData } from '#shared/types/room'
 
 const route = useRoute()
 const router = useRouter()
 const roomId = route.params.id as string
 
-const loading = ref(true)
+const { roomState, loading, notFound, error, isHost, hostData, fetchRoomState } = useRoomState(computed(() => roomId))
+const spotifyAuth = useSpotifyAuth()
+const spotifyPlayer = useSpotifyPlayer()
+
 const addingSong = ref(false)
-const error = ref('')
-const copied = ref(false)
-const notFound = ref(false)
 const activeTab = ref<'player' | 'settings'>('player')
 
-const roomState = ref<RoomState>({
-  id: roomId,
-  title: '',
-  currentSong: null,
-  queue: [],
-  isPlaying: false,
-  spotifyConnected: false,
-  createdAt: 0,
-  position: 0
-})
-
-const hostData = ref<{ roomId: string, hostToken: string } | null>(null)
-const isHost = computed(
-  () => hostData.value?.roomId === roomId && !!hostData.value?.hostToken
-)
 const playDisabled = computed(
   () => !roomState.value.queue.length && !roomState.value.currentSong
 )
@@ -252,9 +172,6 @@ const currentSongIsAudio = computed(
     roomState.value.currentSong?.source === 'youtube'
     || roomState.value.currentSong?.source === 'soundcloud'
 )
-
-const spotifyAuth = useSpotifyAuth()
-const spotifyPlayer = useSpotifyPlayer()
 
 const audioPlayerRef = ref<{
   play: (url: string, startTime?: number) => void
@@ -301,35 +218,8 @@ function updateMediaSession(song: SongData | null) {
     })
 
     navigator.mediaSession.setActionHandler('play', () => spotifyPlayer.play())
-    navigator.mediaSession.setActionHandler('pause', () =>
-      spotifyPlayer.pause()
-    )
+    navigator.mediaSession.setActionHandler('pause', () => spotifyPlayer.pause())
     navigator.mediaSession.setActionHandler('nexttrack', () => skip())
-  }
-}
-
-function copyRoomCode() {
-  navigator.clipboard.writeText(roomId)
-  copied.value = true
-  setTimeout(() => {
-    copied.value = false
-  }, 2000)
-}
-
-async function exportQueue() {
-  try {
-    const data = await $fetch(`/api/room/${roomId}/export`)
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: 'application/json'
-    })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `room-${roomId}-queue.json`
-    a.click()
-    URL.revokeObjectURL(url)
-  } catch {
-    error.value = 'Failed to export queue.'
   }
 }
 
@@ -348,12 +238,6 @@ function onSpotifyPlayerReady() {
     audioPlayerRef.value?.pause()
     transferSpotifyPlayback(roomState.value.currentSong.trackUri)
   }
-}
-
-async function fetchRoomState() {
-  try {
-    roomState.value = await $fetch<RoomState>(`/api/room/${roomId}`)
-  } catch {}
 }
 
 let lastSongId: string | null = null
@@ -385,44 +269,7 @@ function handleSongChange(song: SongData) {
   }
 }
 
-let eventSource: EventSource | null = null
-let pollTimer: ReturnType<typeof setInterval> | null = null
 let positionTimer: ReturnType<typeof setInterval> | null = null
-let pageLeaving = false
-
-function connectSSE() {
-  const sseUrl = hostData.value?.hostToken
-    ? `/api/room/${roomId}/events?hostToken=${hostData.value.hostToken}`
-    : `/api/room/${roomId}/events`
-  eventSource = new EventSource(sseUrl)
-
-  eventSource.addEventListener('room-update', (event) => {
-    const newState = JSON.parse(event.data) as RoomState
-    const songChanged
-      = newState.currentSong?.id !== roomState.value.currentSong?.id
-    roomState.value = newState
-
-    if (songChanged && newState.currentSong) {
-      lastSongId = newState.currentSong.id
-      handleSongChange(newState.currentSong)
-    } else if (!newState.currentSong) {
-      lastSongId = null
-    }
-  })
-
-  eventSource.onerror = () => {
-    if (pageLeaving) return
-    console.warn('SSE connection failed, falling back to polling')
-    eventSource?.close()
-    eventSource = null
-    startPolling()
-  }
-}
-
-function startPolling() {
-  if (pollTimer) return
-  pollTimer = setInterval(fetchRoomState, 3000)
-}
 
 async function reportPosition() {
   if (!isHost.value || !hostData.value?.hostToken) return
@@ -491,10 +338,6 @@ async function transferSpotifyPlayback(trackUri: string) {
   }
 
   const deviceId = spotifyPlayer.deviceId.value
-  /* if (!deviceId) {
-    error.value = 'Spotify device not ready. Reconnect Spotify.'
-    return
-  } */
   if (!spotifyPlayer.deviceId.value) return
 
   const headers = {
@@ -587,8 +430,7 @@ async function addSongBySoundcloudUrl(trackUrl: string) {
     })
     await fetchRoomState()
   } catch (e: any) {
-    error.value
-      = e?.data?.statusMessage || e?.message || 'Failed to add SoundCloud track.'
+    error.value = e?.data?.statusMessage || e?.message || 'Failed to add SoundCloud track.'
   } finally {
     addingSong.value = false
   }
@@ -725,47 +567,22 @@ async function onAudioExpired() {
   }
 }
 
-onMounted(async () => {
+async function exportQueue() {
   try {
-    const raw = localStorage.getItem('quefy-host')
-    if (raw) hostData.value = JSON.parse(raw)
-  } catch {}
-
-  try {
-    roomState.value = await $fetch<RoomState>(`/api/room/${roomId}`)
+    const data = await $fetch(`/api/room/${roomId}/export`)
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: 'application/json'
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `room-${roomId}-queue.json`
+    a.click()
+    URL.revokeObjectURL(url)
   } catch {
-    notFound.value = true
-    loading.value = false
-    return
+    error.value = 'Failed to export queue.'
   }
-  loading.value = false
-  connectSSE()
-
-  if (isHost.value) {
-    positionTimer = setInterval(reportPosition, 5000)
-  }
-
-  document.addEventListener('pointerdown', activateUser, { once: true })
-  document.addEventListener('keydown', activateUser, { once: true })
-
-  window.addEventListener('beforeunload', () => {
-    pageLeaving = true
-  })
-})
-
-onUnmounted(() => {
-  pageLeaving = true
-  if (isHost.value && hostData.value?.hostToken) {
-    $fetch(`/api/room/${roomId}/spotify-disconnect`, {
-      method: 'POST',
-      body: { hostToken: hostData.value.hostToken }
-    }).catch(() => {})
-  }
-  eventSource?.close()
-  if (pollTimer) clearInterval(pollTimer)
-  if (positionTimer) clearInterval(positionTimer)
-  spotifyPlayer.destroy()
-})
+}
 
 async function deleteRoom() {
   if (!isHost.value || !hostData.value?.hostToken) return
@@ -779,4 +596,18 @@ async function deleteRoom() {
     error.value = 'Failed to delete room.'
   }
 }
+
+onMounted(() => {
+  if (isHost.value) {
+    positionTimer = setInterval(reportPosition, 5000)
+  }
+
+  document.addEventListener('pointerdown', activateUser, { once: true })
+  document.addEventListener('keydown', activateUser, { once: true })
+})
+
+onUnmounted(() => {
+  if (positionTimer) clearInterval(positionTimer)
+  spotifyPlayer.destroy()
+})
 </script>
