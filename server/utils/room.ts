@@ -28,6 +28,7 @@ export interface Room {
   isPlaying: boolean
   spotifyConnected: boolean
   createdAt: number
+  position: number
 }
 
 const rooms = new Map<string, Room>()
@@ -53,7 +54,8 @@ export function createRoom(title?: string): Room {
     currentSong: null,
     isPlaying: false,
     spotifyConnected: false,
-    createdAt: Date.now()
+    createdAt: Date.now(),
+    position: 0
   }
   rooms.set(room.id, room)
   return room
