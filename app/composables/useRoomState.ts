@@ -71,11 +71,10 @@ export function useRoomState(roomId: Ref<string>) {
   }
 
   onMounted(async () => {
-    try {
-      const raw = localStorage.getItem('quefy-host')
-      if (raw) hostData.value = JSON.parse(raw)
-    } catch {
-      // corrupted localStorage data, ignore
+    const hosts = JSON.parse(localStorage.getItem('quefy-hosts') || '{}')
+    const hostToken = hosts[roomId.value]
+    if (hostToken) {
+      hostData.value = { roomId: roomId.value, hostToken }
     }
 
     try {
