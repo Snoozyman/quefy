@@ -177,7 +177,7 @@ const audioPlayerRef = ref<{
   play: (url: string, startTime?: number) => void
   pause: () => void
   resume: () => void
-  state: { playing: boolean, currentTime: number, duration: number, volume: number, seekValue: number }
+  state: { playing: { value: boolean }, currentTime: { value: number }, duration: { value: number }, volume: { value: number }, seekValue: { value: number } }
 }>()
 
 const userActivated = ref(false)
@@ -281,12 +281,12 @@ async function reportPosition() {
 
   const locallyPlaying = song.source === 'spotify'
     ? !spotifyPlayer.paused.value
-    : (audioPlayerRef.value?.state.playing ?? false)
+    : (audioPlayerRef.value?.state.playing.value ?? false)
 
   console.log('[position] reportPosition called', {
     songSource: song.source,
     locallyPlaying,
-    currentTime: audioPlayerRef.value?.state.currentTime,
+    currentTime: audioPlayerRef.value?.state.currentTime.value,
     spotifyPosition: spotifyPlayer.position.value
   })
 
@@ -296,7 +296,7 @@ async function reportPosition() {
   if (song.source === 'spotify') {
     position = spotifyPlayer.position.value
   } else {
-    position = Math.round((audioPlayerRef.value?.state.currentTime ?? 0) * 1000)
+    position = Math.round((audioPlayerRef.value?.state.currentTime.value ?? 0) * 1000)
   }
 
   lastKnownPosition = position
@@ -497,7 +497,7 @@ async function togglePlay() {
           }
         } else if (song.source === 'youtube' || song.source === 'soundcloud') {
           spotifyPlayer.pause()
-          const dur = audioPlayerRef.value?.state.duration ?? 0
+          const dur = audioPlayerRef.value?.state.duration.value ?? 0
           console.log('[playback] resume check', {
             source: song.source,
             duration: dur,
