@@ -176,7 +176,8 @@ const currentSongIsAudio = computed(
 const audioPlayerRef = ref<{
   play: (url: string, startTime?: number) => void
   pause: () => void
-  state: { playing: boolean, currentTime: number, duration: number, volume: number, seekValue: number }
+  resume: () => void
+  state: { playing: { value: boolean }, currentTime: { value: number }, duration: { value: number }, volume: { value: number }, seekValue: { value: number } }
 }>()
 
 const userActivated = ref(false)
@@ -270,20 +271,28 @@ function handleSongChange(song: SongData) {
 }
 
 let positionTimer: ReturnType<typeof setInterval> | null = null
+let lastKnownPosition = 0
 
 async function reportPosition() {
   if (!isHost.value || !hostData.value?.hostToken) return
-  if (!roomState.value.isPlaying) return
 
   const song = roomState.value.currentSong
   if (!song) return
+
+  const locallyPlaying = song.source === 'spotify'
+    ? !spotifyPlayer.paused.value
+    : (audioPlayerRef.value?.state.playing.value ?? false)
+
+  if (!locallyPlaying) return
 
   let position = 0
   if (song.source === 'spotify') {
     position = spotifyPlayer.position.value
   } else {
-    position = Math.round((audioPlayerRef.value?.state.currentTime ?? 0) * 1000)
+    position = Math.round((audioPlayerRef.value?.state.currentTime.value ?? 0) * 1000)
   }
+
+  lastKnownPosition = position
 
   if (position > 0) {
     $fetch(`/api/room/${roomId}/position`, {
@@ -478,15 +487,17 @@ async function togglePlay() {
           } else {
             transferSpotifyPlayback(song.trackUri)
           }
-        } else if (
-          (song.source === 'youtube' || song.source === 'soundcloud')
-          && song.url
-        ) {
+        } else if (song.source === 'youtube' || song.source === 'soundcloud') {
           spotifyPlayer.pause()
-          const startTime = roomState.value.position > 0
-            ? roomState.value.position / 1000
-            : undefined
-          audioPlayerRef.value?.play(song.url, startTime)
+          const dur = audioPlayerRef.value?.state.duration.value ?? 0
+          if (dur > 0) {
+            audioPlayerRef.value!.resume()
+          } else if (song.url) {
+            const startTime = roomState.value.position > 0
+              ? roomState.value.position / 1000
+              : undefined
+            audioPlayerRef.value?.play(song.url, startTime)
+          }
         }
       }
     } else {
@@ -599,14 +610,28 @@ async function deleteRoom() {
 
 onMounted(() => {
   if (isHost.value) {
-    positionTimer = setInterval(reportPosition, 5000)
+    positionTimer = setInterval(reportPosition, 2000)
   }
 
   document.addEventListener('pointerdown', activateUser, { once: true })
   document.addEventListener('keydown', activateUser, { once: true })
 })
 
+watch(loading, (val) => {
+  if (!val && isHost.value && roomState.value.currentSong) {
+    togglePlay()
+  }
+})
+
 onUnmounted(() => {
+  if (isHost.value && hostData.value?.hostToken && lastKnownPosition > 0) {
+    const blob = new Blob([JSON.stringify({
+      hostToken: hostData.value.hostToken,
+      position: lastKnownPosition
+    })], { type: 'application/json' })
+    navigator.sendBeacon(`/api/room/${roomId}/position`, blob)
+  }
+
   if (positionTimer) clearInterval(positionTimer)
   spotifyPlayer.destroy()
 })

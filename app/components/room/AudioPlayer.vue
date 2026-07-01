@@ -4,7 +4,16 @@
     class="rounded-xl border border-default p-4 space-y-3"
   >
     <div class="flex items-center gap-3">
-      <div class="size-12 shrink-0 rounded-lg bg-muted flex items-center justify-center">
+      <img
+        v-if="currentSong?.albumImageUrl"
+        :src="currentSong.albumImageUrl"
+        alt=""
+        class="size-12 shrink-0 rounded-lg object-cover"
+      >
+      <div
+        v-else
+        class="size-12 shrink-0 rounded-lg bg-muted flex items-center justify-center"
+      >
         <UIcon
           name="i-lucide-music"
           class="size-6 text-muted"
@@ -92,7 +101,7 @@
 import Hls from 'hls.js'
 import type { SongData } from '#shared/types/room'
 
-const props = defineProps<{
+defineProps<{
   show: boolean
   currentSong: SongData | null
   isPlaying: boolean
@@ -203,6 +212,12 @@ function togglePlay() {
   }
 }
 
+function resume() {
+  if (!audioEl.value) return
+  audioEl.value.play()
+  playing.value = true
+}
+
 function formatTime(s: number): string {
   if (!s || !isFinite(s)) return '0:00'
   const m = Math.floor(s / 60)
@@ -261,7 +276,7 @@ function onError() {
   emit('error', msg || 'Audio playback failed.')
 }
 
-defineExpose({ play, pause, state: { playing, currentTime, duration, volume, seekValue } })
+defineExpose({ play, pause, resume, state: { playing, currentTime, duration, volume, seekValue } })
 
 onUnmounted(() => {
   destroyHls()
