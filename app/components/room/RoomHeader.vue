@@ -20,28 +20,6 @@
         >Copied!</span>
       </p>
     </div>
-    <div class="flex flex-row items-center gap-2 flex-wrap">
-      <UButton
-        v-if="isHost"
-        size="sm"
-        variant="outline"
-        :icon="roomState.isPlaying ? 'i-lucide-pause' : 'i-lucide-play'"
-        :disabled="playDisabled"
-        @click="$emit('play')"
-      >
-        {{ roomState.isPlaying ? 'Pause' : 'Play' }}
-      </UButton>
-      <UButton
-        v-if="isHost"
-        size="sm"
-        variant="outline"
-        icon="i-lucide-skip-forward"
-        :disabled="!roomState.currentSong"
-        @click="$emit('skip')"
-      >
-        Skip
-      </UButton>
-    </div>
   </div>
 </template>
 
@@ -51,13 +29,6 @@ import type { RoomState } from '#shared/types/room'
 const props = defineProps<{
   roomId: string
   roomState: RoomState
-  isHost: boolean
-  playDisabled: boolean
-}>()
-
-defineEmits<{
-  play: []
-  skip: []
 }>()
 
 const copied = ref(false)

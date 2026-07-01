@@ -35,10 +35,6 @@
         <RoomHeader
           :room-id="roomId"
           :room-state="roomState"
-          :is-host="isHost"
-          :play-disabled="playDisabled"
-          @play="togglePlay"
-          @skip="skip"
         />
       </template>
       <template #default>
@@ -83,6 +79,7 @@
                 && roomState.currentSong.source === 'spotify'
                 && spotifyPlayer.isReady.value
                 && !!spotifyPlayer.currentTrack.value
+                && spotifyPlayer.currentTrack.value.uri === roomState.currentSong.trackUri
             "
             :track="spotifyPlayer.currentTrack.value ?? fallbackTrack"
             :paused="spotifyPlayer.paused.value"
@@ -118,6 +115,30 @@
         </div>
       </template>
     </UCard>
+
+    <div
+      v-if="isHost"
+      class="flex items-center gap-2"
+    >
+      <UButton
+        size="sm"
+        variant="outline"
+        :icon="roomState.isPlaying ? 'i-lucide-pause' : 'i-lucide-play'"
+        :disabled="playDisabled"
+        @click="togglePlay"
+      >
+        {{ roomState.isPlaying ? 'Pause' : 'Play' }}
+      </UButton>
+      <UButton
+        size="sm"
+        variant="outline"
+        icon="i-lucide-skip-forward"
+        :disabled="!roomState.currentSong"
+        @click="skip"
+      >
+        Skip
+      </UButton>
+    </div>
 
     <RoomSpotifyConnectBanner
       :room-id="roomId"
