@@ -315,7 +315,7 @@ watch(
 watch(
   () => spotifyPlayer.error.value,
   (val) => {
-    if (val) error.value = val
+    if (val && isHost.value) error.value = val
   }
 )
 
