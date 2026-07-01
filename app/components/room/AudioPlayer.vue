@@ -4,7 +4,16 @@
     class="rounded-xl border border-default p-4 space-y-3"
   >
     <div class="flex items-center gap-3">
-      <div class="size-12 shrink-0 rounded-lg bg-muted flex items-center justify-center">
+      <img
+        v-if="currentSong?.albumImageUrl"
+        :src="currentSong.albumImageUrl"
+        alt=""
+        class="size-12 shrink-0 rounded-lg object-cover"
+      >
+      <div
+        v-else
+        class="size-12 shrink-0 rounded-lg bg-muted flex items-center justify-center"
+      >
         <UIcon
           name="i-lucide-music"
           class="size-6 text-muted"
