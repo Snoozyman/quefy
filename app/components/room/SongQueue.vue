@@ -39,7 +39,7 @@
           </template>
           <span class="ml-1">
             <UIcon
-              :name="song.source === 'spotify' ? 'i-simple-icons-spotify' : 'i-simple-icons-youtube'"
+              :name="sourceIcon(song.source)"
               class="size-3 inline"
             />
           </span>
@@ -68,4 +68,10 @@ defineProps<{
 defineEmits<{
   remove: [songId: string]
 }>()
+
+function sourceIcon(source: string): string {
+  if (source === 'spotify') return 'i-simple-icons-spotify'
+  if (source === 'soundcloud') return 'i-simple-icons-soundcloud'
+  return 'i-simple-icons-youtube'
+}
 </script>
