@@ -2,15 +2,28 @@ import type { EventStream } from 'h3'
 import type { Room } from './room'
 
 const roomClients = new Map<string, Set<EventStream>>()
+const hostStreams = new Map<string, EventStream>()
 
-export function registerRoomClient(roomId: string, stream: EventStream) {
+export function registerRoomClient(roomId: string, stream: EventStream): void {
   if (!roomClients.has(roomId)) {
     roomClients.set(roomId, new Set())
   }
   roomClients.get(roomId)!.add(stream)
 }
 
-export function unregisterRoomClient(roomId: string, stream: EventStream) {
+export function registerHostStream(roomId: string, stream: EventStream): void {
+  hostStreams.set(roomId, stream)
+  registerRoomClient(roomId, stream)
+}
+
+export function isHostDisconnect(roomId: string, stream: EventStream): boolean {
+  return hostStreams.get(roomId) === stream
+}
+
+export function unregisterRoomClient(roomId: string, stream: EventStream): void {
+  if (hostStreams.get(roomId) === stream) {
+    hostStreams.delete(roomId)
+  }
   const clients = roomClients.get(roomId)
   if (clients) {
     clients.delete(stream)

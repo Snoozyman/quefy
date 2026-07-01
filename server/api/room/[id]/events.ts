@@ -1,5 +1,5 @@
-import { getRoom } from '#server/utils/room'
-import { registerRoomClient, unregisterRoomClient } from '#server/utils/room-events'
+import { getRoom, verifyHost } from '#server/utils/room'
+import { registerHostStream, registerRoomClient, unregisterRoomClient, isHostDisconnect, emitRoomUpdate } from '#server/utils/room-events'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
@@ -12,8 +12,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Room not found' })
   }
 
+  const hostToken = getQuery(event).hostToken as string | undefined
+  const isHost = hostToken && verifyHost(id, hostToken)
+
   const stream = createEventStream(event)
-  registerRoomClient(id, stream)
+  if (isHost) {
+    registerHostStream(id, stream)
+  } else {
+    registerRoomClient(id, stream)
+  }
 
   stream.push({
     event: 'room-update',
@@ -42,6 +49,11 @@ export default defineEventHandler(async (event) => {
   })
 
   stream.onClosed(() => {
+    if (isHostDisconnect(id, stream)) {
+      room.isPlaying = false
+      room.currentSong = null
+      emitRoomUpdate(id, room)
+    }
     unregisterRoomClient(id, stream)
   })
 
