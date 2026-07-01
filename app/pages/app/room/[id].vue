@@ -177,6 +177,7 @@ const audioPlayerRef = ref<{
   play: (url: string, startTime?: number) => void
   pause: () => void
   resume: () => void
+  seek: (time: number) => void
   state: { playing: { value: boolean }, currentTime: { value: number }, duration: { value: number }, volume: { value: number }, seekValue: { value: number } }
 }>()
 
@@ -202,6 +203,7 @@ function updateMediaSession(song: SongData | null) {
     document.title = 'Quefy'
     if ('mediaSession' in navigator) {
       navigator.mediaSession.metadata = null
+      navigator.mediaSession.playbackState = 'none'
     }
     return
   }
@@ -218,9 +220,26 @@ function updateMediaSession(song: SongData | null) {
         : []
     })
 
-    navigator.mediaSession.setActionHandler('play', () => spotifyPlayer.play())
-    navigator.mediaSession.setActionHandler('pause', () => spotifyPlayer.pause())
+    navigator.mediaSession.playbackState = roomState.value.isPlaying ? 'playing' : 'paused'
+
+    navigator.mediaSession.setActionHandler('play', () => togglePlay())
+    navigator.mediaSession.setActionHandler('pause', () => togglePlay())
     navigator.mediaSession.setActionHandler('nexttrack', () => skip())
+    navigator.mediaSession.setActionHandler('previoustrack', () => {
+      if (song.source === 'spotify') {
+        spotifyPlayer.seek(0)
+      } else {
+        audioPlayerRef.value?.seek(0)
+      }
+    })
+    navigator.mediaSession.setActionHandler('seekto', (details) => {
+      const ms = details.seekTime ?? 0
+      if (song.source === 'spotify') {
+        spotifyPlayer.seek(ms)
+      } else {
+        audioPlayerRef.value?.seek(ms / 1000)
+      }
+    })
   }
 }
 

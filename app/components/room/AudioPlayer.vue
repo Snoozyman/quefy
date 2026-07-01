@@ -276,7 +276,14 @@ function onError() {
   emit('error', msg || 'Audio playback failed.')
 }
 
-defineExpose({ play, pause, resume, state: { playing, currentTime, duration, volume, seekValue } })
+function seek(time: number) {
+  if (!audioEl.value || !duration.value) return
+  audioEl.value.currentTime = time
+  currentTime.value = time
+  seekValue.value = (time / duration.value) * 1000
+}
+
+defineExpose({ play, pause, resume, seek, state: { playing, currentTime, duration, volume, seekValue } })
 
 onUnmounted(() => {
   destroyHls()
