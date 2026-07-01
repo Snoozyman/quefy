@@ -121,7 +121,7 @@ function destroyHls() {
   errorEmitted = false
 }
 
-function play(url: string) {
+function play(url: string, startTime?: number) {
   if (!audioEl.value) return
   destroyHls()
 
@@ -134,6 +134,9 @@ function play(url: string) {
       instance.loadSource(url)
       instance.attachMedia(audioEl.value)
       instance.on(Hls.Events.MANIFEST_PARSED, () => {
+        if (startTime) {
+          audioEl.value!.currentTime = startTime
+        }
         playing.value = true
         audioEl.value?.play().catch((err: unknown) => {
           const name = err instanceof DOMException ? err.name : ''
@@ -170,6 +173,9 @@ function play(url: string) {
 
   audioEl.value.src = url
   audioEl.value.load()
+  if (startTime) {
+    audioEl.value.currentTime = startTime
+  }
   playing.value = true
   audioEl.value.play().catch((err: unknown) => {
     const name = err instanceof DOMException ? err.name : ''
@@ -217,7 +223,7 @@ function onLoadedMetadata() {
   const d = audioEl.value.duration
   if (!d || !isFinite(d)) {
     playing.value = false
-    emit('error', 'Song has no duration (live or unavailable). Skipping.')
+    emit('expired')
     return
   }
   duration.value = d

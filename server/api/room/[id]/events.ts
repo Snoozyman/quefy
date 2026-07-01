@@ -37,7 +37,8 @@ export default defineEventHandler(async (event) => {
       })),
       isPlaying: room.isPlaying,
       spotifyConnected: room.spotifyConnected,
-      createdAt: room.createdAt
+      createdAt: room.createdAt,
+      position: room.position
     })
   })
 

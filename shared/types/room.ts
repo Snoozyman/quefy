@@ -36,4 +36,5 @@ export interface RoomState {
   isPlaying: boolean
   spotifyConnected: boolean
   createdAt: number
+  position: number
 }

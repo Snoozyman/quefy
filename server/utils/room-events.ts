@@ -44,7 +44,8 @@ export function emitRoomUpdate(roomId: string, room: Room) {
     })),
     isPlaying: room.isPlaying,
     spotifyConnected: room.spotifyConnected,
-    createdAt: room.createdAt
+    createdAt: room.createdAt,
+    position: room.position
   }
 
   const data = JSON.stringify(state)

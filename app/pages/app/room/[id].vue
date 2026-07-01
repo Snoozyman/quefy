@@ -214,7 +214,8 @@ const roomState = ref<RoomState>({
   queue: [],
   isPlaying: false,
   spotifyConnected: false,
-  createdAt: 0
+  createdAt: 0,
+  position: 0
 })
 
 const hostData = ref<{ roomId: string, hostToken: string } | null>(null)
@@ -234,8 +235,9 @@ const spotifyAuth = useSpotifyAuth()
 const spotifyPlayer = useSpotifyPlayer()
 
 const audioPlayerRef = ref<{
-  play: (url: string) => void
+  play: (url: string, startTime?: number) => void
   pause: () => void
+  state: { playing: boolean, currentTime: number, duration: number, volume: number, seekValue: number }
 }>()
 
 const userActivated = ref(false)
@@ -351,8 +353,11 @@ function handleSongChange(song: SongData) {
     if (roomState.value.isPlaying) {
       if (!userActivated.value) return
       const url = song.url!
+      const startTime = roomState.value.position > 0
+        ? roomState.value.position / 1000
+        : undefined
       nextTick(() => {
-        audioPlayerRef.value?.play(url)
+        audioPlayerRef.value?.play(url, startTime)
       })
     }
   }
@@ -360,6 +365,7 @@ function handleSongChange(song: SongData) {
 
 let eventSource: EventSource | null = null
 let pollTimer: ReturnType<typeof setInterval> | null = null
+let positionTimer: ReturnType<typeof setInterval> | null = null
 let pageLeaving = false
 
 function connectSSE() {
@@ -393,6 +399,28 @@ function startPolling() {
   pollTimer = setInterval(fetchRoomState, 3000)
 }
 
+async function reportPosition() {
+  if (!isHost.value || !hostData.value?.hostToken) return
+  if (!roomState.value.isPlaying) return
+
+  const song = roomState.value.currentSong
+  if (!song) return
+
+  let position = 0
+  if (song.source === 'spotify') {
+    position = spotifyPlayer.position.value
+  } else {
+    position = Math.round((audioPlayerRef.value?.state.currentTime ?? 0) * 1000)
+  }
+
+  if (position > 0) {
+    $fetch(`/api/room/${roomId}/position`, {
+      method: 'POST',
+      body: { hostToken: hostData.value.hostToken, position }
+    }).catch(() => {})
+  }
+}
+
 watch(
   () => roomState.value.currentSong,
   (song) => {
@@ -421,7 +449,7 @@ watch(
 async function transferSpotifyPlayback(trackUri: string) {
   if (!roomState.value.isPlaying) return
 
-  spotifyPlayer.position.value = 0
+  spotifyPlayer.position.value = roomState.value.position
 
   let token = spotifyAuth.getAccessToken()
   if (!token) {
@@ -461,7 +489,10 @@ async function transferSpotifyPlayback(trackUri: string) {
       {
         method: 'PUT',
         headers,
-        body: JSON.stringify({ uris: [trackUri] })
+        body: JSON.stringify({
+          uris: [trackUri],
+          position_ms: roomState.value.position
+        })
       }
     )
     if (playRes.ok) return
@@ -634,16 +665,27 @@ function onAudioError(msg: string) {
 
 async function onAudioExpired() {
   const song = roomState.value.currentSong
-  if (!song?.trackUrl || !hostData.value?.hostToken) {
+  if (!song || !hostData.value?.hostToken) {
     skip()
     return
   }
+
+  const body: Record<string, string> = { hostToken: hostData.value.hostToken }
+  if (song.trackUrl) {
+    body.trackUrl = song.trackUrl
+  } else if (song.videoId) {
+    body.videoId = song.videoId
+  } else {
+    skip()
+    return
+  }
+
   try {
     const refreshed = await $fetch<{ url: string, title: string }>(
       `/api/room/${roomId}/audio/refresh`,
       {
         method: 'POST',
-        body: { hostToken: hostData.value.hostToken, trackUrl: song.trackUrl }
+        body
       }
     )
     song.url = refreshed.url
@@ -670,6 +712,10 @@ onMounted(async () => {
   loading.value = false
   connectSSE()
 
+  if (isHost.value) {
+    positionTimer = setInterval(reportPosition, 5000)
+  }
+
   document.addEventListener('pointerdown', activateUser, { once: true })
   document.addEventListener('keydown', activateUser, { once: true })
 
@@ -688,6 +734,7 @@ onUnmounted(() => {
   }
   eventSource?.close()
   if (pollTimer) clearInterval(pollTimer)
+  if (positionTimer) clearInterval(positionTimer)
   spotifyPlayer.destroy()
 })
 
