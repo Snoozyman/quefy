@@ -4,6 +4,45 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.2.3] - 2026-07-01
+
+### Commits
+
+- [`8fdfd70`](https://github.com/Snoozyman/quefy/commit/8fdfd70cb58d0ea2e5fc871014223907a672c53f) fix: cap spotify position at duration after seeking near end
+- [`2dcbe79`](https://github.com/Snoozyman/quefy/commit/2dcbe7920616dd5f38ba137deb3e3951852329d8) Merge pull request #22 from Snoozyman/fix/spotify-position-cap
+- [`caee75c`](https://github.com/Snoozyman/quefy/commit/caee75c7f8b93e39ad4e8e4e0f198b3dc412652b) fix: gate autoplay behind user activation for Safari
+- [`a661b4c`](https://github.com/Snoozyman/quefy/commit/a661b4c720de9732d9e4228dfcfe3c00b1d3ff3f) Merge pull request #23 from Snoozyman/fix/safari-autoplay
+- [`bdee68f`](https://github.com/Snoozyman/quefy/commit/bdee68f5047d2a7cf7ea01cb563836680df5bcd2) fix: prevent double play causing queue to disappear
+- [`3881796`](https://github.com/Snoozyman/quefy/commit/38817961a0bb2275df25064f55a68834bc834a2c) Merge pull request #24 from Snoozyman/fix/toggleplay-race
+- [`395a4dd`](https://github.com/Snoozyman/quefy/commit/395a4dd66e1a0254e972226df64e11baaeba7f9b) docs: add workflow conventions to AGENTS.md
+- [`addb4f3`](https://github.com/Snoozyman/quefy/commit/addb4f3ea4afb9cb22110302fcade9006005de0d) Merge pull request #25 from Snoozyman/docs/workflow
+- [`245e125`](https://github.com/Snoozyman/quefy/commit/245e125d25ca7ab313537187415b57938d46b0c8) Create labeler.yml
+- [`1a4fc8b`](https://github.com/Snoozyman/quefy/commit/1a4fc8b5e7641713b05d9fa0cafb0430d8d94de0) Create pr-labeler.yml
+- [`d5d847a`](https://github.com/Snoozyman/quefy/commit/d5d847a4e21cf095abcfd357cc39a21878ee4479) fix: safari volume slider, mute, and hardware keys
+- [`4b19bf3`](https://github.com/Snoozyman/quefy/commit/4b19bf3ca4dc44f04df67de7a74c87762ee3070b) Merge pull request #26 from Snoozyman/fix/safari-volume
+- [`0499d81`](https://github.com/Snoozyman/quefy/commit/0499d8199712eb93dafe51aba25a794fd6daeb4d) fix: missing button end tag in AudioPlayer
+- [`94bd699`](https://github.com/Snoozyman/quefy/commit/94bd6999ed44e8ab754394223e58626ffb214a30) Merge pull request #27 from Snoozyman/hotfix/button-end-tag
+- [`7dd0524`](https://github.com/Snoozyman/quefy/commit/7dd0524e5eab7d6a7e730ba54e8df08053e04e62) feat: add spotifyConnected to room state
+- [`88b4db0`](https://github.com/Snoozyman/quefy/commit/88b4db02c6a8ac15655ef5787acaae1e27f54d1a) feat: add spotify ready and disconnect endpoints
+- [`3ffb090`](https://github.com/Snoozyman/quefy/commit/3ffb09085da80088a7cb0da299760b645deb27f9) feat: broadcast spotify connection state from client
+- [`0a55f5d`](https://github.com/Snoozyman/quefy/commit/0a55f5d45e7f9648e134d5cdc22ab1b56a33e18c) feat: disable spotify search when host not connected
+- [`2b107e9`](https://github.com/Snoozyman/quefy/commit/2b107e9c46bdbbd820ab1adb8cc954b3e306e907) Merge pull request #29 from Snoozyman/feat/spotify-connection-state
+- [`1aad86a`](https://github.com/Snoozyman/quefy/commit/1aad86a81212615dd344edf14e5bc0301dbd354e) docs: add issue templates
+- [`dfe0084`](https://github.com/Snoozyman/quefy/commit/dfe008479e0a367fb9bc636d0c7e5843a43b5710) Merge pull request #30 from Snoozyman/docs/issue-templates
+- [`75edb54`](https://github.com/Snoozyman/quefy/commit/75edb54c4bd1a5fce107bb2ecaaa9c97821d4612) docs: add bug report link to readme
+- [`28e5e98`](https://github.com/Snoozyman/quefy/commit/28e5e98df880e5a5556513d0618a3ef049ac808e) Merge pull request #31 from Snoozyman/docs/bug-report-readme
+- [`74e5f74`](https://github.com/Snoozyman/quefy/commit/74e5f74ab099bb007a78b83f52f09ededc97429c) docs: update homepage copy to reflect actual features
+- [`a36d762`](https://github.com/Snoozyman/quefy/commit/a36d7621fbc8920c8ba76edb06708dacd4267696) fix: validate cookie format and fix leading-newline corruption
+- [`a2be5a5`](https://github.com/Snoozyman/quefy/commit/a2be5a5854849e0fc1ddae6a6792e0857b094c3f) Merge pull request #32 from Snoozyman/docs/homepage-copy
+- [`251086d`](https://github.com/Snoozyman/quefy/commit/251086d900f4875c97b72f9f1026e132e5e40030) Merge pull request #33 from Snoozyman/fix/cookie-format-validation
+- [`3e6e00b`](https://github.com/Snoozyman/quefy/commit/3e6e00bda6ed147989be894956586e56b28cf7fd) feat: add parseNetscapeCookies helper
+- [`6016b53`](https://github.com/Snoozyman/quefy/commit/6016b53de16ff1ec3db4f6ebb752e89a86bc37d5) feat: return parsed cookies from cookie APIs
+- [`9accc40`](https://github.com/Snoozyman/quefy/commit/9accc40ae9506ef2f47baee760069ede5634d3b3) feat: show cookie tabs in upload UI
+- [`70db44b`](https://github.com/Snoozyman/quefy/commit/70db44bc3c845910554cf139340ebb080bfdef8e) feat: add player and settings tabs to room view
+- [`47d7e84`](https://github.com/Snoozyman/quefy/commit/47d7e845e198a6e6d804b56bf04cb3db226f683b) Merge pull request #34 from Snoozyman/feat/cookie-and-room-tabs
+- [`9acecc9`](https://github.com/Snoozyman/quefy/commit/9acecc98a5ec8b0e16509f57e2387626ee047397) feat: add isPlaying and thumbnail to room list endpoint
+- [`a3a979f`](https://github.com/Snoozyman/quefy/commit/a3a979fafeb9404a6894e6763fd6f66386a35857) feat: polish overview page with live indicators and UCard layout
+- [`a92718e`](https://github.com/Snoozyman/quefy/commit/a92718e62dbc1887a8cfdbe44f1463e53c33b758) Merge pull request #35 from Snoozyman/feat/overview-polish
 ## [0.2.2] - 2026-06-30
 
 ### Commits
