@@ -54,7 +54,7 @@
         size="md"
         color="primary"
         variant="solid"
-        @click="togglePlay"
+        @click="$emit('toggle-play')"
       />
       <button
         class="shrink-0 cursor-pointer bg-transparent border-none p-0"
@@ -92,16 +92,17 @@
 import Hls from 'hls.js'
 import type { SongData } from '#shared/types/room'
 
-const props = defineProps<{
+defineProps<{
   show: boolean
   currentSong: SongData | null
   isPlaying: boolean
 }>()
 
 const emit = defineEmits<{
-  ended: []
-  error: [message: string]
-  expired: []
+  'ended': []
+  'error': [message: string]
+  'expired': []
+  'toggle-play': []
 }>()
 
 const audioEl = ref<HTMLAudioElement | undefined>()
@@ -191,16 +192,6 @@ function play(url: string, startTime?: number) {
 function pause() {
   audioEl.value?.pause()
   playing.value = false
-}
-
-function togglePlay() {
-  if (audioEl.value?.paused) {
-    audioEl.value.play()
-    playing.value = true
-  } else {
-    audioEl.value?.pause()
-    playing.value = false
-  }
 }
 
 function formatTime(s: number): string {

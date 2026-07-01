@@ -101,6 +101,7 @@
             @ended="onAudioEnded"
             @error="(msg: string) => onAudioError(msg)"
             @expired="onAudioExpired"
+            @toggle-play="togglePlay"
           />
 
           <RoomNowPlaying
@@ -273,10 +274,15 @@ let positionTimer: ReturnType<typeof setInterval> | null = null
 
 async function reportPosition() {
   if (!isHost.value || !hostData.value?.hostToken) return
-  if (!roomState.value.isPlaying) return
 
   const song = roomState.value.currentSong
   if (!song) return
+
+  const locallyPlaying = song.source === 'spotify'
+    ? !spotifyPlayer.paused.value
+    : (audioPlayerRef.value?.state.playing ?? false)
+
+  if (!locallyPlaying) return
 
   let position = 0
   if (song.source === 'spotify') {
@@ -607,18 +613,23 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (isHost.value && hostData.value?.hostToken && roomState.value.isPlaying) {
+  if (isHost.value && hostData.value?.hostToken) {
     const song = roomState.value.currentSong
     if (song) {
-      let position = 0
-      if (song.source === 'spotify') position = spotifyPlayer.position.value
-      else position = Math.round((audioPlayerRef.value?.state.currentTime ?? 0) * 1000)
-      if (position > 0) {
-        const blob = new Blob([JSON.stringify({
-          hostToken: hostData.value.hostToken,
-          position
-        })], { type: 'application/json' })
-        navigator.sendBeacon(`/api/room/${roomId}/position`, blob)
+      const locallyPlaying = song.source === 'spotify'
+        ? !spotifyPlayer.paused.value
+        : (audioPlayerRef.value?.state.playing ?? false)
+      if (locallyPlaying) {
+        let position = 0
+        if (song.source === 'spotify') position = spotifyPlayer.position.value
+        else position = Math.round((audioPlayerRef.value?.state.currentTime ?? 0) * 1000)
+        if (position > 0) {
+          const blob = new Blob([JSON.stringify({
+            hostToken: hostData.value.hostToken,
+            position
+          })], { type: 'application/json' })
+          navigator.sendBeacon(`/api/room/${roomId}/position`, blob)
+        }
       }
     }
   }
