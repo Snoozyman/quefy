@@ -15,12 +15,16 @@
       :key="song.id"
       class="flex items-center gap-3 rounded-lg border border-default px-3 py-2"
     >
-      <img
+      <UIcon
+        :name="sourceIcon(song.source)"
+        class="size-4 shrink-0 text-muted"
+      />
+      <NuxtImg
         v-if="song.albumImageUrl"
         :src="song.albumImageUrl"
         alt=""
         class="size-8 rounded object-cover shrink-0"
-      >
+      />
       <UIcon
         v-else
         name="i-lucide-music"
@@ -37,12 +41,6 @@
           <template v-else>
             added by {{ song.addedBy }}
           </template>
-          <span class="ml-1">
-            <UIcon
-              :name="sourceIcon(song.source)"
-              class="size-3 inline"
-            />
-          </span>
         </p>
       </div>
       <UButton
