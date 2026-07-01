@@ -283,13 +283,6 @@ async function reportPosition() {
     ? !spotifyPlayer.paused.value
     : (audioPlayerRef.value?.state.playing.value ?? false)
 
-  console.log('[position] reportPosition called', {
-    songSource: song.source,
-    locallyPlaying,
-    currentTime: audioPlayerRef.value?.state.currentTime.value,
-    spotifyPosition: spotifyPlayer.position.value
-  })
-
   if (!locallyPlaying) return
 
   let position = 0
@@ -300,7 +293,6 @@ async function reportPosition() {
   }
 
   lastKnownPosition = position
-  console.log('[position] computed:', position, 'lastKnown:', lastKnownPosition)
 
   if (position > 0) {
     $fetch(`/api/room/${roomId}/position`, {
@@ -498,23 +490,13 @@ async function togglePlay() {
         } else if (song.source === 'youtube' || song.source === 'soundcloud') {
           spotifyPlayer.pause()
           const dur = audioPlayerRef.value?.state.duration.value ?? 0
-          console.log('[playback] resume check', {
-            source: song.source,
-            duration: dur,
-            hasUrl: !!song.url,
-            roomPosition: roomState.value.position
-          })
           if (dur > 0) {
-            console.log('[playback] using resume()')
             audioPlayerRef.value!.resume()
           } else if (song.url) {
             const startTime = roomState.value.position > 0
               ? roomState.value.position / 1000
               : undefined
-            console.log('[playback] using play()', { url: song.url.slice(0, 80), startTime })
             audioPlayerRef.value?.play(song.url, startTime)
-          } else {
-            console.log('[playback] no url to play, skipping')
           }
         }
       }
@@ -627,7 +609,6 @@ async function deleteRoom() {
 }
 
 onMounted(() => {
-  console.log('[position] onMounted, room position from server:', roomState.value.position)
   if (isHost.value) {
     positionTimer = setInterval(reportPosition, 2000)
   }
@@ -643,9 +624,7 @@ watch(loading, (val) => {
 })
 
 onUnmounted(() => {
-  console.log('[position] onUnmounted, lastKnownPosition:', lastKnownPosition)
   if (isHost.value && hostData.value?.hostToken && lastKnownPosition > 0) {
-    console.log('[position] sending beacon with position:', lastKnownPosition)
     const blob = new Blob([JSON.stringify({
       hostToken: hostData.value.hostToken,
       position: lastKnownPosition

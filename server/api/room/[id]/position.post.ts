@@ -15,7 +15,6 @@ export default defineEventHandler(async (event) => {
   if (typeof body.position !== 'number' || !isFinite(body.position))
     throw createError({ statusCode: 400, statusMessage: 'Invalid position' })
 
-  console.log('[position] server received:', body.position, 'for room', id)
   const room = getRoom(id)
   if (!room)
     throw createError({ statusCode: 404, statusMessage: 'Room not found' })
