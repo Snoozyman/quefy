@@ -634,6 +634,10 @@ onMounted(() => {
 
   document.addEventListener('pointerdown', activateUser, { once: true })
   document.addEventListener('keydown', activateUser, { once: true })
+
+  if (isHost.value && roomState.value.currentSong) {
+    togglePlay()
+  }
 })
 
 onUnmounted(() => {
