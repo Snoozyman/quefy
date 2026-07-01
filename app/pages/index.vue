@@ -2,14 +2,14 @@
   <UPage>
     <UPageHero
       title="Listen together. In sync."
-      description="Multi-user YouTube and Spotify audio rooms. Share a queue, control playback together, and discover music with friends — no account needed."
+      description="Multi-user YouTube, Spotify, and SoundCloud audio rooms. Share a queue, control playback together, and discover music with friends — no account needed."
     >
       <template #links>
         <UButton to="/app/room" size="xl" trailing-icon="i-lucide-arrow-right">
           Create a Room
         </UButton>
         <UButton
-          to="https://github.com/anomalyco/quefy"
+          to="https://github.com/Snoozyman/quefy"
           target="_blank"
           size="xl"
           color="neutral"
@@ -24,18 +24,18 @@
     <UPageSection
       headline="Features"
       title="Everything you need to share the experience"
-      description="Real-time sync, dual-platform support, and a simple interface built for groups."
+      description="Real-time sync, triple-platform support, and a simple interface built for groups."
     >
       <template #features>
         <UPageFeature
           icon="i-lucide-waves"
           title="Real-time sync"
-          description="Queue updates stream to every listener instantly via SSE. No polling, no lag — everyone hears the same song at the same time."
+          description="Queue updates stream to every listener instantly via SSE. Only the host plays the audio — guests see what's playing in real time, add songs, and follow along."
         />
         <UPageFeature
           icon="i-lucide-music-2"
-          title="YouTube & Spotify"
-          description="Search and queue from both platforms. The player switches automatically — add a YouTube track next to a Spotify song and it just works."
+          title="YouTube, Spotify & SoundCloud"
+          description="Search and queue from all three platforms. The player switches automatically — add a YouTube track next to a SoundCloud song and it just works."
         />
         <UPageFeature
           icon="i-lucide-users"
@@ -45,7 +45,7 @@
         <UPageFeature
           icon="i-lucide-list-music"
           title="Collaborative queue"
-          description="Everyone adds, removes, and reorders songs. Vote on what plays next or let the queue run — full control for the whole group."
+          description="Guests can add songs, the host can remove them. Simple, fair, and no chaos — the host stays in control."
         />
       </template>
     </UPageSection>
@@ -66,12 +66,12 @@
         <UPageFeature
           icon="i-lucide-search"
           title="2. Add songs"
-          description="Search YouTube or Spotify, pick a track, and drop it in the queue."
+          description="Search YouTube, Spotify, or SoundCloud, pick a track, and drop it in the queue."
         />
         <UPageFeature
           icon="i-lucide-play"
-          title="3. Play together"
-          description="Press play. Everyone in the room hears the same thing, synced in real time."
+          title="3. Listen together"
+          description="Press play. Guests follow along — same song, same progress, zero setup."
         />
       </template>
     </UPageSection>
