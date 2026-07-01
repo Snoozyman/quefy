@@ -101,7 +101,6 @@
             @ended="onAudioEnded"
             @error="(msg: string) => onAudioError(msg)"
             @expired="onAudioExpired"
-            @toggle-play="togglePlay"
           />
 
           <RoomNowPlaying
@@ -177,6 +176,7 @@ const currentSongIsAudio = computed(
 const audioPlayerRef = ref<{
   play: (url: string, startTime?: number) => void
   pause: () => void
+  resume: () => void
   state: { playing: boolean, currentTime: number, duration: number, volume: number, seekValue: number }
 }>()
 
@@ -484,15 +484,16 @@ async function togglePlay() {
           } else {
             transferSpotifyPlayback(song.trackUri)
           }
-        } else if (
-          (song.source === 'youtube' || song.source === 'soundcloud')
-          && song.url
-        ) {
+        } else if (song.source === 'youtube' || song.source === 'soundcloud') {
           spotifyPlayer.pause()
-          const startTime = roomState.value.position > 0
-            ? roomState.value.position / 1000
-            : undefined
-          audioPlayerRef.value?.play(song.url, startTime)
+          if (audioPlayerRef.value?.state.duration && audioPlayerRef.value.state.duration > 0) {
+            audioPlayerRef.value.resume()
+          } else if (song.url) {
+            const startTime = roomState.value.position > 0
+              ? roomState.value.position / 1000
+              : undefined
+            audioPlayerRef.value?.play(song.url, startTime)
+          }
         }
       }
     } else {

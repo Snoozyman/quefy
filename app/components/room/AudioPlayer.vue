@@ -54,7 +54,7 @@
         size="md"
         color="primary"
         variant="solid"
-        @click="$emit('toggle-play')"
+        @click="togglePlay"
       />
       <button
         class="shrink-0 cursor-pointer bg-transparent border-none p-0"
@@ -99,10 +99,9 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'ended': []
-  'error': [message: string]
-  'expired': []
-  'toggle-play': []
+  ended: []
+  error: [message: string]
+  expired: []
 }>()
 
 const audioEl = ref<HTMLAudioElement | undefined>()
@@ -194,6 +193,22 @@ function pause() {
   playing.value = false
 }
 
+function togglePlay() {
+  if (audioEl.value?.paused) {
+    audioEl.value.play()
+    playing.value = true
+  } else {
+    audioEl.value?.pause()
+    playing.value = false
+  }
+}
+
+function resume() {
+  if (!audioEl.value) return
+  audioEl.value.play()
+  playing.value = true
+}
+
 function formatTime(s: number): string {
   if (!s || !isFinite(s)) return '0:00'
   const m = Math.floor(s / 60)
@@ -252,7 +267,7 @@ function onError() {
   emit('error', msg || 'Audio playback failed.')
 }
 
-defineExpose({ play, pause, state: { playing, currentTime, duration, volume, seekValue } })
+defineExpose({ play, pause, resume, state: { playing, currentTime, duration, volume, seekValue } })
 
 onUnmounted(() => {
   destroyHls()
