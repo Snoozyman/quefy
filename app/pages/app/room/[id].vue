@@ -271,6 +271,7 @@ function handleSongChange(song: SongData) {
 }
 
 let positionTimer: ReturnType<typeof setInterval> | null = null
+let lastKnownPosition = 0
 
 async function reportPosition() {
   if (!isHost.value || !hostData.value?.hostToken) return
@@ -290,6 +291,8 @@ async function reportPosition() {
   } else {
     position = Math.round((audioPlayerRef.value?.state.currentTime ?? 0) * 1000)
   }
+
+  lastKnownPosition = position
 
   if (position > 0) {
     $fetch(`/api/room/${roomId}/position`, {
@@ -614,25 +617,12 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  if (isHost.value && hostData.value?.hostToken) {
-    const song = roomState.value.currentSong
-    if (song) {
-      const locallyPlaying = song.source === 'spotify'
-        ? !spotifyPlayer.paused.value
-        : (audioPlayerRef.value?.state.playing ?? false)
-      if (locallyPlaying) {
-        let position = 0
-        if (song.source === 'spotify') position = spotifyPlayer.position.value
-        else position = Math.round((audioPlayerRef.value?.state.currentTime ?? 0) * 1000)
-        if (position > 0) {
-          const blob = new Blob([JSON.stringify({
-            hostToken: hostData.value.hostToken,
-            position
-          })], { type: 'application/json' })
-          navigator.sendBeacon(`/api/room/${roomId}/position`, blob)
-        }
-      }
-    }
+  if (isHost.value && hostData.value?.hostToken && lastKnownPosition > 0) {
+    const blob = new Blob([JSON.stringify({
+      hostToken: hostData.value.hostToken,
+      position: lastKnownPosition
+    })], { type: 'application/json' })
+    navigator.sendBeacon(`/api/room/${roomId}/position`, blob)
   }
 
   if (positionTimer) clearInterval(positionTimer)
