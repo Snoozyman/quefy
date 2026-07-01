@@ -11,7 +11,7 @@
 
     <UModal v-model:open="open">
       <template #content>
-        <div class="p-4 space-y-4">
+        <div class="p-4 space-y-4 min-w-sm">
           <h2 class="text-lg font-semibold">
             YouTube Cookies
             <span
@@ -108,6 +108,42 @@
               Remove
             </UButton>
           </div>
+
+          <div
+            v-if="cookieExists && (ytCookies.length || scCookies.length)"
+            class="space-y-2"
+          >
+            <div class="flex gap-px bg-border rounded-lg">
+              <button
+                v-for="tab in tabs"
+                :key="tab.source"
+                class="flex-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
+                :class="activeTab === tab.source
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-default text-muted hover:bg-muted/50'"
+                @click="activeTab = tab.source"
+              >
+                {{ tab.label }}
+              </button>
+            </div>
+
+            <div class="max-h-32 overflow-y-auto rounded-lg border border-default">
+              <div
+                v-if="activeCookies.length === 0"
+                class="text-xs text-muted text-center py-4"
+              >
+                No cookies found
+              </div>
+              <div
+                v-for="c in activeCookies"
+                :key="c.name"
+                class="flex items-center justify-between px-3 py-1.5 text-xs border-b border-default last:border-b-0"
+              >
+                <span class="font-mono truncate mr-2">{{ c.name }}</span>
+                <span class="text-muted truncate">{{ c.domain }}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </template>
     </UModal>
@@ -115,11 +151,30 @@
 </template>
 
 <script lang="ts" setup>
+interface CookieEntry {
+  name: string
+  domain: string
+}
+
 interface CookieSaveResponse {
   ok: boolean
   size: number
   verified?: boolean
   verifyError?: string
+}
+
+interface CookieRefreshResponse {
+  ok: boolean
+  count: number
+  youtube: CookieEntry[] | null
+  soundcloud: CookieEntry[] | null
+}
+
+interface CookieStatusResponse {
+  exists: boolean
+  size: number
+  youtube?: CookieEntry[]
+  soundcloud?: CookieEntry[]
 }
 
 const open = ref(false)
@@ -133,6 +188,18 @@ const fetching = ref(false)
 const deleting = ref(false)
 const saveMsg = ref('')
 const saveOk = ref(false)
+const ytCookies = ref<CookieEntry[]>([])
+const scCookies = ref<CookieEntry[]>([])
+const activeTab = ref<'youtube' | 'soundcloud'>('youtube')
+
+const tabs = computed(() => [
+  { source: 'youtube' as const, label: `YouTube (${ytCookies.value.length})` },
+  { source: 'soundcloud' as const, label: `SoundCloud (${scCookies.value.length})` }
+])
+
+const activeCookies = computed(() =>
+  activeTab.value === 'youtube' ? ytCookies.value : scCookies.value
+)
 
 const statusText = computed(() => {
   if (cookieExists.value) return `Cookies (${cookieSize.value}b)`
@@ -141,10 +208,17 @@ const statusText = computed(() => {
 
 async function fetchStatus() {
   try {
-    const res = await $fetch<{ exists: boolean, size: number }>('/api/cookies')
+    const res = await $fetch<CookieStatusResponse>('/api/cookies')
     cookieExists.value = res.exists
     cookieSize.value = res.size
-  } catch {}
+    ytCookies.value = res.youtube ?? []
+    scCookies.value = res.soundcloud ?? []
+  } catch {
+    cookieExists.value = false
+    cookieSize.value = 0
+    ytCookies.value = []
+    scCookies.value = []
+  }
 }
 
 function triggerFilePick() {
@@ -201,13 +275,17 @@ async function autoFetch() {
   fetching.value = true
   saveMsg.value = ''
   try {
-    const res = await $fetch<{ ok: boolean, count: number }>('/api/cookies/refresh')
+    const res = await $fetch<CookieRefreshResponse>('/api/cookies/refresh')
+    ytCookies.value = res.youtube ?? []
+    scCookies.value = res.soundcloud ?? []
+    activeTab.value = ytCookies.value.length ? 'youtube' : 'soundcloud'
     saveOk.value = true
-    saveMsg.value = `Fetched ${res.count} cookies from YouTube.`
+    saveMsg.value = `Fetched ${res.count} cookies.`
     await fetchStatus()
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const e = err as { data?: { statusMessage?: string }, message?: string }
     saveOk.value = false
-    saveMsg.value = err?.data?.statusMessage || err?.message || 'Failed to auto-fetch cookies.'
+    saveMsg.value = e?.data?.statusMessage || e?.message || 'Failed to auto-fetch cookies.'
   } finally {
     fetching.value = false
   }
@@ -223,6 +301,8 @@ async function deleteCookies() {
     })
     cookieExists.value = false
     cookieSize.value = 0
+    ytCookies.value = []
+    scCookies.value = []
     saveOk.value = true
     saveMsg.value = 'Cookies removed.'
     pasteText.value = ''
