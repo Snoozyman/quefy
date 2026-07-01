@@ -92,10 +92,11 @@ const processing = ref(false)
 const spotifyError = ref('')
 
 const storageHostData = ref<{ roomId: string, hostToken: string } | null>(null)
-try {
-  const raw = localStorage.getItem('quefy-host')
-  if (raw) storageHostData.value = JSON.parse(raw)
-} catch { /* localStorage access denied */ }
+const hosts = JSON.parse(localStorage.getItem('quefy-hosts') || '{}')
+const hostToken = hosts[props.roomId]
+if (hostToken) {
+  storageHostData.value = { roomId: props.roomId, hostToken }
+}
 
 const isHost = computed(
   () => storageHostData.value?.roomId === props.roomId && !!storageHostData.value?.hostToken
