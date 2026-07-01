@@ -178,11 +178,7 @@ docker run -d --name quefy -p 3000:3000 snoozyman/quefy:latest
 
 ## Unraid
 
-A Community Applications template is available at [Snoozyman/unraid-templates](https://github.com/Snoozyman/unraid-templates).
-
-1. In Unraid, go to **Apps** → **Settings**
-2. Under private repositories, add `https://github.com/Snoozyman/unraid-templates`
-3. Search for **quefy** and install
+A Community Applications template is available via [Snoozyman/unraid-templates](https://github.com/Snoozyman/unraid-templates). Once approved, search for **quefy** directly in the Unraid Apps tab.
 
 ## Troubleshooting
 

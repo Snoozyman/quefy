@@ -48,19 +48,7 @@ See [docs/docker.md](docs/docker.md) for complete Docker documentation including
 
 ## Unraid
 
-Install via Community Applications with a private repository:
-
-1. In Unraid, go to **Apps** → **Settings** (gear icon)
-2. Check **"Allow install of 2nd party applications"**
-3. Under **Private Repositories**, add:
-   ```
-   https://raw.githubusercontent.com/Snoozyman/quefy/main/my-quefy.xml
-   ```
-4. Click **Apply**, then search for **quefy** in the Apps tab
-5. Configure the `/data` volume path and optional Spotify environment variables
-6. Click **Install**
-
-Cookies are stored at `/data/cookies.txt` inside the container — the template mounts this to your chosen appdata path by default.
+Available via Community Applications. Templates at [Snoozyman/unraid-templates](https://github.com/Snoozyman/unraid-templates).
 
 ## Environment
 
