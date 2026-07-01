@@ -599,7 +599,7 @@ async function deleteRoom() {
 
 onMounted(() => {
   if (isHost.value) {
-    positionTimer = setInterval(reportPosition, 5000)
+    positionTimer = setInterval(reportPosition, 2000)
   }
 
   document.addEventListener('pointerdown', activateUser, { once: true })
@@ -607,6 +607,22 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  if (isHost.value && hostData.value?.hostToken && roomState.value.isPlaying) {
+    const song = roomState.value.currentSong
+    if (song) {
+      let position = 0
+      if (song.source === 'spotify') position = spotifyPlayer.position.value
+      else position = Math.round((audioPlayerRef.value?.state.currentTime ?? 0) * 1000)
+      if (position > 0) {
+        const blob = new Blob([JSON.stringify({
+          hostToken: hostData.value.hostToken,
+          position
+        })], { type: 'application/json' })
+        navigator.sendBeacon(`/api/room/${roomId}/position`, blob)
+      }
+    }
+  }
+
   if (positionTimer) clearInterval(positionTimer)
   spotifyPlayer.destroy()
 })
