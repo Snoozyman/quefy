@@ -641,7 +641,10 @@ async function togglePlay() {
           && song.url
         ) {
           spotifyPlayer.pause()
-          audioPlayerRef.value?.play(song.url)
+          const startTime = roomState.value.position > 0
+            ? roomState.value.position / 1000
+            : undefined
+          audioPlayerRef.value?.play(song.url, startTime)
         }
       }
     } else {

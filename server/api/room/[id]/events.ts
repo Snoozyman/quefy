@@ -52,7 +52,6 @@ export default defineEventHandler(async (event) => {
   stream.onClosed(() => {
     if (isHostDisconnect(id, stream)) {
       room.isPlaying = false
-      room.currentSong = null
       emitRoomUpdate(id, room)
     }
     unregisterRoomClient(id, stream)
