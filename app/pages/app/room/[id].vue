@@ -363,7 +363,10 @@ let pollTimer: ReturnType<typeof setInterval> | null = null
 let pageLeaving = false
 
 function connectSSE() {
-  eventSource = new EventSource(`/api/room/${roomId}/events`)
+  const sseUrl = hostData.value?.hostToken
+    ? `/api/room/${roomId}/events?hostToken=${hostData.value.hostToken}`
+    : `/api/room/${roomId}/events`
+  eventSource = new EventSource(sseUrl)
 
   eventSource.addEventListener('room-update', (event) => {
     const newState = JSON.parse(event.data) as RoomState
