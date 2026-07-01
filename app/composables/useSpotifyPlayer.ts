@@ -230,12 +230,18 @@ export function useSpotifyPlayer() {
         return false
       }
 
+      await fetch('https://api.spotify.com/v1/me/player', {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ device_ids: [deviceId.value], play: false })
+      })
+
       let found = false
-      for (let attempt = 0; attempt < 3; attempt++) {
+      for (let attempt = 0; attempt < 5; attempt++) {
         const devices = await listDevices(accessToken)
         found = devices.some((d: { id: string }) => d.id === deviceId.value)
         if (found) break
-        if (attempt < 2) await new Promise(r => setTimeout(r, 500))
+        if (attempt < 4) await new Promise(r => setTimeout(r, 1000))
       }
       if (!found) {
         error.value = 'Spotify device was created but not found in your available devices. Try opening Spotify and playing a song first.'
