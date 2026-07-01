@@ -36,7 +36,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
+      - PORT=3000
       # YouTube / SoundCloud cookies (optional — can also upload via the room UI)
       # - YT_DLP_COOKIES=/data/cookies.txt
       # Spotify (optional — requires Premium account)
@@ -72,8 +72,8 @@ docker run -d -p 3000:3000 quefy:local
 | Tag      | Description                                  |
 | -------- | -------------------------------------------- |
 | `latest` | Latest stable release                        |
-| `v0.1.0` | Specific version (e.g., v0.1.0, v0.2.0)      |
-| `0.1`    | Latest patch for minor version (e.g., 0.1.x) |
+| `v0.2.3` | Specific version (e.g., v0.2.3, v0.2.4)      |
+| `0.2`    | Latest patch for minor version (e.g., 0.1.x) |
 
 ## Environment Variables
 
@@ -89,7 +89,7 @@ docker run -d \
 
 | Variable | Default | Description |
 |---|---|---|
-| `NODE_ENV` | `production` | Node environment |
+| `PORT` | `3000` | HTTP server port |
 | `YT_DLP_COOKIES` | `data/cookies.txt` | Path to cookies file (or upload via room UI) |
 | `SPOTIFY_CLIENT_ID` | _(optional)_ | Spotify App Client ID |
 | `SPOTIFY_CLIENT_SECRET` | _(optional)_ | Spotify App Client Secret |
@@ -175,6 +175,10 @@ docker pull snoozyman/quefy:latest
 docker stop quefy && docker rm quefy
 docker run -d --name quefy -p 3000:3000 snoozyman/quefy:latest
 ```
+
+## Unraid
+
+A Community Applications template is available via [Snoozyman/unraid-templates](https://github.com/Snoozyman/unraid-templates). Once approved, search for **quefy** directly in the Unraid Apps tab.
 
 ## Troubleshooting
 
