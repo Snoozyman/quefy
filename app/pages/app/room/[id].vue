@@ -6,6 +6,27 @@
     Loading room...
   </div>
   <div
+    v-else-if="notFound"
+    class="max-w-lg mx-auto py-16 text-center space-y-4"
+  >
+    <UIcon
+      name="i-lucide-door-open"
+      class="size-12 text-muted"
+    />
+    <h2 class="text-lg font-semibold">
+      Room not found
+    </h2>
+    <p class="text-sm text-muted">
+      This room may have expired or the code is incorrect.
+    </p>
+    <UButton
+      to="/app/room"
+      variant="outline"
+    >
+      Back to Rooms
+    </UButton>
+  </div>
+  <div
     v-else
     class="mx-2 w-50vw md:mx-4 md:w-2xl space-y-6 py-6"
   >
@@ -205,6 +226,7 @@ const loading = ref(true)
 const addingSong = ref(false)
 const error = ref('')
 const copied = ref(false)
+const notFound = ref(false)
 const activeTab = ref<'player' | 'settings'>('player')
 
 const roomState = ref<RoomState>({
@@ -664,7 +686,8 @@ onMounted(async () => {
   try {
     roomState.value = await $fetch<RoomState>(`/api/room/${roomId}`)
   } catch {
-    router.push('/app/room')
+    notFound.value = true
+    loading.value = false
     return
   }
   loading.value = false
