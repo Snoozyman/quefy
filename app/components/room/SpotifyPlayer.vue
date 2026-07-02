@@ -40,6 +40,13 @@
         variant="solid"
         @click="togglePlay"
       />
+      <UButton
+        icon="i-lucide-skip-forward"
+        size="md"
+        color="neutral"
+        variant="ghost"
+        @click="$emit('skip')"
+      />
       <UIcon
         name="i-simple-icons-spotify"
         class="size-5 text-primary shrink-0"
@@ -77,6 +84,7 @@ const emit = defineEmits<{
   play: []
   pause: []
   seek: [value: number]
+  skip: []
 }>()
 
 function togglePlay() {
