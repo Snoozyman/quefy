@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "nuxt build",
+    "start:prod": "node .output/server/index.mjs",
     "dev": "nuxt dev --dotenv .env.local",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
