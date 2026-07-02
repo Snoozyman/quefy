@@ -85,10 +85,9 @@
             :paused="spotifyPlayer.paused.value"
             :position="spotifyPlayer.position.value"
             :duration="spotifyPlayer.duration.value"
-            @play="togglePlay"
-            @pause="togglePlay"
+            @play="spotifyPlayer.play()"
+            @pause="spotifyPlayer.pause()"
             @seek="(v: number) => spotifyPlayer.seek(v)"
-            @skip="skip"
           />
 
           <RoomAudioPlayer
@@ -96,10 +95,6 @@
             :show="isHost && currentSongIsAudio"
             :current-song="roomState.currentSong"
             :is-playing="roomState.isPlaying"
-            :user-activated="userActivated"
-            @play="togglePlay"
-            @pause="togglePlay"
-            @skip="skip"
             @ended="onAudioEnded"
             @error="(msg: string) => onAudioError(msg)"
             @expired="onAudioExpired"
@@ -354,7 +349,6 @@ async function handleSongChange(song: SongData) {
         ? roomState.value.position / 1000
         : undefined
       nextTick(() => {
-        if (!roomState.value.isPlaying) return
         audioPlayerRef.value?.play(url, startTime)
       })
     }

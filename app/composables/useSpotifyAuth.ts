@@ -49,7 +49,7 @@ export function useSpotifyAuth() {
     loading.value = true
     try {
       const { clientId, redirectUri } = await $fetch<{ clientId: string, redirectUri: string }>('/api/spotify/client-id')
-      const state = `${roomId}:${crypto.randomUUID?.() ?? crypto.getRandomValues(new Uint32Array(4)).join('-')}`
+      const state = `${roomId}:${crypto.randomUUID()}`
       const scopes = [
         'streaming',
         'user-read-email',
@@ -67,10 +67,9 @@ export function useSpotifyAuth() {
       })
 
       window.location.href = `https://accounts.spotify.com/authorize?${params.toString()}`
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err)
+    } catch {
       throw new Error(
-        `Spotify login failed: ${message}`
+        'Spotify Client ID not configured. Set SPOTIFY_CLIENT_ID in the server environment.'
       )
     }
   }
