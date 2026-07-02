@@ -96,3 +96,13 @@ Key response types in `shared/types/`:
 - Use `$fetch` for client-server calls
 - Keep `<script setup>` with TypeScript; no Options API
 - Use `definePageMeta` sparingly (SSR is disabled for `/app/**`)
+
+## Error handling
+
+Quefy is **self-hosted**, not a public SaaS. Error messages shown to end-users should be descriptive and actionable — the user is also the admin who can fix things.
+
+- **Show the real error** – don't swallow exceptions with empty `catch {}` in user-facing operations. Report what went wrong so the user can diagnose the issue (e.g., check their Spotify account, cookies, or yt-dlp version).
+- **Use `error.value`** in composables for UI-visible errors (shown via `UAlert` in the room page).
+- **Catch format** – always capture the error object: `catch (err: unknown) { error.value = \`...\` }`. Include `err instanceof Error ? err.message` for context.
+- **Keep background/supplementary failures silent** – things like `visibilitychange` handlers or fire-and-forget REST calls can swallow errors with `catch(() => {})`.
+- **Don't expose secrets** – error messages should never include tokens, passwords, or cookie contents.

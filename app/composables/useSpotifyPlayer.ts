@@ -304,25 +304,30 @@ export function useSpotifyPlayer() {
 
   async function play(): Promise<void> {
     iosShouldBePlaying = true
+    try {
+      await player.value?.resume()
+      error.value = ''
+    } catch (err) {
+      error.value = `Failed to resume Spotify playback: ${err instanceof Error ? err.message : 'unknown error'}`
+      return
+    }
     if (isIOS() && currentTrack.value && deviceId.value) {
       const auth = useSpotifyAuth()
       const token = auth.getAccessToken()
       if (token) {
-        try {
-          await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId.value}`, {
-            method: 'PUT',
-            headers: { 'Authorization': `Bearer ${token}` }
-          })
-          return
-        } catch {}
+        fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId.value}`, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${token}` }
+        }).catch(() => {})
       }
     }
-    try { await player.value?.resume() } catch {}
   }
 
   async function pause(): Promise<void> {
     iosShouldBePlaying = false
-    try { await player.value?.pause() } catch {}
+    try { await player.value?.pause() } catch (err) {
+      error.value = `Failed to pause Spotify playback: ${err instanceof Error ? err.message : 'unknown error'}`
+    }
   }
 
   async function seek(positionMs: number): Promise<void> {
@@ -331,11 +336,15 @@ export function useSpotifyPlayer() {
       lastSyncPosition = positionMs
       lastSyncTime = Date.now()
       position.value = positionMs
-    } catch {}
+    } catch (err) {
+      error.value = `Failed to seek Spotify track: ${err instanceof Error ? err.message : 'unknown error'}`
+    }
   }
 
   async function nextTrack(): Promise<void> {
-    try { await player.value?.nextTrack() } catch {}
+    try { await player.value?.nextTrack() } catch (err) {
+      error.value = `Failed to skip Spotify track: ${err instanceof Error ? err.message : 'unknown error'}`
+    }
   }
 
   function setVolume(v: number) {
