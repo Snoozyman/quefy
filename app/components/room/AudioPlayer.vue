@@ -65,6 +65,13 @@
         variant="solid"
         @click="togglePlay"
       />
+      <UButton
+        icon="i-lucide-skip-forward"
+        size="md"
+        color="neutral"
+        variant="ghost"
+        @click="emit('skip')"
+      />
       <button
         class="shrink-0 cursor-pointer bg-transparent border-none p-0"
         @click="toggleMute"
@@ -111,6 +118,7 @@ const emit = defineEmits<{
   ended: []
   error: [message: string]
   expired: []
+  skip: []
 }>()
 
 const audioEl = ref<HTMLAudioElement | undefined>()
