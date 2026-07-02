@@ -17,7 +17,7 @@ RUN curl -fsSL https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_
 RUN bun run build
 
 # ---- Production stage ----
-FROM oven/bun:slim
+FROM node:22-bookworm-slim
 
 WORKDIR /app
 
@@ -35,4 +35,4 @@ ENV NODE_ENV=production
 ENV PORT=3000
 EXPOSE ${PORT}
 
-CMD ["bun", "run", ".output/server/index.mjs"]
+CMD ["node", ".output/server/index.mjs"]
