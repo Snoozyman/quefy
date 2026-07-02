@@ -2,6 +2,7 @@ import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { parseYtDlpError } from './yt-dlp-errors'
 import { getCookiesArgs } from './cookies'
+import { getYtDlpPath } from './yt-dlp'
 
 const execFileAsync = promisify(execFile)
 
@@ -34,7 +35,7 @@ export async function getSoundcloudAudioStreamUrl(trackUrl: string): Promise<Aud
   let stdout: string
   let stderr: string
   try {
-    const result = await execFileAsync('yt-dlp', [
+    const result = await execFileAsync(getYtDlpPath(), [
       '-f',
       'bestaudio/best',
       '--print-json',
