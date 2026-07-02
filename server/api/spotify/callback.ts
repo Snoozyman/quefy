@@ -1,4 +1,4 @@
-import { exchangeCode } from '#server/utils/spotify'
+import { exchangeCode, getRedirectUri } from '#server/utils/spotify'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -19,7 +19,8 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    const tokens = await exchangeCode(code)
+    const redirectUri = getRedirectUri(event)
+    const tokens = await exchangeCode(code, redirectUri)
     const params = new URLSearchParams({
       access_token: tokens.accessToken,
       refresh_token: tokens.refreshToken,
