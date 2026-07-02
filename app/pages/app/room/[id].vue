@@ -243,8 +243,16 @@ function updateMediaSession(song: SongData | null) {
 
     navigator.mediaSession.playbackState = roomState.value.isPlaying ? 'playing' : 'paused'
 
-    navigator.mediaSession.setActionHandler('play', () => togglePlay())
-    navigator.mediaSession.setActionHandler('pause', () => togglePlay())
+    navigator.mediaSession.setActionHandler('play', () => {
+      if (!roomState.value.isPlaying) {
+        togglePlay()
+      }
+    })
+    navigator.mediaSession.setActionHandler('pause', () => {
+      if (roomState.value.isPlaying) {
+        togglePlay()
+      }
+    })
     navigator.mediaSession.setActionHandler('nexttrack', () => skip())
     navigator.mediaSession.setActionHandler('previoustrack', () => {
       if (song.source === 'spotify') {
@@ -254,14 +262,52 @@ function updateMediaSession(song: SongData | null) {
       }
     })
     navigator.mediaSession.setActionHandler('seekto', (details) => {
-      const ms = details.seekTime ?? 0
+      const seconds = details.seekTime ?? 0
       if (song.source === 'spotify') {
-        spotifyPlayer.seek(ms)
+        spotifyPlayer.seek(Math.round(seconds * 1000))
       } else {
-        audioPlayerRef.value?.seek(ms / 1000)
+        audioPlayerRef.value?.seek(seconds)
       }
     })
   }
+}
+
+function updateMediaSessionPlaybackState() {
+  if (!('mediaSession' in navigator)) return
+  if (!roomState.value.currentSong) {
+    navigator.mediaSession.playbackState = 'none'
+    return
+  }
+  navigator.mediaSession.playbackState = roomState.value.isPlaying ? 'playing' : 'paused'
+}
+
+function updateMediaSessionPosition(song: SongData | null) {
+  if (!song || !('mediaSession' in navigator)) return
+
+  const mediaSessionWithPosition = navigator.mediaSession as MediaSession & {
+    setPositionState?: (state: MediaPositionState) => void
+  }
+
+  if (!mediaSessionWithPosition.setPositionState) return
+
+  let durationSeconds = 0
+  let positionSeconds = 0
+
+  if (song.source === 'spotify') {
+    durationSeconds = Math.max(0, spotifyPlayer.duration.value / 1000)
+    positionSeconds = Math.max(0, spotifyPlayer.position.value / 1000)
+  } else {
+    durationSeconds = Math.max(0, audioPlayerRef.value?.state.duration.value ?? 0)
+    positionSeconds = Math.max(0, audioPlayerRef.value?.state.currentTime.value ?? 0)
+  }
+
+  if (!isFinite(durationSeconds) || durationSeconds <= 0) return
+
+  mediaSessionWithPosition.setPositionState({
+    duration: durationSeconds,
+    playbackRate: 1,
+    position: Math.min(positionSeconds, durationSeconds)
+  })
 }
 
 function onSpotifyPlayerReady() {
@@ -360,8 +406,23 @@ watch(
   () => roomState.value.currentSong,
   (song) => {
     updateMediaSession(song)
+    updateMediaSessionPosition(song)
   },
   { immediate: true }
+)
+
+watch(
+  () => roomState.value.isPlaying,
+  () => {
+    updateMediaSessionPlaybackState()
+  }
+)
+
+watch(
+  () => [spotifyPlayer.position.value, spotifyPlayer.duration.value, audioPlayerRef.value?.state.currentTime.value, audioPlayerRef.value?.state.duration.value],
+  () => {
+    updateMediaSessionPosition(roomState.value.currentSong)
+  }
 )
 
 async function transferSpotifyPlayback(trackUri: string) {
@@ -658,12 +719,6 @@ onMounted(() => {
 
   document.addEventListener('pointerdown', activateUser, { once: true })
   document.addEventListener('keydown', activateUser, { once: true })
-})
-
-watch(loading, (val) => {
-  if (!val && isHost.value && roomState.value.currentSong) {
-    togglePlay()
-  }
 })
 
 onUnmounted(() => {
