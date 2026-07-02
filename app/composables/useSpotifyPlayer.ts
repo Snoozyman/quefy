@@ -70,6 +70,7 @@ let lastSyncTime = 0
 let tickTimer: ReturnType<typeof setInterval> | null = null
 let wasPlaying = false
 let onTrackEnd: (() => void) | null = null
+let iosShouldBePlaying = false
 
 function startTick() {
   stopTick()
@@ -85,6 +86,33 @@ function stopTick() {
     clearInterval(tickTimer)
     tickTimer = null
   }
+}
+
+function isIOS(): boolean {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+}
+
+let visibilityHandlerSetup = false
+
+function setupVisibilityHandler() {
+  if (visibilityHandlerSetup || !isIOS()) return
+  visibilityHandlerSetup = true
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return
+    if (!iosShouldBePlaying) return
+    if (!deviceId.value) return
+
+    const auth = useSpotifyAuth()
+    const token = auth.getAccessToken()
+    if (!token) return
+
+    fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId.value}`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${token}` }
+    }).catch(() => {})
+  })
 }
 
 function isFirefox(): boolean {
@@ -112,6 +140,8 @@ function loadSDK(): Promise<void> {
 }
 
 export function useSpotifyPlayer() {
+  setupVisibilityHandler()
+
   async function init(accessToken: string): Promise<boolean> {
     if (player.value) {
       await player.value.disconnect()
@@ -273,10 +303,25 @@ export function useSpotifyPlayer() {
   }
 
   async function play(): Promise<void> {
+    iosShouldBePlaying = true
+    if (isIOS() && currentTrack.value && deviceId.value) {
+      const auth = useSpotifyAuth()
+      const token = auth.getAccessToken()
+      if (token) {
+        try {
+          await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId.value}`, {
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          return
+        } catch {}
+      }
+    }
     try { await player.value?.resume() } catch {}
   }
 
   async function pause(): Promise<void> {
+    iosShouldBePlaying = false
     try { await player.value?.pause() } catch {}
   }
 
