@@ -63,7 +63,7 @@
         size="md"
         color="primary"
         variant="solid"
-        @click="togglePlay"
+        @click="emitPlayPause"
       />
       <UButton
         icon="i-lucide-skip-forward"
@@ -108,16 +108,19 @@
 import Hls from 'hls.js'
 import type { SongData } from '#shared/types/room'
 
-defineProps<{
+const props = defineProps<{
   show: boolean
   currentSong: SongData | null
   isPlaying: boolean
+  userActivated: boolean
 }>()
 
 const emit = defineEmits<{
   ended: []
   error: [message: string]
   expired: []
+  play: []
+  pause: []
   skip: []
 }>()
 
@@ -222,13 +225,11 @@ function pause() {
   playing.value = false
 }
 
-function togglePlay() {
-  if (audioEl.value?.paused) {
-    audioEl.value.play()
-    playing.value = true
+function emitPlayPause() {
+  if (props.isPlaying) {
+    emit('pause')
   } else {
-    audioEl.value?.pause()
-    playing.value = false
+    emit('play')
   }
 }
 
