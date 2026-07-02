@@ -19,16 +19,25 @@ Built with [Nuxt](https://nuxt.com), [Nuxt UI](https://ui.nuxt.com),
 
 ## Quick Start
 
+**Requires [Bun](https://bun.sh) >= 1.2.**
+
 ```bash
 bun install
-bun run dev
+bun run build && bun run preview
 ```
 
-## Test
+Open [http://localhost:3000](http://localhost:3000).
 
-```bash
-bun test
-```
+## Commands
+
+| Command | Description |
+|---|---|
+| `bun run dev` | Start dev server (uses `.env.local`) |
+| `bun run build` | Production build |
+| `bun run preview` | Preview production build |
+| `bun run typecheck` | TypeScript typecheck |
+| `bun run lint` | ESLint |
+| `bun test` | Run tests (Bun test runner) |
 
 ## Docker
 

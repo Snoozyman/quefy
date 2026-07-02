@@ -3,6 +3,9 @@
   "version": "0.2.3",
   "private": true,
   "type": "module",
+  "engines": {
+    "bun": ">=1.2"
+  },
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev --dotenv .env.local",
