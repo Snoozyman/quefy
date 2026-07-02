@@ -133,6 +133,10 @@ function destroyHls() {
 function play(url: string, startTime?: number) {
   if (!audioEl.value) return
   destroyHls()
+  currentTime.value = 0
+  duration.value = 0
+  seekValue.value = 0
+  errorEmitted = false
 
   if (url.includes('m3u8')) {
     if (Hls.isSupported()) {
@@ -172,6 +176,20 @@ function play(url: string, startTime?: number) {
       hls.value = instance
     } else if (audioEl.value.canPlayType('application/vnd.apple.mpegurl')) {
       audioEl.value.src = url
+      audioEl.value.load()
+      if (startTime) {
+        audioEl.value.currentTime = startTime
+      }
+      playing.value = true
+      audioEl.value.play().catch((err: unknown) => {
+        const name = err instanceof DOMException ? err.name : ''
+        if (name === 'NotAllowedError') {
+          playing.value = false
+          return
+        }
+        playing.value = false
+        emit('error', 'Playback blocked. Try clicking play again.')
+      })
     } else {
       playing.value = false
       emit('error', 'HLS audio is not supported in this browser.')
