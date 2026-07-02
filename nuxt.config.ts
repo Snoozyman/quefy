@@ -49,7 +49,6 @@ export default defineNuxtConfig({
 
   compatibilityDate: "2025-01-15",
   nitro: {
-    preset: "bun",
     experimental: {
       websocket: true,
     },
@@ -62,9 +61,6 @@ export default defineNuxtConfig({
         "workbox-window",
         "hls.js",
       ],
-    },
-    build: {
-      chunkSizeWarningLimit: 1000,
     },
   },
 
@@ -106,7 +102,7 @@ export default defineNuxtConfig({
     },
     workbox: {
       globPatterns: ["**/*.{js,css,html,png,svg,ico}"],
-      navigateFallback: "/app/overview",
+      navigateFallback: '/app/overview',
       navigateFallbackAllowlist: [/^\/app\//],
       navigateFallbackDenylist: [/^\/api\//, /\?.*$/],
     },
