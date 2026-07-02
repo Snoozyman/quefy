@@ -15,11 +15,18 @@ function getClientSecret(): string {
   return process.env.SPOTIFY_CLIENT_SECRET ?? ''
 }
 
-export function getRedirectUri(): string {
-  return (
-    process.env.SPOTIFY_REDIRECT_URI
-    ?? 'http://localhost:3000/api/spotify/callback'
-  )
+export function getRedirectUri(event?: { node: { req: { headers: { host?: string } } } }): string {
+  const configured = process.env.SPOTIFY_REDIRECT_URI
+  if (configured) return configured
+
+  if (event) {
+    const host = event.node.req.headers.host
+    if (host) {
+      return `http://${host}/api/spotify/callback`
+    }
+  }
+
+  return 'http://localhost:3000/api/spotify/callback'
 }
 
 async function getClientCredentialsToken(): Promise<string> {
@@ -82,7 +89,8 @@ export async function searchTracks(
 }
 
 export async function exchangeCode(
-  code: string
+  code: string,
+  redirectUri?: string
 ): Promise<TokenResponse> {
   const res = await fetch('https://accounts.spotify.com/api/token', {
     method: 'POST',
@@ -93,7 +101,7 @@ export async function exchangeCode(
     body: new URLSearchParams({
       grant_type: 'authorization_code',
       code,
-      redirect_uri: getRedirectUri()
+      redirect_uri: redirectUri ?? getRedirectUri()
     })
   })
 

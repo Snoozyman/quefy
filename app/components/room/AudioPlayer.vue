@@ -63,7 +63,14 @@
         size="md"
         color="primary"
         variant="solid"
-        @click="togglePlay"
+        @click="emitPlayPause"
+      />
+      <UButton
+        icon="i-lucide-skip-forward"
+        size="md"
+        color="neutral"
+        variant="ghost"
+        @click="emit('skip')"
       />
       <button
         class="shrink-0 cursor-pointer bg-transparent border-none p-0"
@@ -101,16 +108,20 @@
 import Hls from 'hls.js'
 import type { SongData } from '#shared/types/room'
 
-defineProps<{
+const props = defineProps<{
   show: boolean
   currentSong: SongData | null
   isPlaying: boolean
+  userActivated: boolean
 }>()
 
 const emit = defineEmits<{
   ended: []
   error: [message: string]
   expired: []
+  play: []
+  pause: []
+  skip: []
 }>()
 
 const audioEl = ref<HTMLAudioElement | undefined>()
@@ -150,16 +161,14 @@ function play(url: string, startTime?: number) {
         if (startTime) {
           audioEl.value!.currentTime = startTime
         }
-        playing.value = true
-        audioEl.value?.play().catch((err: unknown) => {
-          const name = err instanceof DOMException ? err.name : ''
-          if (name === 'NotAllowedError') {
-            playing.value = false
-            return
-          }
-          playing.value = false
-          emit('error', 'Playback blocked. Try clicking play again.')
-        })
+        audioEl.value?.play()
+          .then(() => { playing.value = true })
+          .catch((err: unknown) => {
+            const name = err instanceof DOMException ? err.name : ''
+            if (name !== 'NotAllowedError') {
+              emit('error', 'Playback blocked. Try clicking play again.')
+            }
+          })
       })
       instance.on(Hls.Events.ERROR, (_event, data) => {
         if (data.fatal) {
@@ -180,16 +189,14 @@ function play(url: string, startTime?: number) {
       if (startTime) {
         audioEl.value.currentTime = startTime
       }
-      playing.value = true
-      audioEl.value.play().catch((err: unknown) => {
-        const name = err instanceof DOMException ? err.name : ''
-        if (name === 'NotAllowedError') {
-          playing.value = false
-          return
-        }
-        playing.value = false
-        emit('error', 'Playback blocked. Try clicking play again.')
-      })
+      audioEl.value.play()
+        .then(() => { playing.value = true })
+        .catch((err: unknown) => {
+          const name = err instanceof DOMException ? err.name : ''
+          if (name !== 'NotAllowedError') {
+            emit('error', 'Playback blocked. Try clicking play again.')
+          }
+        })
     } else {
       playing.value = false
       emit('error', 'HLS audio is not supported in this browser.')
@@ -203,16 +210,14 @@ function play(url: string, startTime?: number) {
   if (startTime) {
     audioEl.value.currentTime = startTime
   }
-  playing.value = true
-  audioEl.value.play().catch((err: unknown) => {
-    const name = err instanceof DOMException ? err.name : ''
-    if (name === 'NotAllowedError') {
-      playing.value = false
-      return
-    }
-    playing.value = false
-    emit('error', 'Playback blocked. Try clicking play again.')
-  })
+  audioEl.value.play()
+    .then(() => { playing.value = true })
+    .catch((err: unknown) => {
+      const name = err instanceof DOMException ? err.name : ''
+      if (name !== 'NotAllowedError') {
+        emit('error', 'Playback blocked. Try clicking play again.')
+      }
+    })
 }
 
 function pause() {
@@ -220,20 +225,25 @@ function pause() {
   playing.value = false
 }
 
-function togglePlay() {
-  if (audioEl.value?.paused) {
-    audioEl.value.play()
-    playing.value = true
+function emitPlayPause() {
+  if (props.isPlaying) {
+    emit('pause')
   } else {
-    audioEl.value?.pause()
-    playing.value = false
+    emit('play')
   }
 }
 
 function resume() {
   if (!audioEl.value) return
+  playing.value = false
   audioEl.value.play()
-  playing.value = true
+    .then(() => { playing.value = true })
+    .catch((err: unknown) => {
+      const name = err instanceof DOMException ? err.name : ''
+      if (name !== 'NotAllowedError') {
+        emit('error', 'Playback blocked. Try clicking play again.')
+      }
+    })
 }
 
 function formatTime(s: number): string {
