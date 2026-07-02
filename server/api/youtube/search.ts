@@ -2,6 +2,7 @@ import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { parseYtDlpError } from '#server/utils/yt-dlp-errors'
 import { getCookiesArgs } from '#server/utils/cookies'
+import { getYtDlpPath } from '#server/utils/yt-dlp'
 
 const execFileAsync = promisify(execFile)
 
@@ -25,7 +26,7 @@ export default defineEventHandler(async (event) => {
 
   let stdout: string
   try {
-    const result = await execFileAsync('yt-dlp', [
+    const result = await execFileAsync(getYtDlpPath(), [
       `ytsearch${maxResults}:${q}`,
       '--flat-playlist',
       '--print-json',

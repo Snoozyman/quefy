@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs'
 import { promisify } from 'node:util'
 import { saveCookieContent, deleteCookieFile, getCookiePath, isValidNetscapeFormat } from '#server/utils/cookies'
 import { clearAudioCache } from '#server/utils/youtube'
+import { getYtDlpPath } from '#server/utils/yt-dlp'
 
 const execFileAsync = promisify(execFile)
 
@@ -47,7 +48,7 @@ export default defineEventHandler(async (event) => {
   try {
     const cookiesPath = getCookiePath()
     if (existsSync(cookiesPath)) {
-      await execFileAsync('yt-dlp', [
+      await execFileAsync(getYtDlpPath(), [
         '--cookies', cookiesPath,
         'ytsearch1:test',
         '--flat-playlist',
