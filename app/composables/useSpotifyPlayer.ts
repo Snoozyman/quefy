@@ -304,23 +304,54 @@ export function useSpotifyPlayer() {
 
   async function play(): Promise<void> {
     iosShouldBePlaying = true
+    let resumeError = ''
     try {
       await player.value?.resume()
-      error.value = ''
-    } catch (err) {
-      error.value = `Failed to resume Spotify playback: ${err instanceof Error ? err.message : 'unknown error'}`
-      return
+    } catch (err: unknown) {
+      resumeError = err instanceof Error ? err.message : 'unknown error'
     }
+
+    let iosFallbackError = ''
     if (isIOS() && currentTrack.value && deviceId.value) {
       const auth = useSpotifyAuth()
-      const token = auth.getAccessToken()
+      let token = auth.getAccessToken()
+      if (!token) {
+        const refreshed = await auth.refreshToken()
+        if (refreshed) {
+          token = auth.getAccessToken()
+        }
+      }
+
       if (token) {
-        fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId.value}`, {
+        const res = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId.value}`, {
           method: 'PUT',
           headers: { 'Authorization': `Bearer ${token}` }
-        }).catch(() => {})
+        })
+        if (!res.ok) {
+          const body = await res.text().catch(() => '')
+          iosFallbackError = body || `HTTP ${res.status}`
+        }
+      } else {
+        iosFallbackError = 'No Spotify access token available'
       }
     }
+
+    if (!resumeError && !iosFallbackError) {
+      error.value = ''
+      return
+    }
+
+    if (resumeError && iosFallbackError) {
+      error.value = `Failed to resume Spotify playback: SDK (${resumeError}), iOS fallback (${iosFallbackError})`
+      return
+    }
+
+    if (resumeError) {
+      error.value = `Failed to resume Spotify playback: ${resumeError}`
+      return
+    }
+
+    error.value = `Spotify iOS fallback failed: ${iosFallbackError}`
   }
 
   async function pause(): Promise<void> {
