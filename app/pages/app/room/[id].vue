@@ -330,24 +330,26 @@ function onSpotifyPlayerReady() {
 let lastSongId: string | null = null
 let currentPlayingId = ''
 
-function handleSongChange(song: SongData) {
+async function handleSongChange(song: SongData) {
   if (!isHost.value) return
   if (song.id === currentPlayingId) return
   currentPlayingId = song.id
   if (song.source === 'spotify' && song.trackUri) {
     audioPlayerRef.value?.pause()
     spotifyPlayer.setOnTrackEnd(skip)
-    transferSpotifyPlayback(song.trackUri)
+    await transferSpotifyPlayback(song.trackUri)
   }
   if ((song.source === 'youtube' || song.source === 'soundcloud') && song.url) {
     spotifyPlayer.setOnTrackEnd(null)
     spotifyPlayer.resetErrors()
-    spotifyPlayer.pause()
+    await spotifyPlayer.pause()
     if (roomState.value.isPlaying) {
-      if (!userActivated.value) return
       const url = song.url!
+      const startTime = roomState.value.position > 0
+        ? roomState.value.position / 1000
+        : undefined
       nextTick(() => {
-        audioPlayerRef.value?.play(url)
+        audioPlayerRef.value?.play(url, startTime)
       })
     }
   }
@@ -391,7 +393,7 @@ watch(
     if (!song || !isHost.value) return
     if (song.id === lastSongId) return
     lastSongId = song.id
-    handleSongChange(song)
+    void handleSongChange(song)
   }
 )
 
@@ -630,7 +632,7 @@ async function skip() {
     roomState.value.isPlaying = res.isPlaying
     if (res.currentSong) {
       lastSongId = res.currentSong.id
-      handleSongChange(res.currentSong)
+      void handleSongChange(res.currentSong)
     } else {
       spotifyPlayer.pause()
     }
