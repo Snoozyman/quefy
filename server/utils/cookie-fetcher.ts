@@ -1,5 +1,4 @@
 import { execSync } from 'node:child_process'
-import { normalizeCurlOutput } from './cookies'
 
 export interface CookieEntry {
   name: string
@@ -20,7 +19,7 @@ export function parseNetscapeCookies(content: string): CookieEntry[] {
 
 export async function fetchYouTubeCookies(): Promise<{ cookies: string, count: number }> {
   try {
-    const raw = execSync(
+    const output = execSync(
       'curl -s -c - -L -o /dev/null'
       + ' -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"'
       + ' -H "Accept-Language: en-US,en;q=0.9"'
@@ -29,7 +28,6 @@ export async function fetchYouTubeCookies(): Promise<{ cookies: string, count: n
       { timeout: 30000, encoding: 'utf-8' },
     )
 
-    const output = normalizeCurlOutput(raw)
     const lines = output.split('\n').filter(l => l && !l.startsWith('#'))
 
     if (lines.length === 0) {
@@ -47,7 +45,7 @@ export async function fetchYouTubeCookies(): Promise<{ cookies: string, count: n
 
 export async function fetchSoundCloudCookies(): Promise<{ cookies: string, count: number }> {
   try {
-    const raw = execSync(
+    const output = execSync(
       'curl -s -c - -L -o /dev/null'
       + ' -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"'
       + ' -H "Accept-Language: en-US,en;q=0.9"'
@@ -56,7 +54,6 @@ export async function fetchSoundCloudCookies(): Promise<{ cookies: string, count
       { timeout: 30000, encoding: 'utf-8' },
     )
 
-    const output = normalizeCurlOutput(raw)
     const lines = output.split('\n').filter(l => l && !l.startsWith('#'))
 
     if (lines.length === 0) {

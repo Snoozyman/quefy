@@ -7,18 +7,6 @@ export function getCookiePath(): string {
   return process.env.YT_DLP_COOKIES ?? join(DATA_DIR, 'cookies.txt')
 }
 
-export function normalizeCurlOutput(content: string): string {
-  return content
-    .split('\n')
-    .map((line) => {
-      if (line.startsWith('#HttpOnly_')) {
-        return line.slice('#HttpOnly_'.length)
-      }
-      return line
-    })
-    .join('\n')
-}
-
 export function isValidNetscapeFormat(content: string): boolean {
   let hasCookie = false
   for (const line of content.split('\n')) {
@@ -54,10 +42,10 @@ export function getCookiesArgs(): string[] {
 
 export function saveCookieContent(content: string): { ok: true, size: number } {
   const path = getCookiePath()
-  const normalized = normalizeCurlOutput(content.trim())
+  const trimmed = content.trim()
   mkdirSync(DATA_DIR, { recursive: true })
-  writeFileSync(path, normalized, 'utf-8')
-  const size = Buffer.byteLength(normalized, 'utf-8')
+  writeFileSync(path, trimmed, 'utf-8')
+  const size = Buffer.byteLength(trimmed, 'utf-8')
   return { ok: true, size }
 }
 
