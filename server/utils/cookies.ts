@@ -90,15 +90,21 @@ export function mergeAndSaveCookieContent(incoming: string): {
     merged = incomingLines
   }
 
-  const output = merged.join('\n')
+  if (merged.length === 0) {
+    if (existsSync(path)) unlinkSync(path)
+    return { ok: true, size: 0 }
+  }
+
+  const output = `# Netscape HTTP Cookie File\n${merged.join('\n')}\n`
   writeFileSync(path, output, 'utf-8')
   const size = Buffer.byteLength(output, 'utf-8')
   return { ok: true, size }
 }
 
 function parseCookieLines(content: string): string[] {
+  const normalized = normalizeCurlOutput(content)
   const lines: string[] = []
-  for (const line of content.split('\n')) {
+  for (const line of normalized.split('\n')) {
     const trimmed = line.trim()
     if (!trimmed || trimmed.startsWith('#')) continue
     const fields = trimmed.split('\t')
