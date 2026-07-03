@@ -110,7 +110,9 @@
                 :key="c.name"
                 class="flex items-center justify-between px-3 py-1.5 text-xs border-b border-default last:border-b-0"
               >
-                <span class="font-mono truncate mr-2 min-w-0">{{ c.name }}</span>
+                <span class="font-mono truncate mr-2 min-w-0">{{
+                  c.name
+                }}</span>
                 <span class="text-muted truncate mr-2 min-w-0">{{
                   c.domain
                 }}</span>
