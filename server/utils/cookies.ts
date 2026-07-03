@@ -68,6 +68,46 @@ export function saveCookieContent(content: string): { ok: true; size: number } {
   return { ok: true, size }
 }
 
+export function mergeAndSaveCookieContent(incoming: string): {
+  ok: true
+  size: number
+} {
+  const path = getCookiePath()
+  mkdirSync(DATA_DIR, { recursive: true })
+
+  const incomingLines = parseCookieLines(incoming)
+  const incomingDomains = new Set(incomingLines.map((l) => l.split('\t')[0]!))
+
+  let merged: string[]
+  if (existsSync(path)) {
+    const existing = readFileSync(path, 'utf-8')
+    const existingLines = parseCookieLines(existing)
+    const kept = existingLines.filter(
+      (l) => !incomingDomains.has(l.split('\t')[0]!)
+    )
+    merged = [...kept, ...incomingLines]
+  } else {
+    merged = incomingLines
+  }
+
+  const output = merged.join('\n')
+  writeFileSync(path, output, 'utf-8')
+  const size = Buffer.byteLength(output, 'utf-8')
+  return { ok: true, size }
+}
+
+function parseCookieLines(content: string): string[] {
+  const lines: string[] = []
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith('#')) continue
+    const fields = trimmed.split('\t')
+    if (fields.length < 7) continue
+    lines.push(trimmed)
+  }
+  return lines
+}
+
 export function getCookieInfo(): { exists: boolean; size: number } {
   const path = getCookiePath()
   if (existsSync(path)) {

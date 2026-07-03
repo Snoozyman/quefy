@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { promisify } from 'node:util'
 import {
-  saveCookieContent,
+  mergeAndSaveCookieContent,
   deleteCookieFile,
   getCookiePath,
   isValidNetscapeFormat
@@ -55,7 +55,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  saveCookieContent(content)
+  mergeAndSaveCookieContent(content)
 
   let verified = false
   let verifyError = ''

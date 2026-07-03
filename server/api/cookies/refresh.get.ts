@@ -4,7 +4,10 @@ import {
   parseNetscapeCookies
 } from '#server/utils/cookie-fetcher'
 import type { CookieEntry } from '#server/utils/cookie-fetcher'
-import { saveCookieContent, isValidNetscapeFormat } from '#server/utils/cookies'
+import {
+  mergeAndSaveCookieContent,
+  isValidNetscapeFormat
+} from '#server/utils/cookies'
 import { clearAudioCache } from '#server/utils/youtube'
 import { clearSoundcloudAudioCache } from '#server/utils/soundcloud'
 
@@ -48,7 +51,9 @@ export default defineEventHandler(async () => {
       })
     }
 
-    saveCookieContent(cookies)
+    for (const part of parts) {
+      mergeAndSaveCookieContent(part)
+    }
     clearAudioCache()
     clearSoundcloudAudioCache()
 
