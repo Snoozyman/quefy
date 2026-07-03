@@ -29,6 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /tmp/yt-dlp /usr/local/bin/yt-dlp
+COPY --from=build /usr/local/bin/bun /usr/local/bin/bun
 COPY --from=build /app/.output ./.output
 
 ENV NODE_ENV=production

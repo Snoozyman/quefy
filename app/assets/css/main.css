@@ -16,3 +16,8 @@
   --color-green-900: #0a5331;
   --color-green-950: #052e16;
 }
+
+body {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  overscroll-behavior: none;
+}

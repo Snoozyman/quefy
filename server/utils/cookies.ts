@@ -68,6 +68,58 @@ export function saveCookieContent(content: string): { ok: true; size: number } {
   return { ok: true, size }
 }
 
+export function mergeAndSaveCookieContent(incoming: string): {
+  ok: true
+  size: number
+} {
+  const path = getCookiePath()
+  mkdirSync(DATA_DIR, { recursive: true })
+
+  const incomingLines = parseCookieLines(incoming)
+  const incomingKeys = new Set(
+    incomingLines.map((l) => {
+      const f = l.split('\t')
+      return f[0]! + '\t' + f[5]!
+    })
+  )
+
+  let merged: string[]
+  if (existsSync(path)) {
+    const existing = readFileSync(path, 'utf-8')
+    const existingLines = parseCookieLines(existing)
+    const kept = existingLines.filter((l) => {
+      const f = l.split('\t')
+      return !incomingKeys.has(f[0]! + '\t' + f[5]!)
+    })
+    merged = [...kept, ...incomingLines]
+  } else {
+    merged = incomingLines
+  }
+
+  if (merged.length === 0) {
+    if (existsSync(path)) unlinkSync(path)
+    return { ok: true, size: 0 }
+  }
+
+  const output = `# Netscape HTTP Cookie File\n${merged.join('\n')}\n`
+  writeFileSync(path, output, 'utf-8')
+  const size = Buffer.byteLength(output, 'utf-8')
+  return { ok: true, size }
+}
+
+function parseCookieLines(content: string): string[] {
+  const normalized = normalizeCurlOutput(content)
+  const lines: string[] = []
+  for (const line of normalized.split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith('#')) continue
+    const fields = trimmed.split('\t')
+    if (fields.length < 7) continue
+    lines.push(trimmed)
+  }
+  return lines
+}
+
 export function getCookieInfo(): { exists: boolean; size: number } {
   const path = getCookiePath()
   if (existsSync(path)) {

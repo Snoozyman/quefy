@@ -2,13 +2,13 @@ import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { promisify } from 'node:util'
 import {
-  saveCookieContent,
+  mergeAndSaveCookieContent,
   deleteCookieFile,
   getCookiePath,
   isValidNetscapeFormat
 } from '#server/utils/cookies'
 import { clearAudioCache } from '#server/utils/youtube'
-import { getYtDlpPath } from '#server/utils/yt-dlp'
+import { getYtDlpPath, getYtDlpBaseArgs } from '#server/utils/yt-dlp'
 
 const execFileAsync = promisify(execFile)
 
@@ -55,7 +55,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  saveCookieContent(content)
+  mergeAndSaveCookieContent(content)
 
   let verified = false
   let verifyError = ''
@@ -72,7 +72,8 @@ export default defineEventHandler(async (event) => {
           '--print-json',
           '--no-warnings',
           '--timeout',
-          '10'
+          '10',
+          ...getYtDlpBaseArgs()
         ],
         { timeout: 15000 }
       )

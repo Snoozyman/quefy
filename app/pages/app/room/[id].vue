@@ -31,30 +31,7 @@
           </p>
         </div>
 
-        <div class="flex gap-px bg-border rounded-lg mb-4">
-          <button
-            class="flex-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors"
-            :class="
-              activeTab === 'player'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-default text-muted hover:bg-muted/50'
-            "
-            @click="activeTab = 'player'"
-          >
-            Player
-          </button>
-          <button
-            class="flex-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors"
-            :class="
-              activeTab === 'settings'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-default text-muted hover:bg-muted/50'
-            "
-            @click="activeTab = 'settings'"
-          >
-            Settings
-          </button>
-        </div>
+        <UTabs :items="tabItems" v-model="activeTab" />
 
         <div v-show="activeTab === 'player'">
           <RoomSpotifyPlayer
@@ -171,6 +148,10 @@ const spotifyAuth = useSpotifyAuth()
 const spotifyPlayer = useSpotifyPlayer()
 
 const addingSong = ref(false)
+const tabItems = [
+  { label: 'Player', value: 'player' },
+  { label: 'Settings', value: 'settings' }
+]
 const activeTab = ref<'player' | 'settings'>('player')
 
 const playDisabled = computed(

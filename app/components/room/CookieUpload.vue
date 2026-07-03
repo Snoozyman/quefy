@@ -94,21 +94,7 @@
             v-if="cookieExists && (ytCookies.length || scCookies.length)"
             class="space-y-2"
           >
-            <div class="flex gap-px bg-border rounded-lg">
-              <button
-                v-for="tab in tabs"
-                :key="tab.source"
-                class="flex-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
-                :class="
-                  activeTab === tab.source
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-default text-muted hover:bg-muted/50'
-                "
-                @click="activeTab = tab.source"
-              >
-                {{ tab.label }}
-              </button>
-            </div>
+            <UTabs :items="tabItems" v-model="activeTab" />
 
             <div
               class="max-h-32 overflow-y-auto rounded-lg border border-default"
@@ -124,8 +110,15 @@
                 :key="c.name"
                 class="flex items-center justify-between px-3 py-1.5 text-xs border-b border-default last:border-b-0"
               >
-                <span class="font-mono truncate mr-2">{{ c.name }}</span>
-                <span class="text-muted truncate">{{ c.domain }}</span>
+                <span class="font-mono truncate mr-2 min-w-0">{{
+                  c.name
+                }}</span>
+                <span class="text-muted truncate mr-2 min-w-0">{{
+                  c.domain
+                }}</span>
+                <span class="text-muted shrink-0">{{
+                  formatExpiry(c.expires)
+                }}</span>
               </div>
             </div>
           </div>
@@ -139,6 +132,7 @@
 interface CookieEntry {
   name: string
   domain: string
+  expires: number
 }
 
 interface CookieSaveResponse {
@@ -177,12 +171,9 @@ const ytCookies = ref<CookieEntry[]>([])
 const scCookies = ref<CookieEntry[]>([])
 const activeTab = ref<'youtube' | 'soundcloud'>('youtube')
 
-const tabs = computed(() => [
-  { source: 'youtube' as const, label: `YouTube (${ytCookies.value.length})` },
-  {
-    source: 'soundcloud' as const,
-    label: `SoundCloud (${scCookies.value.length})`
-  }
+const tabItems = computed(() => [
+  { value: 'youtube', label: `YouTube (${ytCookies.value.length})` },
+  { value: 'soundcloud', label: `SoundCloud (${scCookies.value.length})` }
 ])
 
 const activeCookies = computed(() =>
@@ -301,6 +292,15 @@ async function deleteCookies() {
   } finally {
     deleting.value = false
   }
+}
+
+function formatExpiry(ts: number): string {
+  if (!ts) return 'Session'
+  return new Date(ts * 1000).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
 }
 
 onMounted(fetchStatus)

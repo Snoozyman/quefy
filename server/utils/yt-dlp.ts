@@ -23,3 +23,7 @@ export function getYtDlpPath(): string {
   cachedPath = 'yt-dlp'
   return cachedPath
 }
+
+export function getYtDlpBaseArgs(): string[] {
+  return ['--js-runtimes', 'bun']
+}
