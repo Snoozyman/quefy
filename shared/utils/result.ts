@@ -1,8 +1,7 @@
 export type ApiResponse<T> = Result<never, Error> | Result<T, never>
 
-export type Result<T, E extends Error | string>
-  = | { success: true, data: T }
-    | { success: false, error: E }
+export type Result<T, E extends Error | string> =
+  { success: true; data: T } | { success: false; error: E }
 
 export function success<T>(data: T): Result<T, never> {
   return { success: true, data }

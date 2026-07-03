@@ -11,4 +11,4 @@ changelog:
     - title: CI & Chores
       labels: [ci, chore, test]
     - title: Other Changes
-      labels: ["*"]
+      labels: ['*']

@@ -1,46 +1,29 @@
 <template>
-  <div
-    v-if="show"
-    class="rounded-xl border border-default p-4 space-y-3"
-  >
+  <div v-if="show" class="rounded-xl border border-default p-4 space-y-3">
     <div class="flex items-center gap-3">
       <img
         v-if="currentSong?.albumImageUrl"
         :src="currentSong.albumImageUrl"
         alt=""
         class="size-12 shrink-0 rounded-lg object-cover"
-      >
+      />
       <div
         v-else
         class="size-12 shrink-0 rounded-lg bg-muted flex items-center justify-center"
       >
-        <UIcon
-          name="i-lucide-music"
-          class="size-6 text-muted"
-        />
+        <UIcon name="i-lucide-music" class="size-6 text-muted" />
       </div>
       <div class="min-w-0">
-        <p
-          v-if="currentSong"
-          class="font-medium truncate"
-        >
+        <p v-if="currentSong" class="font-medium truncate">
           {{ currentSong.title }}
         </p>
-        <p
-          v-else
-          class="text-muted text-sm"
-        >
-          Nothing playing
-        </p>
+        <p v-else class="text-muted text-sm">Nothing playing</p>
         <p class="text-xs text-muted">
           {{ currentSong ? (isPlaying ? 'Playing' : 'Paused') : 'Idle' }}
         </p>
       </div>
     </div>
-    <div
-      v-if="currentSong"
-      class="space-y-1"
-    >
+    <div v-if="currentSong" class="space-y-1">
       <input
         type="range"
         min="0"
@@ -48,16 +31,13 @@
         :value="seekValue"
         class="w-full accent-primary"
         @input="onSeek"
-      >
+      />
       <div class="flex justify-between text-xs text-muted">
         <span>{{ formatTime(currentTime) }}</span>
         <span>{{ formatTime(duration) }}</span>
       </div>
     </div>
-    <div
-      v-if="currentSong"
-      class="flex items-center gap-3"
-    >
+    <div v-if="currentSong" class="flex items-center gap-3">
       <UButton
         :icon="playing ? 'i-lucide-pause' : 'i-lucide-play'"
         size="md"
@@ -83,7 +63,7 @@
         class="w-20 accent-primary"
         @input="onVolumeChange"
         @change="onVolumeChange"
-      >
+      />
     </div>
     <audio
       ref="audioEl"
@@ -301,7 +281,13 @@ function seek(time: number) {
   seekValue.value = (time / duration.value) * 1000
 }
 
-defineExpose({ play, pause, resume, seek, state: { playing, currentTime, duration, volume, seekValue } })
+defineExpose({
+  play,
+  pause,
+  resume,
+  seek,
+  state: { playing, currentTime, duration, volume, seekValue }
+})
 
 onUnmounted(() => {
   destroyHls()

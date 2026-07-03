@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   if (!id)
     throw createError({ statusCode: 400, statusMessage: 'Missing room ID' })
 
-  const body = await readBody<{ songId: string, hostToken: string }>(event)
+  const body = await readBody<{ songId: string; hostToken: string }>(event)
   if (!body?.songId || !body?.hostToken) {
     throw createError({
       statusCode: 400,

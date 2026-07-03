@@ -1,20 +1,17 @@
 <template>
-  <div
-    v-if="show"
-    class="rounded-xl border border-default p-4 space-y-3"
-  >
+  <div v-if="show" class="rounded-xl border border-default p-4 space-y-3">
     <div class="flex items-center gap-3">
       <img
         :src="track.album.images[0]?.url"
         alt=""
         class="size-12 rounded-lg object-cover shrink-0"
-      >
+      />
       <div class="min-w-0">
         <p class="font-medium truncate">
           {{ track.name }}
         </p>
         <p class="text-xs text-muted truncate">
-          {{ track.artists.map(a => a.name).join(', ') }}
+          {{ track.artists.map((a) => a.name).join(', ') }}
         </p>
       </div>
     </div>
@@ -25,8 +22,10 @@
         :max="duration"
         :value="position"
         class="w-full accent-primary"
-        @input="$emit('seek', Number(($event.target as HTMLInputElement).value))"
-      >
+        @input="
+          $emit('seek', Number(($event.target as HTMLInputElement).value))
+        "
+      />
       <div class="flex justify-between text-xs text-muted">
         <span>{{ formatTime(position / 1000) }}</span>
         <span>{{ formatTime(duration / 1000) }}</span>
@@ -45,7 +44,11 @@
         class="size-5 text-primary shrink-0"
       />
       <UIcon
-        :name="spotifyPlayer.volume.value === 0 ? 'i-lucide-volume-x' : 'i-lucide-volume-2'"
+        :name="
+          spotifyPlayer.volume.value === 0
+            ? 'i-lucide-volume-x'
+            : 'i-lucide-volume-2'
+        "
         class="size-5 text-muted shrink-0 cursor-pointer"
         @click="toggleMute"
       />
@@ -57,7 +60,7 @@
         :value="spotifyPlayer.volume.value"
         class="w-20 accent-primary"
         @input="onVolumeChange"
-      >
+      />
     </div>
   </div>
 </template>
@@ -67,7 +70,11 @@ const spotifyPlayer = useSpotifyPlayer()
 
 const props = defineProps<{
   show: boolean
-  track: { name: string, album: { images: Array<{ url: string }> }, artists: Array<{ name: string }> }
+  track: {
+    name: string
+    album: { images: Array<{ url: string }> }
+    artists: Array<{ name: string }>
+  }
   paused: boolean
   position: number
   duration: number

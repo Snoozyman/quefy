@@ -16,7 +16,7 @@ interface AudioStream {
   duration: number
 }
 
-const cache = new Map<string, { data: AudioStream, ts: number }>()
+const cache = new Map<string, { data: AudioStream; ts: number }>()
 const CACHE_TTL = 3_600_000
 
 export function clearAudioCache(): void {
@@ -56,7 +56,8 @@ export async function getAudioStreamUrl(videoId: string): Promise<AudioStream> {
   if (!url) throw new Error('No audio URL returned from yt-dlp')
 
   const duration = Number(meta.duration) || 0
-  if (!duration) throw new Error('Video has no duration (live stream or unavailable)')
+  if (!duration)
+    throw new Error('Video has no duration (live stream or unavailable)')
 
   const data: AudioStream = {
     url,

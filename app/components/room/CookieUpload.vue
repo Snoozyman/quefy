@@ -14,32 +14,22 @@
         <div class="p-4 space-y-4 min-w-sm">
           <h2 class="text-lg font-semibold">
             YouTube Cookies
-            <span
-              v-if="cookieExists"
-              class="text-sm text-muted font-normal"
-            >
+            <span v-if="cookieExists" class="text-sm text-muted font-normal">
               ({{ cookieSize }} bytes)
             </span>
-            <span
-              v-else
-              class="text-sm text-muted font-normal"
-            >
+            <span v-else class="text-sm text-muted font-normal">
               (not set)
             </span>
           </h2>
 
           <p class="text-sm text-muted">
-            Cookies help yt-dlp access age-restricted or private videos.
-            You can auto-fetch session cookies, or manually upload a Netscape-format
+            Cookies help yt-dlp access age-restricted or private videos. You can
+            auto-fetch session cookies, or manually upload a Netscape-format
             <code>cookies.txt</code> file.
           </p>
 
           <div class="flex items-center gap-2">
-            <UButton
-              size="sm"
-              variant="outline"
-              @click="triggerFilePick"
-            >
+            <UButton size="sm" variant="outline" @click="triggerFilePick">
               Choose File
             </UButton>
             <input
@@ -48,11 +38,10 @@
               accept=".txt"
               class="hidden"
               @change="onFilePicked"
-            >
-            <span
-              v-if="fileName"
-              class="text-xs text-muted truncate"
-            >{{ fileName }}</span>
+            />
+            <span v-if="fileName" class="text-xs text-muted truncate">{{
+              fileName
+            }}</span>
           </div>
 
           <textarea
@@ -66,16 +55,8 @@
             class="flex items-center gap-2 text-sm"
             :class="saveOk ? 'text-green-600' : 'text-red-500'"
           >
-            <UIcon
-              v-if="saveOk"
-              name="i-lucide-check-circle"
-              class="size-4"
-            />
-            <UIcon
-              v-else
-              name="i-lucide-alert-circle"
-              class="size-4"
-            />
+            <UIcon v-if="saveOk" name="i-lucide-check-circle" class="size-4" />
+            <UIcon v-else name="i-lucide-alert-circle" class="size-4" />
             <span>{{ saveMsg }}</span>
           </div>
 
@@ -118,16 +99,20 @@
                 v-for="tab in tabs"
                 :key="tab.source"
                 class="flex-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
-                :class="activeTab === tab.source
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-default text-muted hover:bg-muted/50'"
+                :class="
+                  activeTab === tab.source
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-default text-muted hover:bg-muted/50'
+                "
                 @click="activeTab = tab.source"
               >
                 {{ tab.label }}
               </button>
             </div>
 
-            <div class="max-h-32 overflow-y-auto rounded-lg border border-default">
+            <div
+              class="max-h-32 overflow-y-auto rounded-lg border border-default"
+            >
               <div
                 v-if="activeCookies.length === 0"
                 class="text-xs text-muted text-center py-4"
@@ -194,7 +179,10 @@ const activeTab = ref<'youtube' | 'soundcloud'>('youtube')
 
 const tabs = computed(() => [
   { source: 'youtube' as const, label: `YouTube (${ytCookies.value.length})` },
-  { source: 'soundcloud' as const, label: `SoundCloud (${scCookies.value.length})` }
+  {
+    source: 'soundcloud' as const,
+    label: `SoundCloud (${scCookies.value.length})`
+  }
 ])
 
 const activeCookies = computed(() =>
@@ -283,9 +271,10 @@ async function autoFetch() {
     saveMsg.value = `Fetched ${res.count} cookies.`
     await fetchStatus()
   } catch (err: unknown) {
-    const e = err as { data?: { statusMessage?: string }, message?: string }
+    const e = err as { data?: { statusMessage?: string }; message?: string }
     saveOk.value = false
-    saveMsg.value = e?.data?.statusMessage || e?.message || 'Failed to auto-fetch cookies.'
+    saveMsg.value =
+      e?.data?.statusMessage || e?.message || 'Failed to auto-fetch cookies.'
   } finally {
     fetching.value = false
   }

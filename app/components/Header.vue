@@ -8,11 +8,7 @@
 
     <UNavigationMenu :items="items" />
     <template #body>
-      <UNavigationMenu
-        :items="items"
-        orientation="vertical"
-        class="-mx-2.5"
-      />
+      <UNavigationMenu :items="items" orientation="vertical" class="-mx-2.5" />
     </template>
     <template #right>
       <UButton

@@ -6,7 +6,7 @@
           <div>
             <h1 class="text-lg font-semibold">Active Rooms</h1>
             <p v-if="loaded && rooms.length" class="text-sm text-muted mt-0.5">
-              {{ rooms.length }} room{{ rooms.length === 1 ? "" : "s" }} online
+              {{ rooms.length }} room{{ rooms.length === 1 ? '' : 's' }} online
               <span v-if="playingCount"> · {{ playingCount }} playing</span>
             </p>
           </div>
@@ -79,7 +79,7 @@
               </p>
               <p class="text-xs text-muted flex items-center gap-1 mt-0.5">
                 <code class="font-mono text-xs">{{ r.id }}</code>
-                · {{ r.queueCount }} track{{ r.queueCount === 1 ? "" : "s" }}
+                · {{ r.queueCount }} track{{ r.queueCount === 1 ? '' : 's' }}
                 <template v-if="r.currentSource">
                   <span class="opacity-50">·</span>
                   <UIcon :name="sourceIcon(r.currentSource)" class="size-3" />
@@ -107,55 +107,55 @@
 </template>
 
 <script lang="ts" setup>
-const loaded = ref(false);
-const refreshing = ref(false);
-const rooms = ref<RoomSummary[]>([]);
+const loaded = ref(false)
+const refreshing = ref(false)
+const rooms = ref<RoomSummary[]>([])
 
 interface RoomSummary {
-  id: string;
-  title: string;
-  queueCount: number;
-  createdAt: number;
-  isPlaying: boolean;
-  currentSource: string | null;
-  currentThumbnail: string | null;
+  id: string
+  title: string
+  queueCount: number
+  createdAt: number
+  isPlaying: boolean
+  currentSource: string | null
+  currentThumbnail: string | null
 }
 
 const playingCount = computed(
-  () => rooms.value.filter((r) => r.isPlaying).length,
-);
+  () => rooms.value.filter((r) => r.isPlaying).length
+)
 
 async function fetchRooms() {
   try {
-    rooms.value = await $fetch<RoomSummary[]>("/api/room/list");
+    rooms.value = await $fetch<RoomSummary[]>('/api/room/list')
   } catch {
     // network error, keep previous list
   } finally {
-    loaded.value = true;
+    loaded.value = true
   }
 }
 
 async function refresh() {
-  refreshing.value = true;
-  await fetchRooms();
-  refreshing.value = false;
+  refreshing.value = true
+  await fetchRooms()
+  refreshing.value = false
 }
 
 function sourceIcon(source: string): string {
-  if (source === "spotify") return "i-simple-icons-spotify";
-  if (source === "soundcloud") return "i-simple-icons-soundcloud";
-  return "i-simple-icons-youtube";
+  if (source === 'spotify') return 'i-simple-icons-spotify'
+  if (source === 'soundcloud') return 'i-simple-icons-soundcloud'
+  return 'i-simple-icons-youtube'
 }
 
 function timeAgo(ts: number): string {
-  const diff = Date.now() - ts;
-  const min = Math.floor(diff / 60000);
-  if (min < 1) return "just now";
-  if (min < 60) return `${min}m ago`;
-  const hrs = Math.floor(min / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
+  const diff = Date.now() - ts
+  const min = Math.floor(diff / 60000)
+  if (min < 1) return 'just now'
+  if (min < 60) return `${min}m ago`
+  const hrs = Math.floor(min / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  return `${Math.floor(hrs / 24)}d ago`
 }
 
-onMounted(fetchRooms);
+onMounted(fetchRooms)
 </script>

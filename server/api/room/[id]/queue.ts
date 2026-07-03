@@ -25,7 +25,8 @@ export default defineEventHandler(async (event) => {
     addedBy?: string
   }>(event)
 
-  if (!body) throw createError({ statusCode: 400, statusMessage: 'Missing body' })
+  if (!body)
+    throw createError({ statusCode: 400, statusMessage: 'Missing body' })
 
   const source = body.source ?? 'youtube'
 
@@ -49,7 +50,10 @@ export default defineEventHandler(async (event) => {
     })
 
     if (!song)
-      throw createError({ statusCode: 500, statusMessage: 'Failed to add song' })
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Failed to add song'
+      })
 
     emitRoomUpdate(id, room)
 
@@ -85,7 +89,10 @@ export default defineEventHandler(async (event) => {
     })
 
     if (!song)
-      throw createError({ statusCode: 500, statusMessage: 'Failed to add song' })
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Failed to add song'
+      })
 
     emitRoomUpdate(id, room)
 

@@ -9,43 +9,24 @@
     v-else-if="notFound"
     class="max-w-lg mx-auto py-16 text-center space-y-4"
   >
-    <UIcon
-      name="i-lucide-door-open"
-      class="size-12 text-muted"
-    />
-    <h2 class="text-lg font-semibold">
-      Room not found
-    </h2>
+    <UIcon name="i-lucide-door-open" class="size-12 text-muted" />
+    <h2 class="text-lg font-semibold">Room not found</h2>
     <p class="text-sm text-muted">
       This room may have expired or the code is incorrect.
     </p>
-    <UButton
-      to="/app/room"
-      variant="outline"
-    >
-      Back to Rooms
-    </UButton>
+    <UButton to="/app/room" variant="outline"> Back to Rooms </UButton>
   </div>
-  <div
-    v-else
-    class="mx-2 w-50vw md:mx-4 md:w-2xl space-y-6 py-6"
-  >
+  <div v-else class="mx-2 w-50vw md:mx-4 md:w-2xl space-y-6 py-6">
     <UCard>
       <template #header>
-        <RoomHeader
-          :room-id="roomId"
-          :room-state="roomState"
-        />
+        <RoomHeader :room-id="roomId" :room-state="roomState" />
       </template>
       <template #default>
         <div class="flex flex-col gap-2 mb-4">
           <p class="text-sm text-muted">
             {{ roomState.queue.length }} song(s) in queue
           </p>
-          <p
-            v-if="!isHost"
-            class="text-sm text-muted"
-          >
+          <p v-if="!isHost" class="text-sm text-muted">
             You are a guest. Only the host can control playback.
           </p>
         </div>
@@ -53,18 +34,22 @@
         <div class="flex gap-px bg-border rounded-lg mb-4">
           <button
             class="flex-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors"
-            :class="activeTab === 'player'
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-default text-muted hover:bg-muted/50'"
+            :class="
+              activeTab === 'player'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-default text-muted hover:bg-muted/50'
+            "
             @click="activeTab = 'player'"
           >
             Player
           </button>
           <button
             class="flex-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors"
-            :class="activeTab === 'settings'
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-default text-muted hover:bg-muted/50'"
+            :class="
+              activeTab === 'settings'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-default text-muted hover:bg-muted/50'
+            "
             @click="activeTab = 'settings'"
           >
             Settings
@@ -74,12 +59,13 @@
         <div v-show="activeTab === 'player'">
           <RoomSpotifyPlayer
             :show="
-              isHost
-                && !!roomState.currentSong
-                && roomState.currentSong.source === 'spotify'
-                && spotifyPlayer.isReady.value
-                && !!spotifyPlayer.currentTrack.value
-                && spotifyPlayer.currentTrack.value.uri === roomState.currentSong.trackUri
+              isHost &&
+              !!roomState.currentSong &&
+              roomState.currentSong.source === 'spotify' &&
+              spotifyPlayer.isReady.value &&
+              !!spotifyPlayer.currentTrack.value &&
+              spotifyPlayer.currentTrack.value.uri ===
+                roomState.currentSong.trackUri
             "
             :track="spotifyPlayer.currentTrack.value ?? fallbackTrack"
             :paused="spotifyPlayer.paused.value"
@@ -100,10 +86,7 @@
             @expired="onAudioExpired"
           />
 
-          <RoomNowPlaying
-            v-if="!isHost"
-            :song="roomState.currentSong"
-          />
+          <RoomNowPlaying v-if="!isHost" :song="roomState.currentSong" />
         </div>
 
         <div v-show="activeTab === 'settings'">
@@ -116,10 +99,7 @@
       </template>
     </UCard>
 
-    <div
-      v-if="isHost"
-      class="flex items-center gap-2"
-    >
+    <div v-if="isHost" class="flex items-center gap-2">
       <UButton
         size="sm"
         variant="outline"
@@ -178,7 +158,15 @@ const route = useRoute()
 const router = useRouter()
 const roomId = route.params.id as string
 
-const { roomState, loading, notFound, error, isHost, hostData, fetchRoomState } = useRoomState(computed(() => roomId))
+const {
+  roomState,
+  loading,
+  notFound,
+  error,
+  isHost,
+  hostData,
+  fetchRoomState
+} = useRoomState(computed(() => roomId))
 const spotifyAuth = useSpotifyAuth()
 const spotifyPlayer = useSpotifyPlayer()
 
@@ -190,8 +178,8 @@ const playDisabled = computed(
 )
 const currentSongIsAudio = computed(
   () =>
-    roomState.value.currentSong?.source === 'youtube'
-    || roomState.value.currentSong?.source === 'soundcloud'
+    roomState.value.currentSong?.source === 'youtube' ||
+    roomState.value.currentSong?.source === 'soundcloud'
 )
 
 const audioPlayerRef = ref<{
@@ -199,7 +187,13 @@ const audioPlayerRef = ref<{
   pause: () => void
   resume: () => void
   seek: (time: number) => void
-  state: { playing: { value: boolean }, currentTime: { value: number }, duration: { value: number }, volume: { value: number }, seekValue: { value: number } }
+  state: {
+    playing: { value: boolean }
+    currentTime: { value: number }
+    duration: { value: number }
+    volume: { value: number }
+    seekValue: { value: number }
+  }
 }>()
 
 const userActivated = ref(false)
@@ -241,7 +235,9 @@ function updateMediaSession(song: SongData | null) {
         : []
     })
 
-    navigator.mediaSession.playbackState = roomState.value.isPlaying ? 'playing' : 'paused'
+    navigator.mediaSession.playbackState = roomState.value.isPlaying
+      ? 'playing'
+      : 'paused'
 
     navigator.mediaSession.setActionHandler('play', () => {
       if (!roomState.value.isPlaying) {
@@ -278,7 +274,9 @@ function updateMediaSessionPlaybackState() {
     navigator.mediaSession.playbackState = 'none'
     return
   }
-  navigator.mediaSession.playbackState = roomState.value.isPlaying ? 'playing' : 'paused'
+  navigator.mediaSession.playbackState = roomState.value.isPlaying
+    ? 'playing'
+    : 'paused'
 }
 
 function updateMediaSessionPosition(song: SongData | null) {
@@ -297,8 +295,14 @@ function updateMediaSessionPosition(song: SongData | null) {
     durationSeconds = Math.max(0, spotifyPlayer.duration.value / 1000)
     positionSeconds = Math.max(0, spotifyPlayer.position.value / 1000)
   } else {
-    durationSeconds = Math.max(0, audioPlayerRef.value?.state.duration.value ?? 0)
-    positionSeconds = Math.max(0, audioPlayerRef.value?.state.currentTime.value ?? 0)
+    durationSeconds = Math.max(
+      0,
+      audioPlayerRef.value?.state.duration.value ?? 0
+    )
+    positionSeconds = Math.max(
+      0,
+      audioPlayerRef.value?.state.currentTime.value ?? 0
+    )
   }
 
   if (!isFinite(durationSeconds) || durationSeconds <= 0) return
@@ -318,9 +322,9 @@ function onSpotifyPlayerReady() {
   }).catch(() => {})
   spotifyPlayer.setOnTrackEnd(skip)
   if (
-    roomState.value.currentSong?.source === 'spotify'
-    && roomState.value.currentSong.trackUri
-    && roomState.value.isPlaying
+    roomState.value.currentSong?.source === 'spotify' &&
+    roomState.value.currentSong.trackUri &&
+    roomState.value.isPlaying
   ) {
     audioPlayerRef.value?.pause()
     transferSpotifyPlayback(roomState.value.currentSong.trackUri)
@@ -345,9 +349,10 @@ async function handleSongChange(song: SongData) {
     await spotifyPlayer.pause()
     if (roomState.value.isPlaying) {
       const url = song.url!
-      const startTime = roomState.value.position > 0
-        ? roomState.value.position / 1000
-        : undefined
+      const startTime =
+        roomState.value.position > 0
+          ? roomState.value.position / 1000
+          : undefined
       nextTick(() => {
         audioPlayerRef.value?.play(url, startTime)
       })
@@ -364,9 +369,10 @@ async function reportPosition() {
   const song = roomState.value.currentSong
   if (!song) return
 
-  const locallyPlaying = song.source === 'spotify'
-    ? !spotifyPlayer.paused.value
-    : (audioPlayerRef.value?.state.playing.value ?? false)
+  const locallyPlaying =
+    song.source === 'spotify'
+      ? !spotifyPlayer.paused.value
+      : (audioPlayerRef.value?.state.playing.value ?? false)
 
   if (!locallyPlaying) return
 
@@ -374,7 +380,9 @@ async function reportPosition() {
   if (song.source === 'spotify') {
     position = spotifyPlayer.position.value
   } else {
-    position = Math.round((audioPlayerRef.value?.state.currentTime.value ?? 0) * 1000)
+    position = Math.round(
+      (audioPlayerRef.value?.state.currentTime.value ?? 0) * 1000
+    )
   }
 
   lastKnownPosition = position
@@ -421,7 +429,12 @@ watch(
 )
 
 watch(
-  () => [spotifyPlayer.position.value, spotifyPlayer.duration.value, audioPlayerRef.value?.state.currentTime.value, audioPlayerRef.value?.state.duration.value],
+  () => [
+    spotifyPlayer.position.value,
+    spotifyPlayer.duration.value,
+    audioPlayerRef.value?.state.currentTime.value,
+    audioPlayerRef.value?.state.duration.value
+  ],
   () => {
     updateMediaSessionPosition(roomState.value.currentSong)
   }
@@ -450,7 +463,7 @@ async function transferSpotifyPlayback(trackUri: string) {
   if (!spotifyPlayer.deviceId.value) return
 
   const headers = {
-    'Authorization': `Bearer ${token}`,
+    Authorization: `Bearer ${token}`,
     'Content-Type': 'application/json'
   }
 
@@ -464,7 +477,7 @@ async function transferSpotifyPlayback(trackUri: string) {
     if (!roomState.value.isPlaying) return
 
     if (attempt > 0) {
-      await new Promise(r => setTimeout(r, 1000 * attempt))
+      await new Promise((r) => setTimeout(r, 1000 * attempt))
     }
 
     const playRes = await fetch(
@@ -545,7 +558,8 @@ async function addSongBySoundcloudUrl(trackUrl: string) {
     })
     await fetchRoomState()
   } catch (e: any) {
-    error.value = e?.data?.statusMessage || e?.message || 'Failed to add SoundCloud track.'
+    error.value =
+      e?.data?.statusMessage || e?.message || 'Failed to add SoundCloud track.'
   } finally {
     addingSong.value = false
   }
@@ -599,9 +613,10 @@ async function togglePlay() {
           if (dur > 0) {
             audioPlayerRef.value!.resume()
           } else if (song.url) {
-            const startTime = roomState.value.position > 0
-              ? roomState.value.position / 1000
-              : undefined
+            const startTime =
+              roomState.value.position > 0
+                ? roomState.value.position / 1000
+                : undefined
             audioPlayerRef.value?.play(song.url, startTime)
           }
         }
@@ -668,7 +683,7 @@ async function onAudioExpired() {
   }
 
   try {
-    const refreshed = await $fetch<{ url: string, title: string }>(
+    const refreshed = await $fetch<{ url: string; title: string }>(
       `/api/room/${roomId}/audio/refresh`,
       {
         method: 'POST',
@@ -725,10 +740,15 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (isHost.value && hostData.value?.hostToken && lastKnownPosition > 0) {
-    const blob = new Blob([JSON.stringify({
-      hostToken: hostData.value.hostToken,
-      position: lastKnownPosition
-    })], { type: 'application/json' })
+    const blob = new Blob(
+      [
+        JSON.stringify({
+          hostToken: hostData.value.hostToken,
+          position: lastKnownPosition
+        })
+      ],
+      { type: 'application/json' }
+    )
     navigator.sendBeacon(`/api/room/${roomId}/position`, blob)
   }
 

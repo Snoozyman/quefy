@@ -5,9 +5,7 @@
       class="rounded-xl border border-primary/30 bg-primary/5 p-4 flex items-center justify-between"
     >
       <div>
-        <p class="font-semibold text-sm">
-          Connect Spotify to play music
-        </p>
+        <p class="font-semibold text-sm">Connect Spotify to play music</p>
         <p class="text-xs text-muted">
           Premium account required. The host must authenticate with Spotify.
         </p>
@@ -19,10 +17,7 @@
         @click="connect"
       >
         <template #leading>
-          <UIcon
-            name="i-lucide-music"
-            class="size-4"
-          />
+          <UIcon name="i-lucide-music" class="size-4" />
         </template>
         Connect Spotify
       </UButton>
@@ -49,28 +44,16 @@
         {{ spotifyError }}
       </p>
       <div class="flex gap-2">
-        <UButton
-          size="sm"
-          color="warning"
-          @click="retryPlayerInit"
-        >
+        <UButton size="sm" color="warning" @click="retryPlayerInit">
           Retry
         </UButton>
-        <UButton
-          size="sm"
-          color="neutral"
-          variant="outline"
-          @click="reconnect"
-        >
+        <UButton size="sm" color="neutral" variant="outline" @click="reconnect">
           Reconnect
         </UButton>
       </div>
     </div>
 
-    <p
-      v-else-if="spotifyError"
-      class="text-sm text-red-500"
-    >
+    <p v-else-if="spotifyError" class="text-sm text-red-500">
       {{ spotifyError }}
     </p>
   </div>
@@ -91,7 +74,7 @@ const spotifyPlayer = useSpotifyPlayer()
 const processing = ref(false)
 const spotifyError = ref('')
 
-const storageHostData = ref<{ roomId: string, hostToken: string } | null>(null)
+const storageHostData = ref<{ roomId: string; hostToken: string } | null>(null)
 const hosts = JSON.parse(localStorage.getItem('quefy-hosts') || '{}')
 const hostToken = hosts[props.roomId]
 if (hostToken) {
@@ -99,7 +82,9 @@ if (hostToken) {
 }
 
 const isHost = computed(
-  () => storageHostData.value?.roomId === props.roomId && !!storageHostData.value?.hostToken
+  () =>
+    storageHostData.value?.roomId === props.roomId &&
+    !!storageHostData.value?.hostToken
 )
 
 async function connect() {
@@ -126,7 +111,8 @@ async function initSpotifyPlayer() {
   if (ok) {
     emit('player-ready')
   } else {
-    spotifyError.value = spotifyPlayer.error.value || 'Failed to init Spotify player'
+    spotifyError.value =
+      spotifyPlayer.error.value || 'Failed to init Spotify player'
   }
 }
 
@@ -190,12 +176,15 @@ async function handleOAuthCallback() {
     await initSpotifyPlayer()
   } catch (err: any) {
     processing.value = false
-    spotifyError.value = err?.message || 'Failed to complete Spotify authentication'
+    spotifyError.value =
+      err?.message || 'Failed to complete Spotify authentication'
   }
 }
 
 onMounted(() => {
-  const hasTokens = !!new URLSearchParams(window.location.search).get('access_token')
+  const hasTokens = !!new URLSearchParams(window.location.search).get(
+    'access_token'
+  )
   if (hasTokens) {
     handleOAuthCallback()
     return

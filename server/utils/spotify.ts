@@ -1,4 +1,7 @@
-import type { SpotifySearchResponse, TokenResponse } from '#shared/types/spotify'
+import type {
+  SpotifySearchResponse,
+  TokenResponse
+} from '#shared/types/spotify'
 
 interface CachedToken {
   accessToken: string
@@ -17,8 +20,8 @@ function getClientSecret(): string {
 
 export function getRedirectUri(): string {
   return (
-    process.env.SPOTIFY_REDIRECT_URI
-    ?? 'http://localhost:3000/api/spotify/callback'
+    process.env.SPOTIFY_REDIRECT_URI ??
+    'http://localhost:3000/api/spotify/callback'
   )
 }
 
@@ -31,7 +34,7 @@ async function getClientCredentialsToken(): Promise<string> {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': `Basic ${Buffer.from(`${getClientId()}:${getClientSecret()}`).toString('base64')}`
+      Authorization: `Basic ${Buffer.from(`${getClientId()}:${getClientSecret()}`).toString('base64')}`
     },
     body: new URLSearchParams({
       grant_type: 'client_credentials'
@@ -40,7 +43,9 @@ async function getClientCredentialsToken(): Promise<string> {
 
   if (!res.ok) {
     const body = await res.text().catch(() => '(no body)')
-    console.error(`[${new Date().toISOString()}] Spotify token fetch failed: ${res.status} — ${body.slice(0, 200)}`)
+    console.error(
+      `[${new Date().toISOString()}] Spotify token fetch failed: ${res.status} — ${body.slice(0, 200)}`
+    )
     throw new Error(`Failed to get Spotify token: ${res.status}`)
   }
 
@@ -74,21 +79,21 @@ export async function searchTracks(
 
   if (!res.ok) {
     const body = await res.text().catch(() => '(no body)')
-    throw new Error(`Spotify search failed: ${res.status} — ${body.slice(0, 200)}`)
+    throw new Error(
+      `Spotify search failed: ${res.status} — ${body.slice(0, 200)}`
+    )
   }
 
   const data = (await res.json()) as SpotifySearchResponse
   return data.tracks?.items ?? []
 }
 
-export async function exchangeCode(
-  code: string
-): Promise<TokenResponse> {
+export async function exchangeCode(code: string): Promise<TokenResponse> {
   const res = await fetch('https://accounts.spotify.com/api/token', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': `Basic ${Buffer.from(`${getClientId()}:${getClientSecret()}`).toString('base64')}`
+      Authorization: `Basic ${Buffer.from(`${getClientId()}:${getClientSecret()}`).toString('base64')}`
     },
     body: new URLSearchParams({
       grant_type: 'authorization_code',
@@ -122,7 +127,7 @@ export async function refreshAccessToken(
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': `Basic ${Buffer.from(`${getClientId()}:${getClientSecret()}`).toString('base64')}`
+      Authorization: `Basic ${Buffer.from(`${getClientId()}:${getClientSecret()}`).toString('base64')}`
     },
     body: new URLSearchParams({
       grant_type: 'refresh_token',
@@ -148,16 +153,19 @@ export async function refreshAccessToken(
   }
 }
 
-export function formatTrackResult(item: SpotifySearchResponse['tracks']['items'][number]) {
+export function formatTrackResult(
+  item: SpotifySearchResponse['tracks']['items'][number]
+) {
   return {
     id: item.id,
     thumbnail: item.album.images?.[0]?.url ?? '',
     uri: item.uri,
     title: item.name,
-    artists: item.artists.map(a => a.name),
+    artists: item.artists.map((a) => a.name),
     albumName: item.album.name,
     albumImageUrl: item.album.images?.[0]?.url ?? '',
-    durationMs: (item as unknown as Record<string, unknown>).duration_ms as number,
+    durationMs: (item as unknown as Record<string, unknown>)
+      .duration_ms as number,
     source: 'spotify' as const
   }
 }

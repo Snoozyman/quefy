@@ -74,7 +74,10 @@ export function verifyHost(roomId: string, token: string): boolean {
   return room?.hostToken === token
 }
 
-export function setSpotifyConnected(roomId: string, connected: boolean): boolean {
+export function setSpotifyConnected(
+  roomId: string,
+  connected: boolean
+): boolean {
   const room = rooms.get(roomId)
   if (!room) return false
   room.spotifyConnected = connected
@@ -125,7 +128,7 @@ export function removeFromQueue(
 ): boolean {
   const room = rooms.get(roomId)
   if (!room || room.hostToken !== hostToken) return false
-  const idx = room.queue.findIndex(s => s.id === songId)
+  const idx = room.queue.findIndex((s) => s.id === songId)
   if (idx === -1) return false
   room.queue.splice(idx, 1)
   return true
@@ -175,8 +178,8 @@ export function listRooms(): RoomSummary[] {
     if (now - r.createdAt >= expiry) rooms.delete(id)
   }
   return entries
-    .filter(r => now - r.createdAt < expiry)
-    .map(r => ({
+    .filter((r) => now - r.createdAt < expiry)
+    .map((r) => ({
       id: r.id,
       title: r.title,
       queueCount: r.queue.length + (r.currentSong ? 1 : 0),

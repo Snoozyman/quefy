@@ -1,4 +1,11 @@
-import { existsSync, mkdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  statSync,
+  unlinkSync,
+  writeFileSync
+} from 'node:fs'
 import { join } from 'node:path'
 
 const DATA_DIR = join(process.cwd(), 'data')
@@ -52,7 +59,7 @@ export function getCookiesArgs(): string[] {
   }
 }
 
-export function saveCookieContent(content: string): { ok: true, size: number } {
+export function saveCookieContent(content: string): { ok: true; size: number } {
   const path = getCookiePath()
   const normalized = normalizeCurlOutput(content.trim())
   mkdirSync(DATA_DIR, { recursive: true })
@@ -61,7 +68,7 @@ export function saveCookieContent(content: string): { ok: true, size: number } {
   return { ok: true, size }
 }
 
-export function getCookieInfo(): { exists: boolean, size: number } {
+export function getCookieInfo(): { exists: boolean; size: number } {
   const path = getCookiePath()
   if (existsSync(path)) {
     return { exists: true, size: statSync(path).size }

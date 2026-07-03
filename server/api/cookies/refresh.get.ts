@@ -1,4 +1,8 @@
-import { fetchYouTubeCookies, fetchSoundCloudCookies, parseNetscapeCookies } from '#server/utils/cookie-fetcher'
+import {
+  fetchYouTubeCookies,
+  fetchSoundCloudCookies,
+  parseNetscapeCookies
+} from '#server/utils/cookie-fetcher'
 import type { CookieEntry } from '#server/utils/cookie-fetcher'
 import { saveCookieContent, isValidNetscapeFormat } from '#server/utils/cookies'
 import { clearAudioCache } from '#server/utils/youtube'
@@ -29,12 +33,19 @@ export default defineEventHandler(async () => {
     }
 
     if (totalCount === 0) {
-      throw createError({ statusCode: 502, statusMessage: 'No cookies received' })
+      throw createError({
+        statusCode: 502,
+        statusMessage: 'No cookies received'
+      })
     }
 
     const cookies = parts.join('\n')
     if (!isValidNetscapeFormat(cookies)) {
-      throw createError({ statusCode: 502, statusMessage: 'Auto-fetched cookies are not in valid Netscape format. Try manually uploading a cookies.txt file.' })
+      throw createError({
+        statusCode: 502,
+        statusMessage:
+          'Auto-fetched cookies are not in valid Netscape format. Try manually uploading a cookies.txt file.'
+      })
     }
 
     saveCookieContent(cookies)

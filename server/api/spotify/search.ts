@@ -14,7 +14,16 @@ export default defineEventHandler(async (event) => {
     return items.map(formatTrackResult)
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Spotify search failed'
-    console.error(`[${new Date().toISOString()}] Spotify search error for q="${q}":`, err instanceof Error ? { message: err.message, cause: err.cause, stack: err.stack?.split('\n').slice(0, 3).join('\n') } : err)
+    console.error(
+      `[${new Date().toISOString()}] Spotify search error for q="${q}":`,
+      err instanceof Error
+        ? {
+            message: err.message,
+            cause: err.cause,
+            stack: err.stack?.split('\n').slice(0, 3).join('\n')
+          }
+        : err
+    )
     throw createError({
       statusCode: 502,
       statusMessage: message
