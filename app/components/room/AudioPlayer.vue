@@ -73,6 +73,7 @@
       @loadedmetadata="onLoadedMetadata"
       @ended="onEnded"
       @error="onError"
+      @webkitbeginnerinterruption="onInterruption"
     />
   </div>
 </template>
@@ -91,6 +92,7 @@ const emit = defineEmits<{
   ended: []
   error: [message: string]
   expired: []
+  'play-blocked': []
 }>()
 
 const audioEl = ref<HTMLAudioElement | undefined>()
@@ -100,7 +102,15 @@ const currentTime = ref(0)
 const duration = ref(0)
 const volume = ref(0.33)
 const seekValue = ref(0)
+const lastUrl = ref('')
 let errorEmitted = false
+
+function isIOS(): boolean {
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  )
+}
 
 function destroyHls() {
   if (hls.value) {
@@ -112,6 +122,7 @@ function destroyHls() {
 
 function play(url: string, startTime?: number) {
   if (!audioEl.value) return
+  lastUrl.value = url
   destroyHls()
   currentTime.value = 0
   duration.value = 0
@@ -212,8 +223,64 @@ function togglePlay() {
 
 function resume() {
   if (!audioEl.value) return
+
+  if (isIOS() && lastUrl.value) {
+    const savedTime = audioEl.value.currentTime
+    destroyHls()
+    currentTime.value = savedTime
+    duration.value = 0
+    seekValue.value = 0
+    errorEmitted = false
+
+    if (lastUrl.value.includes('m3u8')) {
+      if (Hls.isSupported()) {
+        const instance = new Hls({
+          maxBufferLength: 30,
+          maxMaxBufferLength: 60
+        })
+        instance.loadSource(lastUrl.value)
+        instance.attachMedia(audioEl.value)
+        instance.on(Hls.Events.MANIFEST_PARSED, () => {
+          audioEl.value!.currentTime = savedTime
+          audioEl.value?.play()
+            .then(() => { playing.value = true })
+            .catch(() => {})
+        })
+        instance.on(Hls.Events.ERROR, (_event, data) => {
+          if (data.fatal) {
+            errorEmitted = true
+            destroyHls()
+            playing.value = false
+          }
+        })
+        hls.value = instance
+      } else if (audioEl.value.canPlayType('application/vnd.apple.mpegurl')) {
+        audioEl.value.src = lastUrl.value
+        audioEl.value.load()
+        audioEl.value.currentTime = savedTime
+        audioEl.value.play()
+          .then(() => { playing.value = true })
+          .catch(() => {})
+      }
+    } else {
+      audioEl.value.src = ''
+      audioEl.value.load()
+      audioEl.value.src = lastUrl.value
+      audioEl.value.load()
+      audioEl.value.currentTime = savedTime
+      audioEl.value.play()
+        .then(() => { playing.value = true })
+        .catch(() => {})
+    }
+    return
+  }
+
   audioEl.value.play()
   playing.value = true
+}
+
+function onInterruption() {
+  playing.value = false
 }
 
 function formatTime(s: number): string {
