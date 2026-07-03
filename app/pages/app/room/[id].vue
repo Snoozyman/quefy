@@ -16,7 +16,7 @@
     </p>
     <UButton to="/app/room" variant="outline"> Back to Rooms </UButton>
   </div>
-  <div v-else class="mx-2 w-[50vw] md:mx-4 md:w-2xl space-y-6 py-6">
+  <div v-else class="h-dvh overflow-y-auto mx-2 md:mx-4 md:w-2xl space-y-6 py-6">
     <UCard>
       <template #header>
         <RoomHeader :room-id="roomId" :room-state="roomState" />
