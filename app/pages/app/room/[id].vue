@@ -367,28 +367,33 @@ async function handleSongChange(song: SongData) {
   if (!isHost.value) return
   if (song.id === currentPlayingId) return
   currentPlayingId = song.id
-  if (song.source === 'spotify' && song.trackUri) {
-    audioPlayerRef.value?.pause()
-    spotifyPlayer.setOnTrackEnd(skip)
-    await transferSpotifyPlayback(song.trackUri)
-    if (song.id !== currentPlayingId) return
-  }
-  if ((song.source === 'youtube' || song.source === 'soundcloud') && song.url) {
-    spotifyPlayer.setOnTrackEnd(null)
-    spotifyPlayer.resetErrors()
-    await spotifyPlayer.pause()
-    if (song.id !== currentPlayingId) return
-    if (roomState.value.isPlaying) {
-      const url = song.url!
-      const startTime =
-        roomState.value.position > 0
-          ? roomState.value.position / 1000
-          : undefined
-      nextTick(() => {
-        if (song.id !== currentPlayingId) return
-        audioPlayerRef.value?.play(url, startTime)
-      })
+  try {
+    if (song.source === 'spotify' && song.trackUri) {
+      audioPlayerRef.value?.pause()
+      spotifyPlayer.setOnTrackEnd(skip)
+      await transferSpotifyPlayback(song.trackUri)
+      if (song.id !== currentPlayingId) return
     }
+    if ((song.source === 'youtube' || song.source === 'soundcloud') && song.url) {
+      spotifyPlayer.setOnTrackEnd(null)
+      spotifyPlayer.resetErrors()
+      await spotifyPlayer.pause()
+      if (song.id !== currentPlayingId) return
+      if (roomState.value.isPlaying) {
+        const url = song.url!
+        const startTime =
+          roomState.value.position > 0
+            ? roomState.value.position / 1000
+            : undefined
+        nextTick(() => {
+          if (song.id !== currentPlayingId) return
+          audioPlayerRef.value?.play(url, startTime)
+        })
+      }
+    }
+  } catch (err: unknown) {
+    error.value = `Song change failed: ${err instanceof Error ? err.message : err}`
+    skip()
   }
 }
 
@@ -678,10 +683,12 @@ async function skip() {
       body: { hostToken: hostData.value.hostToken }
     })
     roomState.value.position = 0
+    if (res.currentSong) {
+      lastSongId = res.currentSong.id
+    }
     roomState.value.currentSong = res.currentSong
     roomState.value.isPlaying = res.isPlaying
     if (res.currentSong) {
-      lastSongId = res.currentSong.id
       void handleSongChange(res.currentSong)
     } else {
       spotifyPlayer.pause()
