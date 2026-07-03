@@ -61,6 +61,7 @@
             @ended="onAudioEnded"
             @error="(msg: string) => onAudioError(msg)"
             @expired="onAudioExpired"
+            @play-blocked="onPlayBlocked"
           />
 
           <RoomNowPlaying v-if="!isHost" :song="roomState.currentSong" />
@@ -639,6 +640,16 @@ async function skip() {
 
 function onAudioEnded() {
   skip()
+}
+
+function onPlayBlocked() {
+  if (!isHost.value || !hostData.value?.hostToken) return
+  $fetch(`/api/room/${roomId}/play`, {
+    method: 'POST',
+    body: { hostToken: hostData.value.hostToken }
+  }).then((res) => {
+    roomState.value.isPlaying = res.isPlaying
+  }).catch(() => {})
 }
 
 function onAudioError(msg: string) {
