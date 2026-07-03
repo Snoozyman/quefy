@@ -8,7 +8,7 @@ import {
   isValidNetscapeFormat
 } from '#server/utils/cookies'
 import { clearAudioCache } from '#server/utils/youtube'
-import { getYtDlpPath } from '#server/utils/yt-dlp'
+import { getYtDlpPath, getYtDlpBaseArgs } from '#server/utils/yt-dlp'
 
 const execFileAsync = promisify(execFile)
 
@@ -72,7 +72,8 @@ export default defineEventHandler(async (event) => {
           '--print-json',
           '--no-warnings',
           '--timeout',
-          '10'
+          '10',
+          ...getYtDlpBaseArgs()
         ],
         { timeout: 15000 }
       )

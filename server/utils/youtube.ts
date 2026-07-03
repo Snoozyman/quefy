@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { parseYtDlpError } from './yt-dlp-errors'
 import { getCookiesArgs } from './cookies'
-import { getYtDlpPath } from './yt-dlp'
+import { getYtDlpPath, getYtDlpBaseArgs } from './yt-dlp'
 
 const execFileAsync = promisify(execFile)
 
@@ -33,6 +33,7 @@ export async function getAudioStreamUrl(videoId: string): Promise<AudioStream> {
   let stderr: string
   try {
     const result = await execFileAsync(getYtDlpPath(), [
+      ...getYtDlpBaseArgs(),
       '-f',
       'bestaudio',
       '--print-json',

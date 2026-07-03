@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { parseYtDlpError } from '#server/utils/yt-dlp-errors'
 import { getCookiesArgs } from '#server/utils/cookies'
-import { getYtDlpPath } from '#server/utils/yt-dlp'
+import { getYtDlpPath, getYtDlpBaseArgs } from '#server/utils/yt-dlp'
 
 const execFileAsync = promisify(execFile)
 
@@ -31,6 +31,7 @@ export default defineEventHandler(async (event) => {
       '--flat-playlist',
       '--print-json',
       '--no-warnings',
+      ...getYtDlpBaseArgs(),
       ...getCookiesArgs()
     ])
     stdout = result.stdout
