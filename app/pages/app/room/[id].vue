@@ -671,6 +671,7 @@ async function skip() {
       method: 'POST',
       body: { hostToken: hostData.value.hostToken }
     })
+    roomState.value.position = 0
     roomState.value.currentSong = res.currentSong
     roomState.value.isPlaying = res.isPlaying
     if (res.currentSong) {

@@ -71,15 +71,21 @@ let lastSyncPosition = 0
 let lastSyncTime = 0
 let tickTimer: ReturnType<typeof setInterval> | null = null
 let wasPlaying = false
+let trackEndNotified = false
 let onTrackEnd: (() => void) | null = null
 let iosShouldBePlaying = false
 
 function startTick() {
   stopTick()
+  trackEndNotified = false
   tickTimer = setInterval(() => {
     if (paused.value || !playerState.value) return
     const elapsed = Date.now() - lastSyncTime
     position.value = Math.min(lastSyncPosition + elapsed, duration.value)
+    if (!trackEndNotified && duration.value > 0 && position.value >= duration.value - 2000) {
+      trackEndNotified = true
+      onTrackEnd?.()
+    }
   }, 250)
 }
 
@@ -88,6 +94,7 @@ function stopTick() {
     clearInterval(tickTimer)
     tickTimer = null
   }
+  trackEndNotified = false
 }
 
 function isIOS(): boolean {
@@ -225,6 +232,7 @@ export function useSpotifyPlayer() {
               wasPlaying = false
             } else {
               wasPlaying = true
+              trackEndNotified = false
               startTick()
             }
             lastSyncPosition = state.position
