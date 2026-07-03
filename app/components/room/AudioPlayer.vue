@@ -82,6 +82,8 @@
 import Hls from 'hls.js'
 import type { SongData } from '#shared/types/room'
 
+const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='
+
 defineProps<{
   show: boolean
   currentSong: SongData | null
@@ -104,12 +106,40 @@ const volume = ref(0.33)
 const seekValue = ref(0)
 const lastUrl = ref('')
 let errorEmitted = false
+const silentAudio = ref<HTMLAudioElement | undefined>()
+let silentAudioUnlocked = false
 
 function isIOS(): boolean {
   return (
     /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
   )
+}
+
+function unlockSilentAudio() {
+  if (silentAudioUnlocked) return
+  silentAudioUnlocked = true
+  if (!isIOS()) return
+  const el = new Audio(SILENT_WAV)
+  el.loop = true
+  el.volume = 0
+  ;(el as any).playsInline = true
+  document.body.appendChild(el)
+  silentAudio.value = el
+  el.play().then(() => {
+    el.pause()
+  }).catch(() => {})
+}
+
+function toggleSilentAudio(active: boolean) {
+  const el = silentAudio.value
+  if (!el) return
+  if (active) {
+    el.loop = true
+    el.play().catch(() => {})
+  } else {
+    el.pause()
+  }
 }
 
 function destroyHls() {
@@ -142,16 +172,18 @@ function play(url: string, startTime?: number) {
           audioEl.value!.currentTime = startTime
         }
         playing.value = true
-        audioEl.value?.play().catch((err: unknown) => {
-          const name = err instanceof DOMException ? err.name : ''
-          if (name === 'NotAllowedError') {
+        audioEl.value?.play()
+          .then(() => { toggleSilentAudio(true) })
+          .catch((err: unknown) => {
+            const name = err instanceof DOMException ? err.name : ''
+            if (name === 'NotAllowedError') {
+              playing.value = false
+              emit('play-blocked')
+              return
+            }
             playing.value = false
-            emit('play-blocked')
-            return
-          }
-          playing.value = false
-          emit('error', 'Playback blocked. Try clicking play again.')
-        })
+            emit('error', 'Playback blocked. Try clicking play again.')
+          })
       })
       instance.on(Hls.Events.ERROR, (_event, data) => {
         if (data.fatal) {
@@ -173,16 +205,18 @@ function play(url: string, startTime?: number) {
         audioEl.value.currentTime = startTime
       }
       playing.value = true
-      audioEl.value.play().catch((err: unknown) => {
-        const name = err instanceof DOMException ? err.name : ''
-        if (name === 'NotAllowedError') {
+      audioEl.value.play()
+        .then(() => { toggleSilentAudio(true) })
+        .catch((err: unknown) => {
+          const name = err instanceof DOMException ? err.name : ''
+          if (name === 'NotAllowedError') {
+            playing.value = false
+            emit('play-blocked')
+            return
+          }
           playing.value = false
-          emit('play-blocked')
-          return
-        }
-        playing.value = false
-        emit('error', 'Playback blocked. Try clicking play again.')
-      })
+          emit('error', 'Playback blocked. Try clicking play again.')
+        })
     } else {
       playing.value = false
       emit('error', 'HLS audio is not supported in this browser.')
@@ -197,7 +231,9 @@ function play(url: string, startTime?: number) {
     audioEl.value.currentTime = startTime
   }
   playing.value = true
-  audioEl.value.play().catch((err: unknown) => {
+  audioEl.value.play()
+    .then(() => { toggleSilentAudio(true) })
+    .catch((err: unknown) => {
     const name = err instanceof DOMException ? err.name : ''
     if (name === 'NotAllowedError') {
       playing.value = false
@@ -212,6 +248,7 @@ function play(url: string, startTime?: number) {
 function pause() {
   audioEl.value?.pause()
   playing.value = false
+  toggleSilentAudio(false)
 }
 
 function togglePlay() {
@@ -225,61 +262,65 @@ function togglePlay() {
 }
 
 function resume() {
-  if (!audioEl.value) return
+  const el = audioEl.value
+  if (!el) return
 
-  if (isIOS() && lastUrl.value) {
-    const savedTime = audioEl.value.currentTime
-    destroyHls()
-    currentTime.value = savedTime
-    duration.value = 0
-    seekValue.value = 0
-    errorEmitted = false
+  el.play()
+    .then(() => {
+      playing.value = true
+      toggleSilentAudio(true)
+    })
+    .catch(() => {
+      if (!isIOS() || !lastUrl.value || !el) return
 
-    if (lastUrl.value.includes('m3u8')) {
-      if (Hls.isSupported()) {
-        const instance = new Hls({
-          maxBufferLength: 30,
-          maxMaxBufferLength: 60
-        })
-        instance.loadSource(lastUrl.value)
-        instance.attachMedia(audioEl.value)
-        instance.on(Hls.Events.MANIFEST_PARSED, () => {
-          audioEl.value!.currentTime = savedTime
-          audioEl.value?.play()
-            .then(() => { playing.value = true })
+      const savedTime = el.currentTime
+      destroyHls()
+      currentTime.value = savedTime
+      duration.value = 0
+      seekValue.value = 0
+      errorEmitted = false
+
+      if (lastUrl.value.includes('m3u8')) {
+        if (Hls.isSupported()) {
+          const instance = new Hls({
+            maxBufferLength: 30,
+            maxMaxBufferLength: 60
+          })
+          instance.loadSource(lastUrl.value)
+          instance.attachMedia(el)
+          instance.on(Hls.Events.MANIFEST_PARSED, () => {
+            el.currentTime = savedTime
+            el.play()
+              .then(() => { playing.value = true; toggleSilentAudio(true) })
+              .catch(() => {})
+          })
+          instance.on(Hls.Events.ERROR, (_event, data) => {
+            if (data.fatal) {
+              errorEmitted = true
+              destroyHls()
+              playing.value = false
+            }
+          })
+          hls.value = instance
+        } else if (el.canPlayType('application/vnd.apple.mpegurl')) {
+          el.src = lastUrl.value
+          el.load()
+          el.currentTime = savedTime
+          el.play()
+            .then(() => { playing.value = true; toggleSilentAudio(true) })
             .catch(() => {})
-        })
-        instance.on(Hls.Events.ERROR, (_event, data) => {
-          if (data.fatal) {
-            errorEmitted = true
-            destroyHls()
-            playing.value = false
-          }
-        })
-        hls.value = instance
-      } else if (audioEl.value.canPlayType('application/vnd.apple.mpegurl')) {
-        audioEl.value.src = lastUrl.value
-        audioEl.value.load()
-        audioEl.value.currentTime = savedTime
-        audioEl.value.play()
-          .then(() => { playing.value = true })
+        }
+      } else {
+        el.src = ''
+        el.load()
+        el.src = lastUrl.value
+        el.load()
+        el.currentTime = savedTime
+        el.play()
+          .then(() => { playing.value = true; toggleSilentAudio(true) })
           .catch(() => {})
       }
-    } else {
-      audioEl.value.src = ''
-      audioEl.value.load()
-      audioEl.value.src = lastUrl.value
-      audioEl.value.load()
-      audioEl.value.currentTime = savedTime
-      audioEl.value.play()
-        .then(() => { playing.value = true })
-        .catch(() => {})
-    }
-    return
-  }
-
-  audioEl.value.play()
-  playing.value = true
+    })
 }
 
 function onInterruption() {
@@ -333,6 +374,7 @@ function toggleMute() {
 function onEnded() {
   destroyHls()
   playing.value = false
+  toggleSilentAudio(false)
   emit('ended')
 }
 
@@ -356,10 +398,14 @@ defineExpose({
   pause,
   resume,
   seek,
+  unlockSilentAudio,
   state: { playing, currentTime, duration, volume, seekValue }
 })
 
 onUnmounted(() => {
   destroyHls()
+  toggleSilentAudio(false)
+  silentAudio.value?.remove()
+  silentAudio.value = undefined
 })
 </script>

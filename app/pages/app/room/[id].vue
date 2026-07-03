@@ -169,6 +169,7 @@ const audioPlayerRef = ref<{
   pause: () => void
   resume: () => void
   seek: (time: number) => void
+  unlockSilentAudio: () => void
   state: {
     playing: { value: boolean }
     currentTime: { value: number }
@@ -187,6 +188,11 @@ function activateUser() {
   userActivated.value = true
   document.removeEventListener('pointerdown', activateUser)
   document.removeEventListener('keydown', activateUser)
+  audioPlayerRef.value?.unlockSilentAudio()
+  try {
+    const session = (navigator as any).audioSession
+    if (session) session.type = 'playback'
+  } catch {}
 }
 
 const fallbackTrack = {
@@ -223,12 +229,12 @@ function updateMediaSession(song: SongData | null) {
 
     navigator.mediaSession.setActionHandler('play', () => {
       if (!roomState.value.isPlaying) {
-        togglePlay()
+        handleMediaPlay()
       }
     })
     navigator.mediaSession.setActionHandler('pause', () => {
       if (roomState.value.isPlaying) {
-        togglePlay()
+        handleMediaPause()
       }
     })
     navigator.mediaSession.setActionHandler('nexttrack', () => skip())
@@ -294,6 +300,46 @@ function updateMediaSessionPosition(song: SongData | null) {
     playbackRate: 1,
     position: Math.min(positionSeconds, durationSeconds)
   })
+}
+
+function syncPlayState() {
+  if (!isHost.value || !hostData.value?.hostToken) return
+  $fetch(`/api/room/${roomId}/play`, {
+    method: 'POST',
+    body: { hostToken: hostData.value.hostToken }
+  }).catch(() => {})
+}
+
+function handleMediaPlay() {
+  const song = roomState.value.currentSong
+  if (!song) return
+
+  roomState.value.isPlaying = true
+  updateMediaSessionPlaybackState()
+
+  if (song.source === 'spotify') {
+    spotifyPlayer.play().catch(() => {})
+  } else {
+    audioPlayerRef.value?.resume()
+  }
+
+  syncPlayState()
+}
+
+function handleMediaPause() {
+  const song = roomState.value.currentSong
+  if (!song) return
+
+  roomState.value.isPlaying = false
+  updateMediaSessionPlaybackState()
+
+  if (song.source === 'spotify') {
+    spotifyPlayer.pause().catch(() => {})
+  } else {
+    audioPlayerRef.value?.pause()
+  }
+
+  syncPlayState()
 }
 
 function onSpotifyPlayerReady() {
