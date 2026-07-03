@@ -146,6 +146,7 @@ function play(url: string, startTime?: number) {
           const name = err instanceof DOMException ? err.name : ''
           if (name === 'NotAllowedError') {
             playing.value = false
+            emit('play-blocked')
             return
           }
           playing.value = false
@@ -176,6 +177,7 @@ function play(url: string, startTime?: number) {
         const name = err instanceof DOMException ? err.name : ''
         if (name === 'NotAllowedError') {
           playing.value = false
+          emit('play-blocked')
           return
         }
         playing.value = false
@@ -199,6 +201,7 @@ function play(url: string, startTime?: number) {
     const name = err instanceof DOMException ? err.name : ''
     if (name === 'NotAllowedError') {
       playing.value = false
+      emit('play-blocked')
       return
     }
     playing.value = false
