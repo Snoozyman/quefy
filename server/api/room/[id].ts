@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
     id: room.id,
     title: room.title,
     currentSong: room.currentSong,
-    queue: room.queue.map(s => ({
+    queue: room.queue.map((s) => ({
       id: s.id,
       source: s.source,
       title: s.title,

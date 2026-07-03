@@ -4,10 +4,7 @@
       Queue
       <span v-if="queue.length">({{ queue.length }})</span>
     </h2>
-    <div
-      v-if="queue.length === 0"
-      class="text-sm text-muted py-4 text-center"
-    >
+    <div v-if="queue.length === 0" class="text-sm text-muted py-4 text-center">
       Queue is empty. Add a song to get started.
     </div>
     <div
@@ -25,11 +22,7 @@
         alt=""
         class="size-8 rounded object-cover shrink-0"
       />
-      <UIcon
-        v-else
-        name="i-lucide-music"
-        class="size-4 shrink-0 text-muted"
-      />
+      <UIcon v-else name="i-lucide-music" class="size-4 shrink-0 text-muted" />
       <div class="min-w-0 grow">
         <p class="text-sm truncate">
           {{ song.title }}
@@ -38,9 +31,7 @@
           <template v-if="song.source === 'spotify' && song.artists?.length">
             {{ song.artists.join(', ') }}
           </template>
-          <template v-else>
-            added by {{ song.addedBy }}
-          </template>
+          <template v-else> added by {{ song.addedBy }} </template>
         </p>
       </div>
       <UButton

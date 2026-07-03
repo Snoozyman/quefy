@@ -5,12 +5,15 @@ export default defineEventHandler(async (event) => {
   if (!id)
     throw createError({ statusCode: 400, statusMessage: 'Missing room ID' })
 
-  const body = await readBody<{ hostToken: string, position: number }>(event)
+  const body = await readBody<{ hostToken: string; position: number }>(event)
   if (!body?.hostToken)
     throw createError({ statusCode: 400, statusMessage: 'Missing hostToken' })
 
   if (!verifyHost(id, body.hostToken))
-    throw createError({ statusCode: 403, statusMessage: 'Only the host can update position' })
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Only the host can update position'
+    })
 
   if (typeof body.position !== 'number' || !isFinite(body.position))
     throw createError({ statusCode: 400, statusMessage: 'Invalid position' })

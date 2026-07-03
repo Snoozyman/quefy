@@ -1,7 +1,9 @@
 import { refreshAccessToken } from '#server/utils/spotify'
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody<{ refreshToken?: string }>(event).catch(() => ({} as { refreshToken?: string }))
+  const body = await readBody<{ refreshToken?: string }>(event).catch(
+    () => ({}) as { refreshToken?: string }
+  )
 
   if (!body?.refreshToken) {
     throw createError({

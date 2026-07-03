@@ -15,7 +15,7 @@ interface AudioStream {
   thumbnail: string
 }
 
-const cache = new Map<string, { data: AudioStream, ts: number }>()
+const cache = new Map<string, { data: AudioStream; ts: number }>()
 const CACHE_TTL = 3_600_000
 
 export function clearSoundcloudAudioCache(): void {
@@ -26,7 +26,9 @@ export function clearSoundcloudAudioCacheFor(url: string): void {
   cache.delete(url)
 }
 
-export async function getSoundcloudAudioStreamUrl(trackUrl: string): Promise<AudioStream> {
+export async function getSoundcloudAudioStreamUrl(
+  trackUrl: string
+): Promise<AudioStream> {
   const cached = cache.get(trackUrl)
   if (cached && Date.now() - cached.ts < CACHE_TTL) {
     return cached.data

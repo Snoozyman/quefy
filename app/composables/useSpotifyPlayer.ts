@@ -27,7 +27,7 @@ interface SpotifyPlaybackState {
       uri: string
       name: string
       artists: Array<{ name: string }>
-      album: { name: string, images: Array<{ url: string }> }
+      album: { name: string; images: Array<{ url: string }> }
       duration_ms: number
     } | null
   }
@@ -53,7 +53,9 @@ const isConnecting = ref(false)
 const error = ref<string>('')
 const volume = ref(0.33)
 const playerState = ref<SpotifyPlaybackState | null>(null)
-const currentTrack = computed(() => playerState.value?.track_window?.current_track ?? null)
+const currentTrack = computed(
+  () => playerState.value?.track_window?.current_track ?? null
+)
 const paused = computed(() => playerState.value?.paused ?? true)
 const position = ref(0)
 const duration = computed(() => playerState.value?.duration ?? 0)
@@ -89,8 +91,10 @@ function stopTick() {
 }
 
 function isIOS(): boolean {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent)
-    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  )
 }
 
 let visibilityHandlerSetup = false
@@ -108,10 +112,13 @@ function setupVisibilityHandler() {
     const token = auth.getAccessToken()
     if (!token) return
 
-    fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId.value}`, {
-      method: 'PUT',
-      headers: { 'Authorization': `Bearer ${token}` }
-    }).catch(() => {})
+    fetch(
+      `https://api.spotify.com/v1/me/player/play?device_id=${deviceId.value}`,
+      {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    ).catch(() => {})
   })
 }
 
@@ -153,7 +160,8 @@ export function useSpotifyPlayer() {
     playbackErrorWindow = []
 
     if (isFirefox()) {
-      error.value = 'Spotify Web Playback SDK does not work in Firefox. Use Chrome or Edge.'
+      error.value =
+        'Spotify Web Playback SDK does not work in Firefox. Use Chrome or Edge.'
       return true
     }
 
@@ -174,7 +182,9 @@ export function useSpotifyPlayer() {
           const auth = useSpotifyAuth()
           let token = auth.getAccessToken()
           if (!token) {
-            try { await auth.refreshToken() } catch {}
+            try {
+              await auth.refreshToken()
+            } catch {}
             token = auth.getAccessToken()
           }
           cb(token ?? accessToken)
@@ -184,33 +194,45 @@ export function useSpotifyPlayer() {
       player.value = p
 
       let readyResolve: (ok: boolean) => void
-      const readyPromise = new Promise<boolean>((resolve) => { readyResolve = resolve })
+      const readyPromise = new Promise<boolean>((resolve) => {
+        readyResolve = resolve
+      })
 
       p.addListener('ready', ({ device_id }: { device_id: string }) => {
         deviceId.value = device_id
         readyResolve(true)
       })
 
-      p.addListener('not_ready', () => { isReady.value = false })
-
-      p.addListener('player_state_changed', (state: SpotifyPlaybackState | null) => {
-        playerState.value = state
-        if (state) {
-          if (state.paused) {
-            stopTick()
-            if (wasPlaying && state.duration > 0 && (state.position >= state.duration - 1500 || position.value >= state.duration - 1500)) {
-              onTrackEnd?.()
-            }
-            wasPlaying = false
-          } else {
-            wasPlaying = true
-            startTick()
-          }
-          lastSyncPosition = state.position
-          lastSyncTime = Date.now()
-          position.value = state.position
-        }
+      p.addListener('not_ready', () => {
+        isReady.value = false
       })
+
+      p.addListener(
+        'player_state_changed',
+        (state: SpotifyPlaybackState | null) => {
+          playerState.value = state
+          if (state) {
+            if (state.paused) {
+              stopTick()
+              if (
+                wasPlaying &&
+                state.duration > 0 &&
+                (state.position >= state.duration - 1500 ||
+                  position.value >= state.duration - 1500)
+              ) {
+                onTrackEnd?.()
+              }
+              wasPlaying = false
+            } else {
+              wasPlaying = true
+              startTick()
+            }
+            lastSyncPosition = state.position
+            lastSyncTime = Date.now()
+            position.value = state.position
+          }
+        }
+      )
 
       p.addListener('initialization_error', (e: { message: string }) => {
         error.value = `Spotify init error: ${e.message}`
@@ -232,7 +254,7 @@ export function useSpotifyPlayer() {
         if (!playerState.value || playerState.value.paused) return
 
         const now = Date.now()
-        playbackErrorWindow = playbackErrorWindow.filter(t => now - t < 10000)
+        playbackErrorWindow = playbackErrorWindow.filter((t) => now - t < 10000)
         playbackErrorWindow.push(now)
         playbackErrorCount++
 
@@ -243,7 +265,8 @@ export function useSpotifyPlayer() {
           isReady.value = false
           deviceId.value = ''
           playerState.value = null
-          error.value = 'Spotify playback keeps failing. Try a different track or check your account/region.'
+          error.value =
+            'Spotify playback keeps failing. Try a different track or check your account/region.'
         }
       })
 
@@ -262,7 +285,10 @@ export function useSpotifyPlayer() {
 
       await fetch('https://api.spotify.com/v1/me/player', {
         method: 'PUT',
-        headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({ device_ids: [deviceId.value], play: false })
       })
 
@@ -271,10 +297,11 @@ export function useSpotifyPlayer() {
         const devices = await listDevices(accessToken)
         found = devices.some((d: { id: string }) => d.id === deviceId.value)
         if (found) break
-        if (attempt < 4) await new Promise(r => setTimeout(r, 1000))
+        if (attempt < 4) await new Promise((r) => setTimeout(r, 1000))
       }
       if (!found) {
-        error.value = 'Spotify device was created but not found in your available devices. Try opening Spotify and playing a song first.'
+        error.value =
+          'Spotify device was created but not found in your available devices. Try opening Spotify and playing a song first.'
         isConnecting.value = false
         return false
       }
@@ -295,7 +322,7 @@ export function useSpotifyPlayer() {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (!res.ok) return []
-      const data = await res.json() as { devices: Array<{ id: string }> }
+      const data = (await res.json()) as { devices: Array<{ id: string }> }
       return data.devices ?? []
     } catch {
       return []
@@ -323,10 +350,13 @@ export function useSpotifyPlayer() {
       }
 
       if (token) {
-        const res = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId.value}`, {
-          method: 'PUT',
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
+        const res = await fetch(
+          `https://api.spotify.com/v1/me/player/play?device_id=${deviceId.value}`,
+          {
+            method: 'PUT',
+            headers: { Authorization: `Bearer ${token}` }
+          }
+        )
         if (!res.ok) {
           const body = await res.text().catch(() => '')
           iosFallbackError = body || `HTTP ${res.status}`
@@ -356,7 +386,9 @@ export function useSpotifyPlayer() {
 
   async function pause(): Promise<void> {
     iosShouldBePlaying = false
-    try { await player.value?.pause() } catch (err) {
+    try {
+      await player.value?.pause()
+    } catch (err) {
       error.value = `Failed to pause Spotify playback: ${err instanceof Error ? err.message : 'unknown error'}`
     }
   }
@@ -373,7 +405,9 @@ export function useSpotifyPlayer() {
   }
 
   async function nextTrack(): Promise<void> {
-    try { await player.value?.nextTrack() } catch (err) {
+    try {
+      await player.value?.nextTrack()
+    } catch (err) {
       error.value = `Failed to skip Spotify track: ${err instanceof Error ? err.message : 'unknown error'}`
     }
   }
@@ -418,8 +452,24 @@ export function useSpotifyPlayer() {
   }
 
   return {
-    deviceId, isReady, isConnecting, error, volume,
-    playerState, currentTrack, paused, position, duration,
-    init, play, pause, seek, nextTrack, setVolume, destroy, resetErrors, setOnTrackEnd
+    deviceId,
+    isReady,
+    isConnecting,
+    error,
+    volume,
+    playerState,
+    currentTrack,
+    paused,
+    position,
+    duration,
+    init,
+    play,
+    pause,
+    seek,
+    nextTrack,
+    setVolume,
+    destroy,
+    resetErrors,
+    setOnTrackEnd
   }
 }

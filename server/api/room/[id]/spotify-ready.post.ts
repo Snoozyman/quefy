@@ -11,7 +11,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing hostToken' })
 
   if (!verifyHost(id, body.hostToken))
-    throw createError({ statusCode: 403, statusMessage: 'Only the host can set Spotify ready' })
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Only the host can set Spotify ready'
+    })
 
   setSpotifyConnected(id, true)
 

@@ -22,8 +22,8 @@ export interface Format {
   bitrate: number
   width?: number
   height?: number
-  initRange?: { start: string, end: string }
-  indexRange?: { start: string, end: string }
+  initRange?: { start: string; end: string }
+  indexRange?: { start: string; end: string }
   lastModified: string
   contentLength: string
   quality: string

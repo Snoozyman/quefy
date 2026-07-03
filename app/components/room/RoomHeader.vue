@@ -5,19 +5,14 @@
         {{ roomState.title || 'Room' }}
       </h1>
       <p class="text-sm text-muted">
-        <NuxtLink
-          to="/app/room"
-          class="hover:underline"
-        >Rooms</NuxtLink>
+        <NuxtLink to="/app/room" class="hover:underline">Rooms</NuxtLink>
         · Code:
         <code
           class="font-mono font-bold text-primary cursor-pointer select-all"
           @click="copyRoomCode"
-        >{{ roomId }}</code>
-        <span
-          v-if="copied"
-          class="ml-2 text-xs text-muted"
-        >Copied!</span>
+          >{{ roomId }}</code
+        >
+        <span v-if="copied" class="ml-2 text-xs text-muted">Copied!</span>
       </p>
     </div>
   </div>

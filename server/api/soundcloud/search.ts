@@ -10,7 +10,8 @@ const CLIENT_ID_TTL = 3_600_000
 async function scrapeClientId(): Promise<string> {
   const html = await $fetch<string>('https://soundcloud.com', {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
     }
   })
   const match = html.match(/"apiClient"[^}]*"id":"([^"]+)"/)
@@ -44,7 +45,7 @@ interface SoundcloudSearchResponse {
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
-  const q = (query.q as string || '').trim()
+  const q = ((query.q as string) || '').trim()
   const maxResults = Math.min(Number(query.limit) || 8, 50)
 
   if (q.length < 2) {
@@ -55,10 +56,11 @@ export default defineEventHandler(async (event) => {
     const cookieHeader = getSoundcloudCookieHeader()
     const clientId = await getClientId()
     const headers: Record<string, string> = {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-      'Accept': 'application/json',
-      'Origin': 'https://soundcloud.com',
-      'Referer': 'https://soundcloud.com/'
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+      Accept: 'application/json',
+      Origin: 'https://soundcloud.com',
+      Referer: 'https://soundcloud.com/'
     }
     if (cookieHeader) {
       headers['Cookie'] = cookieHeader
@@ -83,7 +85,8 @@ export default defineEventHandler(async (event) => {
 
     return results
   } catch (err: any) {
-    const detail = err.statusMessage || err.data?.message || err.data?.error || err.message
+    const detail =
+      err.statusMessage || err.data?.message || err.data?.error || err.message
     console.error('[soundcloud search]', detail)
     throw createError({
       statusCode: 502,

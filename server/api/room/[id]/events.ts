@@ -1,5 +1,11 @@
 import { getRoom, verifyHost } from '#server/utils/room'
-import { registerHostStream, registerRoomClient, unregisterRoomClient, isHostDisconnect, emitRoomUpdate } from '#server/utils/room-events'
+import {
+  registerHostStream,
+  registerRoomClient,
+  unregisterRoomClient,
+  isHostDisconnect,
+  emitRoomUpdate
+} from '#server/utils/room-events'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
@@ -28,7 +34,7 @@ export default defineEventHandler(async (event) => {
       id: room.id,
       title: room.title,
       currentSong: room.currentSong,
-      queue: room.queue.map(s => ({
+      queue: room.queue.map((s) => ({
         id: s.id,
         source: s.source,
         title: s.title,

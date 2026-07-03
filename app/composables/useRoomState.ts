@@ -16,7 +16,7 @@ export function useRoomState(roomId: Ref<string>) {
     position: 0
   })
 
-  const hostData = ref<{ roomId: string, hostToken: string } | null>(null)
+  const hostData = ref<{ roomId: string; hostToken: string } | null>(null)
   const isHost = computed(
     () => hostData.value?.roomId === roomId.value && !!hostData.value?.hostToken
   )

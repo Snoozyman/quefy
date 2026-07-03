@@ -1,9 +1,6 @@
 <template>
   <div class="flex flex-col gap-3">
-    <div
-      v-if="isHost"
-      class="flex items-center justify-between"
-    >
+    <div v-if="isHost" class="flex items-center justify-between">
       <span class="text-sm">Cookies</span>
       <RoomCookieUpload />
     </div>
@@ -18,10 +15,7 @@
         Export
       </UButton>
     </div>
-    <div
-      v-if="isHost"
-      class="flex items-center justify-between"
-    >
+    <div v-if="isHost" class="flex items-center justify-between">
       <span class="text-sm text-red-500">Delete room</span>
       <UButton
         size="sm"

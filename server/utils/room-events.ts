@@ -20,7 +20,10 @@ export function isHostDisconnect(roomId: string, stream: EventStream): boolean {
   return hostStreams.get(roomId) === stream
 }
 
-export function unregisterRoomClient(roomId: string, stream: EventStream): void {
+export function unregisterRoomClient(
+  roomId: string,
+  stream: EventStream
+): void {
   if (hostStreams.get(roomId) === stream) {
     hostStreams.delete(roomId)
   }
@@ -41,7 +44,7 @@ export function emitRoomUpdate(roomId: string, room: Room) {
     id: room.id,
     title: room.title,
     currentSong: room.currentSong,
-    queue: room.queue.map(s => ({
+    queue: room.queue.map((s) => ({
       id: s.id,
       source: s.source,
       title: s.title,

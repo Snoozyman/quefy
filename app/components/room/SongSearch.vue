@@ -85,7 +85,7 @@
               {{ r.channel }} · {{ r.durationString }}
             </template>
             <template v-else>
-              {{ r.artists?.join(", ") }} · {{ r.albumName }}
+              {{ r.artists?.join(', ') }} · {{ r.albumName }}
             </template>
           </p>
         </div>
@@ -105,171 +105,171 @@
 </template>
 
 <script lang="ts" setup>
-import type { SearchResult } from "#shared/types/room";
+import type { SearchResult } from '#shared/types/room'
 
 const props = defineProps<{
-  roomId: string;
-  addingSong: boolean;
-  spotifyConnected: boolean;
-}>();
+  roomId: string
+  addingSong: boolean
+  spotifyConnected: boolean
+}>()
 
 const emit = defineEmits<{
-  "add-youtube": [videoId: string];
-  "add-spotify": [
+  'add-youtube': [videoId: string]
+  'add-spotify': [
     track: {
-      trackUri: string;
-      title: string;
-      artists?: string[];
-      albumName?: string;
-      albumImageUrl?: string;
-      durationMs?: number;
-    },
-  ];
-  "add-soundcloud": [trackUrl: string];
-}>();
+      trackUri: string
+      title: string
+      artists?: string[]
+      albumName?: string
+      albumImageUrl?: string
+      durationMs?: number
+    }
+  ]
+  'add-soundcloud': [trackUrl: string]
+}>()
 
-const mode = ref<"youtube" | "spotify" | "soundcloud">("youtube");
-const query = ref("");
-const results = ref<SearchResult[]>([]);
-const searching = ref(false);
-const showResults = ref(false);
-const highlightIdx = ref(-1);
+const mode = ref<'youtube' | 'spotify' | 'soundcloud'>('youtube')
+const query = ref('')
+const results = ref<SearchResult[]>([])
+const searching = ref(false)
+const showResults = ref(false)
+const highlightIdx = ref(-1)
 
-let searchTimer: ReturnType<typeof setTimeout>;
+let searchTimer: ReturnType<typeof setTimeout>
 
 function extractVideoId(input: string): string | null {
-  const trimmed = input.trim();
+  const trimmed = input.trim()
   const match = trimmed.match(
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/,
-  );
-  return match ? (match[1] ?? null) : null;
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/
+  )
+  return match ? (match[1] ?? null) : null
 }
 
 function extractSoundcloudUrl(input: string): string | null {
-  const trimmed = input.trim();
-  const match = trimmed.match(/(https?:\/\/soundcloud\.com\/[^\s]+)/i);
-  return match ? match[1]! : null;
+  const trimmed = input.trim()
+  const match = trimmed.match(/(https?:\/\/soundcloud\.com\/[^\s]+)/i)
+  return match ? match[1]! : null
 }
 
 function onInput() {
-  const q = query.value.trim();
+  const q = query.value.trim()
 
-  if (mode.value === "youtube" && extractVideoId(q)) {
-    showResults.value = false;
-    results.value = [];
-    return;
+  if (mode.value === 'youtube' && extractVideoId(q)) {
+    showResults.value = false
+    results.value = []
+    return
   }
 
-  if (mode.value === "soundcloud" && extractSoundcloudUrl(q)) {
-    showResults.value = false;
-    results.value = [];
-    return;
+  if (mode.value === 'soundcloud' && extractSoundcloudUrl(q)) {
+    showResults.value = false
+    results.value = []
+    return
   }
 
-  showResults.value = true;
-  clearTimeout(searchTimer);
+  showResults.value = true
+  clearTimeout(searchTimer)
   if (q.length < 2) {
-    results.value = [];
-    searching.value = false;
-    return;
+    results.value = []
+    searching.value = false
+    return
   }
-  searching.value = true;
+  searching.value = true
   searchTimer = setTimeout(async () => {
     const endpoint =
-      mode.value === "youtube"
+      mode.value === 'youtube'
         ? `/api/youtube/search?q=${encodeURIComponent(q)}&limit=8`
-        : mode.value === "spotify"
+        : mode.value === 'spotify'
           ? `/api/spotify/search?q=${encodeURIComponent(q)}&limit=8`
-          : `/api/soundcloud/search?q=${encodeURIComponent(q)}&limit=8`;
+          : `/api/soundcloud/search?q=${encodeURIComponent(q)}&limit=8`
     try {
-      results.value = await $fetch<SearchResult[]>(endpoint);
-      highlightIdx.value = -1;
+      results.value = await $fetch<SearchResult[]>(endpoint)
+      highlightIdx.value = -1
     } catch {
-      results.value = [];
+      results.value = []
     } finally {
-      searching.value = false;
+      searching.value = false
     }
-  }, 300);
+  }, 300)
 }
 
 function highlightNext() {
-  if (!results.value.length) return;
-  highlightIdx.value = (highlightIdx.value + 1) % results.value.length;
+  if (!results.value.length) return
+  highlightIdx.value = (highlightIdx.value + 1) % results.value.length
 }
 
 function highlightPrev() {
-  if (!results.value.length) return;
+  if (!results.value.length) return
   highlightIdx.value =
-    (highlightIdx.value - 1 + results.value.length) % results.value.length;
+    (highlightIdx.value - 1 + results.value.length) % results.value.length
 }
 
 function addHighlighted() {
-  const q = query.value.trim();
-  if (!q) return;
+  const q = query.value.trim()
+  if (!q) return
 
-  if (mode.value === "youtube") {
-    const videoId = extractVideoId(q);
+  if (mode.value === 'youtube') {
+    const videoId = extractVideoId(q)
     if (videoId) {
-      emit("add-youtube", videoId);
-      reset();
-      return;
+      emit('add-youtube', videoId)
+      reset()
+      return
     }
   }
 
-  if (mode.value === "soundcloud") {
-    const trackUrl = extractSoundcloudUrl(q);
+  if (mode.value === 'soundcloud') {
+    const trackUrl = extractSoundcloudUrl(q)
     if (trackUrl) {
-      emit("add-soundcloud", trackUrl);
-      reset();
-      return;
+      emit('add-soundcloud', trackUrl)
+      reset()
+      return
     }
   }
 
-  const idx = highlightIdx.value;
+  const idx = highlightIdx.value
   const r =
     idx >= 0 && idx < results.value.length
       ? results.value[idx]
-      : results.value[0];
-  if (r) selectResult(r);
+      : results.value[0]
+  if (r) selectResult(r)
 }
 
 function selectResult(r: SearchResult) {
-  showResults.value = false;
-  if (r.source === "spotify") {
-    emit("add-spotify", {
-      trackUri: r.uri ?? "",
+  showResults.value = false
+  if (r.source === 'spotify') {
+    emit('add-spotify', {
+      trackUri: r.uri ?? '',
       title: r.title,
       artists: r.artists,
       albumName: r.albumName,
       albumImageUrl: r.thumbnail,
-      durationMs: r.durationMs,
-    });
-  } else if (r.source === "soundcloud") {
-    emit("add-soundcloud", r.id);
+      durationMs: r.durationMs
+    })
+  } else if (r.source === 'soundcloud') {
+    emit('add-soundcloud', r.id)
   } else {
-    emit("add-youtube", r.id);
+    emit('add-youtube', r.id)
   }
-  reset();
+  reset()
 }
 
 function reset() {
-  query.value = "";
-  results.value = [];
+  query.value = ''
+  results.value = []
 }
 
 function onClickOutside(e: MouseEvent) {
-  const target = e.target as HTMLElement;
-  if (!target.closest(".search-container")) {
-    showResults.value = false;
+  const target = e.target as HTMLElement
+  if (!target.closest('.search-container')) {
+    showResults.value = false
   }
 }
 
 onMounted(() => {
-  document.addEventListener("click", onClickOutside);
-});
+  document.addEventListener('click', onClickOutside)
+})
 
 onUnmounted(() => {
-  clearTimeout(searchTimer);
-  document.removeEventListener("click", onClickOutside);
-});
+  clearTimeout(searchTimer)
+  document.removeEventListener('click', onClickOutside)
+})
 </script>

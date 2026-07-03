@@ -88,12 +88,24 @@ describe('addToQueue', () => {
 
   test('defaults addedBy to Anonymous', () => {
     const room = createRoom()
-    const song = addToQueue(room.id, { source: 'youtube', videoId: 'abc', title: 'Test', url: 'url', addedBy: '' })
+    const song = addToQueue(room.id, {
+      source: 'youtube',
+      videoId: 'abc',
+      title: 'Test',
+      url: 'url',
+      addedBy: ''
+    })
     expect(song!.addedBy).toBe('Anonymous')
   })
 
   test('returns null for non-existent room', () => {
-    const song = addToQueue('NOPE', { source: 'youtube', videoId: 'abc', title: 'Test', url: 'url', addedBy: 'Alice' })
+    const song = addToQueue('NOPE', {
+      source: 'youtube',
+      videoId: 'abc',
+      title: 'Test',
+      url: 'url',
+      addedBy: 'Alice'
+    })
     expect(song).toBeNull()
   })
 })
@@ -101,7 +113,13 @@ describe('addToQueue', () => {
 describe('removeFromQueue', () => {
   test('removes a song by id', () => {
     const room = createRoom()
-    const song = addToQueue(room.id, { source: 'youtube', videoId: 'abc', title: 'Test', url: 'url', addedBy: 'Alice' })!
+    const song = addToQueue(room.id, {
+      source: 'youtube',
+      videoId: 'abc',
+      title: 'Test',
+      url: 'url',
+      addedBy: 'Alice'
+    })!
     const ok = removeFromQueue(room.id, song.id, room.hostToken)
     expect(ok).toBe(true)
     expect(getRoom(room.id)!.queue).toHaveLength(0)
@@ -109,7 +127,13 @@ describe('removeFromQueue', () => {
 
   test('rejects removal with wrong host token', () => {
     const room = createRoom()
-    const song = addToQueue(room.id, { source: 'youtube', videoId: 'abc', title: 'Test', url: 'url', addedBy: 'Alice' })!
+    const song = addToQueue(room.id, {
+      source: 'youtube',
+      videoId: 'abc',
+      title: 'Test',
+      url: 'url',
+      addedBy: 'Alice'
+    })!
     const ok = removeFromQueue(room.id, song.id, 'wrong-token')
     expect(ok).toBe(false)
     expect(getRoom(room.id)!.queue).toHaveLength(1)
@@ -125,7 +149,13 @@ describe('removeFromQueue', () => {
 describe('togglePlay', () => {
   test('starts playing when queue has songs', () => {
     const room = createRoom()
-    addToQueue(room.id, { source: 'youtube', videoId: 'abc', title: 'Song A', url: 'url', addedBy: 'Alice' })
+    addToQueue(room.id, {
+      source: 'youtube',
+      videoId: 'abc',
+      title: 'Song A',
+      url: 'url',
+      addedBy: 'Alice'
+    })
     const result = togglePlay(room.id, room.hostToken)
     expect(result).toBe(true)
 
@@ -138,7 +168,13 @@ describe('togglePlay', () => {
 
   test('toggles play/pause', () => {
     const room = createRoom()
-    addToQueue(room.id, { source: 'youtube', videoId: 'abc', title: 'Song A', url: 'url', addedBy: 'Alice' })
+    addToQueue(room.id, {
+      source: 'youtube',
+      videoId: 'abc',
+      title: 'Song A',
+      url: 'url',
+      addedBy: 'Alice'
+    })
     togglePlay(room.id, room.hostToken) // play
     const paused = togglePlay(room.id, room.hostToken) // pause
     expect(paused).toBe(true)
@@ -157,7 +193,13 @@ describe('togglePlay', () => {
 
   test('fails with wrong host token', () => {
     const room = createRoom()
-    addToQueue(room.id, { source: 'youtube', videoId: 'abc', title: 'Song A', url: 'url', addedBy: 'Alice' })
+    addToQueue(room.id, {
+      source: 'youtube',
+      videoId: 'abc',
+      title: 'Song A',
+      url: 'url',
+      addedBy: 'Alice'
+    })
     const result = togglePlay(room.id, 'wrong-token')
     expect(result).toBe(false)
   })
@@ -166,8 +208,20 @@ describe('togglePlay', () => {
 describe('skipSong', () => {
   test('advances to the next song in queue', () => {
     const room = createRoom()
-    addToQueue(room.id, { source: 'youtube', videoId: 'abc', title: 'Song A', url: 'url', addedBy: 'Alice' })
-    addToQueue(room.id, { source: 'youtube', videoId: 'def', title: 'Song B', url: 'url', addedBy: 'Bob' })
+    addToQueue(room.id, {
+      source: 'youtube',
+      videoId: 'abc',
+      title: 'Song A',
+      url: 'url',
+      addedBy: 'Alice'
+    })
+    addToQueue(room.id, {
+      source: 'youtube',
+      videoId: 'def',
+      title: 'Song B',
+      url: 'url',
+      addedBy: 'Bob'
+    })
     togglePlay(room.id, room.hostToken) // starts playing Song A, queue has [Song B]
 
     expect(getRoom(room.id)!.currentSong!.title).toBe('Song A')
@@ -181,7 +235,13 @@ describe('skipSong', () => {
 
   test('returns null and clears current when queue is empty', () => {
     const room = createRoom()
-    addToQueue(room.id, { source: 'youtube', videoId: 'abc', title: 'Song A', url: 'url', addedBy: 'Alice' })
+    addToQueue(room.id, {
+      source: 'youtube',
+      videoId: 'abc',
+      title: 'Song A',
+      url: 'url',
+      addedBy: 'Alice'
+    })
     togglePlay(room.id, room.hostToken) // plays Song A, queue empty
 
     const result = skipSong(room.id, room.hostToken)
@@ -192,7 +252,13 @@ describe('skipSong', () => {
 
   test('fails with wrong host token', () => {
     const room = createRoom()
-    addToQueue(room.id, { source: 'youtube', videoId: 'abc', title: 'Song A', url: 'url', addedBy: 'Alice' })
+    addToQueue(room.id, {
+      source: 'youtube',
+      videoId: 'abc',
+      title: 'Song A',
+      url: 'url',
+      addedBy: 'Alice'
+    })
     togglePlay(room.id, room.hostToken)
 
     const result = skipSong(room.id, 'wrong-token')
@@ -203,7 +269,13 @@ describe('skipSong', () => {
 describe('exportRoom', () => {
   test('returns room data as plain object', () => {
     const room = createRoom()
-    addToQueue(room.id, { source: 'youtube', videoId: 'abc', title: 'Song A', url: 'url', addedBy: 'Alice' })
+    addToQueue(room.id, {
+      source: 'youtube',
+      videoId: 'abc',
+      title: 'Song A',
+      url: 'url',
+      addedBy: 'Alice'
+    })
     togglePlay(room.id, room.hostToken)
 
     const data = exportRoom(room.id)!
@@ -225,7 +297,7 @@ describe('listRooms', () => {
     const r2 = createRoom('Room B')
     const rooms = listRooms()
     expect(rooms.length).toBeGreaterThanOrEqual(2)
-    const found = rooms.filter(r => r.id === r1.id || r.id === r2.id)
+    const found = rooms.filter((r) => r.id === r1.id || r.id === r2.id)
     expect(found).toHaveLength(2)
     for (const r of found) {
       expect(r).toHaveProperty('title')

@@ -1,11 +1,17 @@
 export function parseYtDlpError(stderr: string): string {
   const lower = stderr.toLowerCase()
 
-  if (lower.includes('sign in to confirm your age') || lower.includes('age-restricted')) {
+  if (
+    lower.includes('sign in to confirm your age') ||
+    lower.includes('age-restricted')
+  ) {
     return 'This video is age-restricted. Configure YT_DLP_COOKIES with authenticated YouTube cookies to access it.'
   }
 
-  if (lower.includes('only available to members') || lower.includes('member-only')) {
+  if (
+    lower.includes('only available to members') ||
+    lower.includes('member-only')
+  ) {
     return 'This video is members-only. Configure YT_DLP_COOKIES with authenticated YouTube cookies to access it.'
   }
 
@@ -13,7 +19,10 @@ export function parseYtDlpError(stderr: string): string {
     return 'This video is private. Configure YT_DLP_COOKIES with authenticated YouTube cookies to access it.'
   }
 
-  if (lower.includes('video unavailable') || lower.includes('no video formats found')) {
+  if (
+    lower.includes('video unavailable') ||
+    lower.includes('no video formats found')
+  ) {
     return 'This video is unavailable or has been removed.'
   }
 
@@ -39,7 +48,11 @@ export function parseYtDlpError(stderr: string): string {
     return 'The cookies file is corrupt (wrong format). Delete it and re-upload a proper Netscape-format cookies.txt file.'
   }
 
-  if (lower.includes('cookie') || lower.includes('not logged in') || lower.includes('sign in')) {
+  if (
+    lower.includes('cookie') ||
+    lower.includes('not logged in') ||
+    lower.includes('sign in')
+  ) {
     return 'Authentication required. Upload fresh YouTube cookies from your browser.'
   }
 

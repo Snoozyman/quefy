@@ -48,7 +48,10 @@ export function useSpotifyAuth() {
   async function login(roomId: string) {
     loading.value = true
     try {
-      const { clientId, redirectUri } = await $fetch<{ clientId: string, redirectUri: string }>('/api/spotify/client-id')
+      const { clientId, redirectUri } = await $fetch<{
+        clientId: string
+        redirectUri: string
+      }>('/api/spotify/client-id')
       const state = `${roomId}:${crypto.randomUUID?.() ?? crypto.getRandomValues(new Uint32Array(4)).join('-')}`
       const scopes = [
         'streaming',
@@ -69,9 +72,7 @@ export function useSpotifyAuth() {
       window.location.href = `https://accounts.spotify.com/authorize?${params.toString()}`
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err)
-      throw new Error(
-        `Spotify login failed: ${message}`
-      )
+      throw new Error(`Spotify login failed: ${message}`)
     }
   }
 

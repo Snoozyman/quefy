@@ -11,6 +11,8 @@ export default defineEventHandler((event) => {
     const duration = Date.now() - start
     const status = event.node.res.statusCode
     const level = status >= 500 ? 'ERROR' : status >= 400 ? 'WARN' : 'OK'
-    console.log(`[${new Date().toISOString()}] ${level} ${method} ${path} ${status} ${duration}ms`)
+    console.log(
+      `[${new Date().toISOString()}] ${level} ${method} ${path} ${status} ${duration}ms`
+    )
   })
 })
