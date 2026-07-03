@@ -76,15 +76,21 @@ export function mergeAndSaveCookieContent(incoming: string): {
   mkdirSync(DATA_DIR, { recursive: true })
 
   const incomingLines = parseCookieLines(incoming)
-  const incomingDomains = new Set(incomingLines.map((l) => l.split('\t')[0]!))
+  const incomingKeys = new Set(
+    incomingLines.map((l) => {
+      const f = l.split('\t')
+      return f[0]! + '\t' + f[5]!
+    })
+  )
 
   let merged: string[]
   if (existsSync(path)) {
     const existing = readFileSync(path, 'utf-8')
     const existingLines = parseCookieLines(existing)
-    const kept = existingLines.filter(
-      (l) => !incomingDomains.has(l.split('\t')[0]!)
-    )
+    const kept = existingLines.filter((l) => {
+      const f = l.split('\t')
+      return !incomingKeys.has(f[0]! + '\t' + f[5]!)
+    })
     merged = [...kept, ...incomingLines]
   } else {
     merged = incomingLines
