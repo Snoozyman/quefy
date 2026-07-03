@@ -18,4 +18,4 @@ services:
       # - SPOTIFY_REDIRECT_URI=https://yourdomain.com/api/spotify/callback
     volumes:
       # Persist uploaded cookies and other data
-      # - ./data:/app/data
+      - ./data:/app/data
