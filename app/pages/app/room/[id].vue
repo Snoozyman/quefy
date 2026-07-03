@@ -359,6 +359,7 @@ function onSpotifyPlayerReady() {
   }
 }
 
+let skipping = false
 let lastSongId: string | null = null
 let currentPlayingId = ''
 
@@ -370,11 +371,13 @@ async function handleSongChange(song: SongData) {
     audioPlayerRef.value?.pause()
     spotifyPlayer.setOnTrackEnd(skip)
     await transferSpotifyPlayback(song.trackUri)
+    if (song.id !== currentPlayingId) return
   }
   if ((song.source === 'youtube' || song.source === 'soundcloud') && song.url) {
     spotifyPlayer.setOnTrackEnd(null)
     spotifyPlayer.resetErrors()
     await spotifyPlayer.pause()
+    if (song.id !== currentPlayingId) return
     if (roomState.value.isPlaying) {
       const url = song.url!
       const startTime =
@@ -382,6 +385,7 @@ async function handleSongChange(song: SongData) {
           ? roomState.value.position / 1000
           : undefined
       nextTick(() => {
+        if (song.id !== currentPlayingId) return
         audioPlayerRef.value?.play(url, startTime)
       })
     }
@@ -660,6 +664,8 @@ async function togglePlay() {
 
 async function skip() {
   if (!isHost.value || !hostData.value?.hostToken) return
+  if (skipping) return
+  skipping = true
 
   audioPlayerRef.value?.pause()
 
@@ -682,6 +688,8 @@ async function skip() {
     }
   } catch {
     error.value = 'Failed to skip.'
+  } finally {
+    skipping = false
   }
 }
 
