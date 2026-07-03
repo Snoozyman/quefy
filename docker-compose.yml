@@ -1,5 +1,6 @@
 services:
   quefy:
+    build: .
     image: snoozyman/quefy:latest
     container_name: quefy
     restart: unless-stopped
