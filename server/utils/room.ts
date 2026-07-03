@@ -121,6 +121,22 @@ export function addToQueue(
   return song
 }
 
+export function reorderQueue(
+  roomId: string,
+  songIds: string[],
+  hostToken: string
+): boolean {
+  const room = rooms.get(roomId)
+  if (!room || room.hostToken !== hostToken) return false
+  if (songIds.length !== room.queue.length) return false
+  const songMap = new Map(room.queue.map(s => [s.id, s]))
+  for (const id of songIds) {
+    if (!songMap.has(id)) return false
+  }
+  room.queue = songIds.map(id => songMap.get(id)!)
+  return true
+}
+
 export function removeFromQueue(
   roomId: string,
   songId: string,

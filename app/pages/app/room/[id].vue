@@ -125,6 +125,7 @@
       :queue="roomState.queue"
       :is-host="isHost"
       @remove="removeSong"
+      @reorder="reorderQueue"
     />
   </div>
 </template>
@@ -613,6 +614,16 @@ async function removeSong(songId: string) {
   } catch {
     error.value = 'Failed to remove song.'
   }
+}
+
+function reorderQueue(songIds: string[]) {
+  if (!isHost.value || !hostData.value?.hostToken) return
+  $fetch(`/api/room/${roomId}/reorder`, {
+    method: 'POST',
+    body: { hostToken: hostData.value.hostToken, songIds }
+  }).catch(() => {
+    error.value = 'Failed to reorder queue.'
+  })
 }
 
 async function togglePlay() {
