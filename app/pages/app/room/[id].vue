@@ -834,8 +834,6 @@ async function onAudioError(msg: string) {
           { method: 'POST', body }
         )
         if (roomState.value.currentSong?.id === song.id) {
-          retryCount.value.delete(song.id)
-          retryExhausted.value = false
           song.url = refreshed.url
           if (userActivated.value) {
             error.value = ''
@@ -887,8 +885,6 @@ async function onAudioExpired() {
         body
       }
     )
-    retryCount.value.delete(song.id)
-    retryExhausted.value = false
     song.url = refreshed.url
     if (userActivated.value) {
       audioPlayerRef.value?.play(refreshed.url)
