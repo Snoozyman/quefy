@@ -1,4 +1,5 @@
 import type { SearchResult } from '#shared/types/room'
+import { formatDurationMs } from '#shared/utils/format'
 import { getSoundcloudCookieHeader } from '#server/utils/cookies'
 
 const SC_CLIENT_ID = 'OtK8FaCIITOnTBrgmv05bTkLTrcKKcuc'
@@ -76,7 +77,7 @@ export default defineEventHandler(async (event) => {
       title: item.title || 'Unknown Track',
       channel: item.user?.username || 'Unknown Artist',
       duration: Math.round((item.duration ?? 0) / 1000),
-      durationString: formatDuration(item.duration),
+      durationString: formatDurationMs(item.duration),
       thumbnail: item.artwork_url?.replace('large', 't500x500') || '',
       source: 'soundcloud' as const,
       artists: item.user?.username ? [item.user.username] : undefined,
@@ -95,10 +96,4 @@ export default defineEventHandler(async (event) => {
   }
 })
 
-function formatDuration(ms?: number): string {
-  if (!ms) return ''
-  const s = Math.round(ms / 1000)
-  const m = Math.floor(s / 60)
-  const sec = s % 60
-  return `${m}:${sec.toString().padStart(2, '0')}`
-}
+

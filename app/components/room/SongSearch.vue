@@ -81,12 +81,9 @@
             {{ r.title }}
           </p>
           <p class="text-xs text-muted truncate">
-            <template v-if="r.source === 'youtube'">
-              {{ r.channel }} · {{ r.durationString }}
-            </template>
-            <template v-else>
-              {{ r.artists?.join(', ') }} · {{ r.albumName }}
-            </template>
+            <template v-if="r.source === 'youtube'">{{ r.channel }}</template>
+            <template v-else>{{ r.artists?.join(', ') }}<template v-if="r.albumName"> · {{ r.albumName }}</template></template>
+            <template v-if="r.durationString"> · {{ r.durationString }}</template>
           </p>
         </div>
         <UIcon

@@ -56,7 +56,8 @@ export default defineEventHandler(async (event) => {
         channel: item.channel || item.uploader || '',
         duration: item.duration ?? 0,
         durationString: item.duration_string || '',
-        thumbnail: item.thumbnails?.[0]?.url || ''
+        thumbnail: item.thumbnails?.[0]?.url || '',
+        source: 'youtube' as const
       }
     })
 
