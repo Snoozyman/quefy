@@ -103,6 +103,25 @@ export default defineEventHandler(async (event) => {
   if (!body.videoId)
     throw createError({ statusCode: 400, statusMessage: 'Missing videoId' })
 
+  if (body.title && body.durationMs) {
+    const song = addToQueue(id, {
+      source: 'youtube',
+      title: body.title,
+      addedBy: body.addedBy ?? 'Anonymous',
+      videoId: body.videoId,
+      albumImageUrl:
+        body.albumImageUrl ||
+        `https://img.youtube.com/vi/${body.videoId}/hqdefault.jpg`,
+      durationMs: body.durationMs
+    })
+
+    if (!song)
+      throw createError({ statusCode: 500, statusMessage: 'Failed to add song' })
+
+    emitRoomUpdate(id, room)
+    return song
+  }
+
   let audio
   try {
     audio = await getAudioStreamUrl(body.videoId)

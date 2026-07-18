@@ -111,7 +111,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'add-youtube': [videoId: string]
+  'add-youtube': [data: { videoId: string; title?: string; durationMs?: number; albumImageUrl?: string }]
   'add-spotify': [
     track: {
       trackUri: string
@@ -207,7 +207,7 @@ function addHighlighted() {
   if (mode.value === 'youtube') {
     const videoId = extractVideoId(q)
     if (videoId) {
-      emit('add-youtube', videoId)
+      emit('add-youtube', { videoId })
       reset()
       return
     }
@@ -244,7 +244,12 @@ function selectResult(r: SearchResult) {
   } else if (r.source === 'soundcloud') {
     emit('add-soundcloud', r.id)
   } else {
-    emit('add-youtube', r.id)
+    emit('add-youtube', {
+      videoId: r.id,
+      title: r.title,
+      durationMs: r.duration ? Math.round(r.duration * 1000) : r.durationMs,
+      albumImageUrl: r.thumbnail
+    })
   }
   reset()
 }
