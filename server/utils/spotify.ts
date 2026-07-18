@@ -2,6 +2,7 @@ import type {
   SpotifySearchResponse,
   TokenResponse
 } from '#shared/types/spotify'
+import { formatDurationMs } from '#shared/utils/format'
 
 interface CachedToken {
   accessToken: string
@@ -156,6 +157,8 @@ export async function refreshAccessToken(
 export function formatTrackResult(
   item: SpotifySearchResponse['tracks']['items'][number]
 ) {
+  const durationMs = (item as unknown as Record<string, unknown>)
+    .duration_ms as number
   return {
     id: item.id,
     thumbnail: item.album.images?.[0]?.url ?? '',
@@ -164,8 +167,8 @@ export function formatTrackResult(
     artists: item.artists.map((a) => a.name),
     albumName: item.album.name,
     albumImageUrl: item.album.images?.[0]?.url ?? '',
-    durationMs: (item as unknown as Record<string, unknown>)
-      .duration_ms as number,
+    durationMs,
+    durationString: formatDurationMs(durationMs),
     source: 'spotify' as const
   }
 }

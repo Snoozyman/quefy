@@ -2,7 +2,7 @@
   <div class="space-y-2">
     <h2 class="font-semibold text-sm text-muted">
       Queue
-      <span v-if="queue.length">({{ queue.length }})</span>
+      <span v-if="queue.length">({{ queue.length }}<template v-if="totalDuration"> · {{ totalDuration }}</template>)</span>
     </h2>
     <div v-if="queue.length === 0" class="text-sm text-muted py-4 text-center">
       Queue is empty. Add a song to get started.
@@ -46,6 +46,7 @@
               {{ song.artists.join(', ') }}
             </template>
             <template v-else> added by {{ song.addedBy }} </template>
+            <template v-if="song.durationMs"> · {{ formatDurationMs(song.durationMs) }}</template>
           </p>
         </div>
         <UButton
@@ -62,8 +63,9 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { SongData } from '#shared/types/room'
+import { formatDurationMs } from '#shared/utils/format'
 import { VueDraggable } from 'vue-draggable-plus'
 
 const props = defineProps<{
@@ -95,4 +97,9 @@ function sourceIcon(source: string): string {
   if (source === 'soundcloud') return 'i-simple-icons-soundcloud'
   return 'i-simple-icons-youtube'
 }
+
+const totalDuration = computed(() => {
+  const totalMs = props.queue.reduce((sum, s) => sum + (s.durationMs ?? 0), 0)
+  return totalMs > 0 ? formatDurationMs(totalMs) : ''
+})
 </script>
