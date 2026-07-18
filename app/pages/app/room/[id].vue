@@ -872,6 +872,13 @@ async function onAudioExpired() {
     return
   }
 
+  const attempts = retryCount.value.get(song.id) ?? 0
+  if (attempts >= RETRY_LIMIT) {
+    retryExhausted.value = true
+    error.value = `Failed to load audio after ${RETRY_LIMIT} attempts.`
+    return
+  }
+
   try {
     const refreshed = await $fetch<{ url: string; title: string }>(
       `/api/room/${roomId}/audio/refresh`,
@@ -880,11 +887,14 @@ async function onAudioExpired() {
         body
       }
     )
+    retryCount.value.delete(song.id)
+    retryExhausted.value = false
     song.url = refreshed.url
     if (userActivated.value) {
       audioPlayerRef.value?.play(refreshed.url)
     }
   } catch {
+    retryCount.value.set(song.id, attempts + 1)
     skip()
   }
 }
