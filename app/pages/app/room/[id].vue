@@ -399,7 +399,7 @@ let refreshingAudio = false
 let lastSongId: string | null = null
 let currentPlayingId = ''
 const retryCount = ref<Map<string, number>>(new Map())
-const RETRY_LIMIT = 5
+const RETRY_LIMIT = 2
 const retryExhausted = ref(false)
 
 async function handleSongChange(song: SongData) {
@@ -827,6 +827,7 @@ async function onAudioError(msg: string) {
         return
       }
 
+      retryCount.value.set(song.id, attempts + 1)
       refreshingAudio = true
       try {
         const refreshed = await $fetch<{ url: string; title: string }>(
@@ -842,7 +843,6 @@ async function onAudioError(msg: string) {
           }
         }
       } catch {
-        retryCount.value.set(song.id, attempts + 1)
         // refresh failed, fall through to skip
       } finally {
         refreshingAudio = false
@@ -854,6 +854,7 @@ async function onAudioError(msg: string) {
 }
 
 async function onAudioExpired() {
+  if (refreshingAudio) return
   const song = roomState.value.currentSong
   if (!song || !hostData.value?.hostToken) {
     skip()
@@ -877,6 +878,8 @@ async function onAudioExpired() {
     return
   }
 
+  retryCount.value.set(song.id, attempts + 1)
+  refreshingAudio = true
   try {
     const refreshed = await $fetch<{ url: string; title: string }>(
       `/api/room/${roomId}/audio/refresh`,
@@ -890,8 +893,9 @@ async function onAudioExpired() {
       audioPlayerRef.value?.play(refreshed.url)
     }
   } catch {
-    retryCount.value.set(song.id, attempts + 1)
     skip()
+  } finally {
+    refreshingAudio = false
   }
 }
 
