@@ -382,6 +382,7 @@ function onError() {
   if (errorEmitted) return
   destroyHls()
   playing.value = false
+  errorEmitted = true
   const msg = audioEl.value?.error?.message
   emit('error', msg || 'Audio playback failed.')
 }
