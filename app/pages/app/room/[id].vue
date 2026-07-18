@@ -109,8 +109,32 @@
       variant="soft"
       :description="error"
       closable
-      @close="error = ''"
-    />
+      @close="error = ''; retryExhausted = false"
+    >
+      <template v-if="retryExhausted" #actions>
+        <div class="flex gap-2">
+          <UButton
+            size="xs"
+            color="error"
+            variant="outline"
+            icon="i-lucide-refresh-cw"
+            :loading="refreshingAudio"
+            @click="manualRefreshAudio"
+          >
+            Refresh
+          </UButton>
+          <UButton
+            size="xs"
+            color="error"
+            variant="outline"
+            icon="i-lucide-skip-forward"
+            @click="error = ''; retryExhausted = false; skip()"
+          >
+            Skip
+          </UButton>
+        </div>
+      </template>
+    </UAlert>
 
     <RoomSongSearch
       :room-id="roomId"
@@ -364,6 +388,9 @@ let skipping = false
 let refreshingAudio = false
 let lastSongId: string | null = null
 let currentPlayingId = ''
+const retryCount = ref<Map<string, number>>(new Map())
+const RETRY_LIMIT = 5
+const retryExhausted = ref(false)
 
 async function handleSongChange(song: SongData) {
   if (!isHost.value) return
@@ -391,6 +418,49 @@ async function handleSongChange(song: SongData) {
           if (song.id !== currentPlayingId) return
           audioPlayerRef.value?.play(url, startTime)
         })
+      }
+    }
+    if ((song.source === 'youtube' || song.source === 'soundcloud') && !song.url && hostData.value?.hostToken) {
+      const body: Record<string, string> = { hostToken: hostData.value.hostToken }
+      if (song.videoId) body.videoId = song.videoId
+      else if (song.trackUrl) body.trackUrl = song.trackUrl
+      else { skip(); return }
+
+      const attempts = retryCount.value.get(song.id) ?? 0
+      if (attempts >= RETRY_LIMIT) {
+        retryExhausted.value = true
+        error.value = `Failed to load audio after ${RETRY_LIMIT} attempts.`
+        return
+      }
+
+      spotifyPlayer.setOnTrackEnd(null)
+      spotifyPlayer.resetErrors()
+      await spotifyPlayer.pause()
+      if (song.id !== currentPlayingId) return
+      if (roomState.value.isPlaying) {
+        try {
+          const refreshed = await $fetch<{ url: string; title: string; durationMs: number }>(
+            `/api/room/${roomId}/audio/refresh`,
+            { method: 'POST', body }
+          )
+          if (song.id !== currentPlayingId) return
+          retryCount.value.delete(song.id)
+          retryExhausted.value = false
+          song.url = refreshed.url
+          if (!song.title || song.title === 'Unknown Title') song.title = refreshed.title
+          if (!song.durationMs) song.durationMs = refreshed.durationMs
+          const startTime =
+            roomState.value.position > 0
+              ? roomState.value.position / 1000
+              : undefined
+          nextTick(() => {
+            if (song.id !== currentPlayingId) return
+            audioPlayerRef.value?.play(refreshed.url, startTime)
+          })
+        } catch {
+          retryCount.value.set(song.id, attempts + 1)
+          skip()
+        }
       }
     }
   } catch (err: unknown) {
@@ -740,6 +810,13 @@ async function onAudioError(msg: string) {
     }
 
     if (body.videoId || body.trackUrl) {
+      const attempts = retryCount.value.get(song.id) ?? 0
+      if (attempts >= RETRY_LIMIT) {
+        retryExhausted.value = true
+        error.value = `Failed to load audio after ${RETRY_LIMIT} attempts.`
+        return
+      }
+
       refreshingAudio = true
       try {
         const refreshed = await $fetch<{ url: string; title: string }>(
@@ -747,6 +824,8 @@ async function onAudioError(msg: string) {
           { method: 'POST', body }
         )
         if (roomState.value.currentSong?.id === song.id) {
+          retryCount.value.delete(song.id)
+          retryExhausted.value = false
           song.url = refreshed.url
           if (userActivated.value) {
             error.value = ''
@@ -755,6 +834,7 @@ async function onAudioError(msg: string) {
           }
         }
       } catch {
+        retryCount.value.set(song.id, attempts + 1)
         // refresh failed, fall through to skip
       } finally {
         refreshingAudio = false
@@ -796,6 +876,42 @@ async function onAudioExpired() {
     }
   } catch {
     skip()
+  }
+}
+
+async function manualRefreshAudio() {
+  const song = roomState.value.currentSong
+  if (!song || !hostData.value?.hostToken) return
+
+  const body: Record<string, string> = { hostToken: hostData.value.hostToken }
+  if (song.videoId) body.videoId = song.videoId
+  else if (song.trackUrl) body.trackUrl = song.trackUrl
+  else return
+
+  refreshingAudio = true
+  error.value = ''
+  retryExhausted.value = false
+  try {
+    const refreshed = await $fetch<{ url: string; title: string; durationMs: number }>(
+      `/api/room/${roomId}/audio/refresh`,
+      { method: 'POST', body }
+    )
+    retryCount.value.delete(song.id)
+    song.url = refreshed.url
+    if (!song.title || song.title === 'Unknown Title') song.title = refreshed.title
+    if (!song.durationMs) song.durationMs = refreshed.durationMs
+    const startTime =
+      roomState.value.position > 0
+        ? roomState.value.position / 1000
+        : undefined
+    nextTick(() => {
+      audioPlayerRef.value?.play(refreshed.url, startTime)
+    })
+  } catch (err: unknown) {
+    retryCount.value.set(song.id, RETRY_LIMIT)
+    error.value = `Refresh failed: ${err instanceof Error ? err.message : err}`
+  } finally {
+    refreshingAudio = false
   }
 }
 
