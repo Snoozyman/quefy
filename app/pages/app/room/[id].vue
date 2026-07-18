@@ -361,6 +361,7 @@ function onSpotifyPlayerReady() {
 }
 
 let skipping = false
+let refreshingAudio = false
 let lastSongId: string | null = null
 let currentPlayingId = ''
 
@@ -725,8 +726,42 @@ function onPlayBlocked() {
   }).catch(() => {})
 }
 
-function onAudioError(msg: string) {
+async function onAudioError(msg: string) {
+  if (refreshingAudio) return
   error.value = msg
+
+  const song = roomState.value.currentSong
+  if (song && hostData.value?.hostToken) {
+    const body: Record<string, string> = { hostToken: hostData.value.hostToken }
+    if (song.videoId) {
+      body.videoId = song.videoId
+    } else if (song.trackUrl) {
+      body.trackUrl = song.trackUrl
+    }
+
+    if (body.videoId || body.trackUrl) {
+      refreshingAudio = true
+      try {
+        const refreshed = await $fetch<{ url: string; title: string }>(
+          `/api/room/${roomId}/audio/refresh`,
+          { method: 'POST', body }
+        )
+        if (roomState.value.currentSong?.id === song.id) {
+          song.url = refreshed.url
+          if (userActivated.value) {
+            error.value = ''
+            audioPlayerRef.value?.play(refreshed.url)
+            return
+          }
+        }
+      } catch {
+        // refresh failed, fall through to skip
+      } finally {
+        refreshingAudio = false
+      }
+    }
+  }
+
   skip()
 }
 
