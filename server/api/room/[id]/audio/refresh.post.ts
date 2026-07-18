@@ -32,6 +32,7 @@ export default defineEventHandler(async (event) => {
 
   let url: string
   let title: string
+  let durationMs: number
 
   try {
     if (body.videoId) {
@@ -39,13 +40,15 @@ export default defineEventHandler(async (event) => {
       const audio = await getAudioStreamUrl(body.videoId)
       url = audio.url
       title = audio.title
+      durationMs = Math.round(audio.duration * 1000)
     } else {
       clearSoundcloudAudioCacheFor(body.trackUrl!)
       const audio = await getSoundcloudAudioStreamUrl(body.trackUrl!)
       url = audio.url
       title = audio.title
+      durationMs = Math.round(audio.duration * 1000)
     }
-    return { url, title }
+    return { url, title, durationMs }
   } catch (err: any) {
     throw createError({
       statusCode: 502,

@@ -4,6 +4,17 @@
       <span class="text-sm">Cookies</span>
       <RoomCookieUpload />
     </div>
+    <div v-if="isHost" class="flex items-center justify-between">
+      <span class="text-sm">Import queue</span>
+      <UButton
+        size="sm"
+        variant="outline"
+        icon="i-lucide-upload"
+        @click="$emit('import')"
+      >
+        Import
+      </UButton>
+    </div>
     <div class="flex items-center justify-between">
       <span class="text-sm">Export queue</span>
       <UButton
@@ -35,6 +46,7 @@ defineProps<{
 }>()
 
 defineEmits<{
+  import: []
   export: []
   delete: []
 }>()

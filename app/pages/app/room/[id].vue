@@ -70,12 +70,21 @@
         <div v-show="activeTab === 'settings'">
           <RoomSettingsTab
             :is-host="isHost"
+            @import="showImportDialog = true"
             @export="exportQueue"
             @delete="deleteRoom"
           />
         </div>
       </template>
     </UCard>
+
+    <RoomImportDialog
+      v-if="isHost && hostData?.hostToken"
+      v-model:open="showImportDialog"
+      :room-id="roomId"
+      :host-token="hostData.hostToken"
+      @imported="fetchRoomState"
+    />
 
     <div v-if="isHost" class="flex items-center gap-2">
       <UButton
@@ -174,6 +183,7 @@ const spotifyAuth = useSpotifyAuth()
 const spotifyPlayer = useSpotifyPlayer()
 
 const addingSong = ref(false)
+const showImportDialog = ref(false)
 const tabItems = [
   { label: 'Player', value: 'player' },
   { label: 'Settings', value: 'settings' }
@@ -618,13 +628,13 @@ async function transferSpotifyPlayback(trackUri: string) {
   error.value = 'Spotify device did not become ready. Try again.'
 }
 
-async function addSongByVideoId(videoId: string) {
+async function addSongByVideoId(data: { videoId: string; title?: string; durationMs?: number; albumImageUrl?: string }) {
   addingSong.value = true
   error.value = ''
   try {
     await $fetch(`/api/room/${roomId}/queue`, {
       method: 'POST',
-      body: { videoId, addedBy: 'Guest' }
+      body: { videoId: data.videoId, title: data.title, durationMs: data.durationMs, albumImageUrl: data.albumImageUrl, addedBy: 'Guest' }
     })
     await fetchRoomState()
   } catch (e: any) {

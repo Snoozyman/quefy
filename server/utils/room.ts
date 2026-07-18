@@ -121,6 +121,48 @@ export function addToQueue(
   return song
 }
 
+export function bulkAddToQueue(
+  roomId: string,
+  songs: Array<{
+    source: 'youtube' | 'spotify' | 'soundcloud'
+    title: string
+    addedBy: string
+    videoId?: string
+    url?: string
+    trackUri?: string
+    trackUrl?: string
+    artists?: string[]
+    albumName?: string
+    albumImageUrl?: string
+    durationMs?: number
+  }>
+): QueuedSong[] {
+  const room = rooms.get(roomId)
+  if (!room) return []
+  const now = Date.now()
+  const added: QueuedSong[] = []
+  for (const data of songs) {
+    const song: QueuedSong = {
+      id: randomUUID(),
+      source: data.source,
+      title: data.title,
+      addedBy: data.addedBy || 'Anonymous',
+      addedAt: now,
+      videoId: data.videoId,
+      url: data.url,
+      trackUri: data.trackUri,
+      trackUrl: data.trackUrl,
+      artists: data.artists,
+      albumName: data.albumName,
+      albumImageUrl: data.albumImageUrl,
+      durationMs: data.durationMs
+    }
+    room.queue.push(song)
+    added.push(song)
+  }
+  return added
+}
+
 export function reorderQueue(
   roomId: string,
   songIds: string[],
