@@ -17,23 +17,3 @@ export function redactPath(path: string): string {
   const query = params.toString().replace(/%2A/g, '*')
   return query ? `${path.slice(0, q)}?${query}` : path.slice(0, q)
 }
-
-export function logRequest(
-  event: { path?: string; method?: string },
-  ...args: unknown[]
-) {
-  console.log(
-    `[${new Date().toISOString()}] ${event.method ?? '?'} ${redactPath(event.path ?? '?')}`,
-    ...args
-  )
-}
-
-export function logError(
-  event: { path?: string; method?: string },
-  ...args: unknown[]
-) {
-  console.error(
-    `[${new Date().toISOString()}] ${event.method ?? '?'} ${redactPath(event.path ?? '?')}`,
-    ...args
-  )
-}
