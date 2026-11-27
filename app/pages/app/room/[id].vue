@@ -16,69 +16,135 @@
     </p>
     <UButton to="/app/room" variant="outline"> Back to Rooms </UButton>
   </div>
-  <div v-else class="h-dvh overflow-y-auto mx-2 md:mx-4 md:w-2xl space-y-6 py-6">
-    <UCard>
-      <template #header>
-        <RoomHeader :room-id="roomId" :room-state="roomState" />
-      </template>
-      <template #default>
-        <div class="flex flex-col gap-2 mb-4">
-          <p class="text-sm text-muted">
-            {{ roomState.queue.length }} song(s) in queue
-          </p>
-          <p v-if="!isHost" class="text-sm text-muted">
-            You are a guest. Only the host can control playback.
-          </p>
-        </div>
+  <div v-else class="h-dvh overflow-y-auto pb-16">
+    <div class="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:py-8">
+      <RoomHeader
+        :room-id="roomId"
+        :room-state="roomState"
+        :is-host="isHost"
+        class="mb-6"
+        @settings="settingsOpen = true"
+      />
 
-        <UTabs v-model="activeTab" :items="tabItems" />
-
-        <div v-show="activeTab === 'player'">
+      <div
+        class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem]"
+      >
+        <div class="flex min-w-0 flex-col gap-4">
           <RoomSpotifyPlayer
-            :show="
-              isHost &&
-              !!roomState.currentSong &&
-              roomState.currentSong.source === 'spotify' &&
-              spotifyPlayer.isReady.value &&
-              !!spotifyPlayer.currentTrack.value &&
-              spotifyPlayer.currentTrack.value.uri ===
-                roomState.currentSong.trackUri
-            "
+            :show="showSpotifyPlayer"
             :track="spotifyPlayer.currentTrack.value ?? fallbackTrack"
             :paused="spotifyPlayer.paused.value"
             :position="spotifyPlayer.position.value"
             :duration="spotifyPlayer.duration.value"
-            @play="spotifyPlayer.play()"
-            @pause="spotifyPlayer.pause()"
+            @toggle="togglePlay"
+            @skip="skip"
             @seek="(v: number) => spotifyPlayer.seek(v)"
           />
 
           <RoomAudioPlayer
             ref="audioPlayerRef"
-            :show="isHost && currentSongIsAudio"
+            :show="showAudioPlayer"
             :current-song="roomState.currentSong"
             :is-playing="roomState.isPlaying"
+            @toggle="togglePlay"
+            @skip="skip"
             @ended="onAudioEnded"
             @error="(msg: string) => onAudioError(msg)"
             @expired="onAudioExpired"
             @play-blocked="onPlayBlocked"
           />
 
-          <RoomNowPlaying v-if="!isHost" :song="roomState.currentSong" />
-        </div>
+          <RoomNowPlaying
+            v-if="!showSpotifyPlayer && !showAudioPlayer"
+            :song="roomState.currentSong"
+            :is-playing="roomState.isPlaying"
+            :controllable="isHost"
+            :toggle-disabled="playDisabled"
+            :empty-title="
+              roomState.queue.length && isHost
+                ? 'Press play to start the queue'
+                : 'Add a song to get started'
+            "
+            :hint="isHost ? '' : 'The host controls playback.'"
+            @toggle="togglePlay"
+            @skip="skip"
+          />
 
-        <div v-show="activeTab === 'settings'">
-          <RoomSettingsTab
-            :is-host="isHost"
+          <UAlert
+            v-if="error"
+            color="error"
+            variant="soft"
+            :description="error"
+            closable
+            @close="error = ''; retryExhausted = false"
+          >
+            <template v-if="retryExhausted" #actions>
+              <div class="flex gap-2">
+                <UButton
+                  size="xs"
+                  color="error"
+                  variant="outline"
+                  icon="i-lucide-refresh-cw"
+                  :loading="refreshingAudio"
+                  @click="manualRefreshAudio"
+                >
+                  Refresh
+                </UButton>
+                <UButton
+                  size="xs"
+                  color="error"
+                  variant="outline"
+                  icon="i-lucide-skip-forward"
+                  @click="error = ''; retryExhausted = false; skip()"
+                >
+                  Skip
+                </UButton>
+              </div>
+            </template>
+          </UAlert>
+
+          <RoomSpotifyConnectBanner
             :room-id="roomId"
-            :host-token="hostData?.hostToken"
-            @import="showImportDialog = true"
-            @export="exportQueue"
-            @delete="deleteRoom"
+            @player-ready="onSpotifyPlayerReady"
+          />
+
+          <RoomSongSearch
+            :room-id="roomId"
+            :adding-song="addingSong"
+            :spotify-connected="roomState.spotifyConnected"
+            @add-youtube="addSongByVideoId"
+            @add-spotify="addSpotifyTrack"
+            @add-soundcloud="addSongBySoundcloudUrl"
           />
         </div>
+
+        <aside class="min-w-0 lg:sticky lg:top-6 lg:self-start">
+          <RoomSongQueue
+            :queue="roomState.queue"
+            :is-host="isHost"
+            @remove="removeSong"
+            @reorder="reorderQueue"
+          />
+        </aside>
+      </div>
+    </div>
+
+    <USlideover
+      v-model:open="settingsOpen"
+      title="Room settings"
+      :description="isHost ? 'You are the host of this room.' : 'You are a guest in this room.'"
+    >
+      <template #body>
+        <RoomSettingsTab
+          :is-host="isHost"
+          :room-id="roomId"
+          :host-token="hostData?.hostToken"
+          @import="openImport"
+          @export="exportQueue"
+          @delete="deleteRoom"
+        />
       </template>
-    </UCard>
+    </USlideover>
 
     <RoomImportDialog
       v-if="isHost && hostData?.hostToken"
@@ -86,81 +152,6 @@
       :room-id="roomId"
       :host-token="hostData.hostToken"
       @imported="fetchRoomState"
-    />
-
-    <div v-if="isHost" class="flex items-center gap-2">
-      <UButton
-        size="sm"
-        variant="outline"
-        :icon="roomState.isPlaying ? 'i-lucide-pause' : 'i-lucide-play'"
-        :disabled="playDisabled"
-        @click="togglePlay"
-      >
-        {{ roomState.isPlaying ? 'Pause' : 'Play' }}
-      </UButton>
-      <UButton
-        size="sm"
-        variant="outline"
-        icon="i-lucide-skip-forward"
-        :disabled="!roomState.currentSong"
-        @click="skip"
-      >
-        Skip
-      </UButton>
-    </div>
-
-    <RoomSpotifyConnectBanner
-      :room-id="roomId"
-      @player-ready="onSpotifyPlayerReady"
-    />
-
-    <UAlert
-      v-if="error"
-      color="error"
-      variant="soft"
-      :description="error"
-      closable
-      @close="error = ''; retryExhausted = false"
-    >
-      <template v-if="retryExhausted" #actions>
-        <div class="flex gap-2">
-          <UButton
-            size="xs"
-            color="error"
-            variant="outline"
-            icon="i-lucide-refresh-cw"
-            :loading="refreshingAudio"
-            @click="manualRefreshAudio"
-          >
-            Refresh
-          </UButton>
-          <UButton
-            size="xs"
-            color="error"
-            variant="outline"
-            icon="i-lucide-skip-forward"
-            @click="error = ''; retryExhausted = false; skip()"
-          >
-            Skip
-          </UButton>
-        </div>
-      </template>
-    </UAlert>
-
-    <RoomSongSearch
-      :room-id="roomId"
-      :adding-song="addingSong"
-      :spotify-connected="roomState.spotifyConnected"
-      @add-youtube="addSongByVideoId"
-      @add-spotify="addSpotifyTrack"
-      @add-soundcloud="addSongBySoundcloudUrl"
-    />
-
-    <RoomSongQueue
-      :queue="roomState.queue"
-      :is-host="isHost"
-      @remove="removeSong"
-      @reorder="reorderQueue"
     />
   </div>
 </template>
@@ -187,14 +178,26 @@ const spotifyPlayer = useSpotifyPlayer()
 
 const addingSong = ref(false)
 const showImportDialog = ref(false)
-const tabItems = [
-  { label: 'Player', value: 'player' },
-  { label: 'Settings', value: 'settings' }
-]
-const activeTab = ref<'player' | 'settings'>('player')
+const settingsOpen = ref(false)
+
+function openImport() {
+  settingsOpen.value = false
+  showImportDialog.value = true
+}
 
 const playDisabled = computed(
   () => !roomState.value.queue.length && !roomState.value.currentSong
+)
+const showSpotifyPlayer = computed(
+  () =>
+    isHost.value &&
+    roomState.value.currentSong?.source === 'spotify' &&
+    spotifyPlayer.isReady.value &&
+    !!spotifyPlayer.currentTrack.value &&
+    spotifyPlayer.currentTrack.value.uri === roomState.value.currentSong.trackUri
+)
+const showAudioPlayer = computed(
+  () => isHost.value && currentSongIsAudio.value
 )
 const currentSongIsAudio = computed(
   () =>

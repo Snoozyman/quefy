@@ -2,30 +2,27 @@
   <div>
     <div
       v-if="!processing && !spotifyAuth.isAuthenticated.value && isHost"
-      class="rounded-xl border border-primary/30 bg-primary/5 p-4 flex items-center justify-between"
+      class="flex items-center gap-3 rounded-xl border border-default px-4 py-3"
     >
-      <div>
-        <p class="font-semibold text-sm">Connect Spotify to play music</p>
-        <p class="text-xs text-muted">
-          Premium account required. The host must authenticate with Spotify.
-        </p>
-      </div>
+      <UIcon name="i-simple-icons-spotify" class="size-5 shrink-0 text-[#1DB954]" />
+      <p class="min-w-0 grow text-sm text-muted">
+        Connect Spotify to add and play Spotify tracks
+        <span class="text-dimmed">(Premium)</span>
+      </p>
       <UButton
-        color="primary"
+        color="neutral"
+        variant="outline"
         size="sm"
         :loading="spotifyAuth.loading.value"
         @click="connect"
       >
-        <template #leading>
-          <UIcon name="i-lucide-music" class="size-4" />
-        </template>
-        Connect Spotify
+        Connect
       </UButton>
     </div>
 
     <div
       v-if="processing"
-      class="rounded-xl border border-default p-4 space-y-3"
+      class="rounded-xl border border-default px-4 py-3"
     >
       <div class="flex items-center gap-3">
         <UIcon
