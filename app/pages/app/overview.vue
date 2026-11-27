@@ -1,108 +1,118 @@
 <template>
-  <div class="w-full md:w-3xl mx-auto space-y-6 p-8">
-    <UCard>
-      <template #header>
-        <div class="space-y-3">
-          <div>
-            <h1 class="text-lg font-semibold">Active Rooms</h1>
-            <p v-if="loaded && rooms.length" class="text-sm text-muted mt-0.5">
-              {{ rooms.length }} room{{ rooms.length === 1 ? '' : 's' }} online
-              <span v-if="playingCount"> · {{ playingCount }} playing</span>
-            </p>
-          </div>
-          <div class="flex items-center gap-2">
+  <div class="h-dvh overflow-y-auto pb-16">
+    <div class="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
+      <header class="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight text-highlighted">
+            Active rooms
+          </h1>
+          <p class="mt-1 text-sm text-muted">
+            <template v-if="!loaded">Loading…</template>
+            <template v-else-if="rooms.length">
+              {{ rooms.length }} room{{ rooms.length === 1 ? '' : 's' }}
+              <template v-if="playingCount">
+                · {{ playingCount }} playing now
+              </template>
+            </template>
+            <template v-else>No rooms yet</template>
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <UTooltip text="Refresh">
             <UButton
-              to="/app/room"
-              icon="i-lucide-plus"
-              size="md"
-              color="primary"
-              variant="solid"
-            >
-              New Room
-            </UButton>
-            <UButton
-              size="md"
+              color="neutral"
               variant="ghost"
               icon="i-lucide-refresh-cw"
+              aria-label="Refresh"
               :loading="refreshing"
               @click="refresh"
             />
-          </div>
+          </UTooltip>
+          <UButton to="/app/room" icon="i-lucide-plus">New room</UButton>
         </div>
-      </template>
+      </header>
 
-      <div v-if="!loaded" class="space-y-3">
-        <div v-for="n in 3" :key="n" class="flex items-center gap-3 px-4 py-3">
-          <div class="size-10 rounded-lg bg-muted shrink-0 animate-pulse" />
-          <div class="space-y-2 flex-1">
-            <div class="h-4 bg-muted rounded w-32 animate-pulse" />
-            <div class="h-3 bg-muted rounded w-48 animate-pulse" />
-          </div>
-        </div>
+      <div
+        v-if="!loaded"
+        class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+        aria-hidden="true"
+      >
+        <div
+          v-for="n in 3"
+          :key="n"
+          class="h-24 animate-pulse rounded-2xl border border-default bg-elevated/50"
+        />
       </div>
 
-      <div v-else-if="rooms.length === 0" class="py-8 text-center">
-        <UIcon name="i-lucide-radio" class="size-10 text-muted mb-3" />
-        <p class="text-sm font-medium">No active rooms</p>
-        <p class="text-xs text-muted mt-1">Create one to get started.</p>
+      <div
+        v-else-if="rooms.length === 0"
+        class="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-default px-6 py-16 text-center"
+      >
+        <UIcon name="i-lucide-radio" class="size-10 text-dimmed" />
+        <div>
+          <p class="font-medium">No active rooms</p>
+          <p class="mt-1 text-sm text-muted">
+            Create one and share the code with your friends.
+          </p>
+        </div>
+        <UButton to="/app/room" icon="i-lucide-plus" class="mt-2">
+          Create a room
+        </UButton>
       </div>
 
-      <div v-else class="divide-y divide-border -mx-4">
-        <NuxtLink
-          v-for="r in rooms"
-          :key="r.id"
-          :to="`/app/room/${r.id}`"
-          class="flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors first:rounded-t-[inherit] last:rounded-b-[inherit]"
-        >
-          <div class="flex items-center gap-3 min-w-0">
-            <div class="shrink-0 relative">
+      <ul v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <li v-for="r in rooms" :key="r.id">
+          <NuxtLink
+            :to="`/app/room/${r.id}`"
+            class="group flex items-center gap-4 rounded-2xl border border-default bg-elevated/30 p-4 transition-colors hover:border-accented hover:bg-elevated/70"
+          >
+            <div class="relative shrink-0">
               <img
                 v-if="r.currentThumbnail"
                 :src="r.currentThumbnail"
                 alt=""
-                class="size-10 rounded-lg object-cover"
+                class="size-16 rounded-xl object-cover"
               />
               <div
                 v-else
-                class="size-10 rounded-lg bg-muted flex items-center justify-center"
+                class="flex size-16 items-center justify-center rounded-xl bg-muted"
               >
-                <UIcon name="i-lucide-music" class="size-5 text-muted" />
+                <UIcon name="i-lucide-music" class="size-6 text-dimmed" />
               </div>
-              <span
-                v-if="r.isPlaying"
-                class="absolute -top-1 -right-1 flex size-3 rounded-full ring-2 ring-default bg-green-500"
+              <UIcon
+                v-if="r.currentSource"
+                :name="sourceIcon(r.currentSource)"
+                class="absolute -bottom-1 -right-1 size-4 rounded-full bg-default p-0.5 text-muted"
               />
             </div>
-            <div class="min-w-0">
-              <p class="text-sm font-medium truncate">
-                {{ r.title }}
-              </p>
-              <p class="text-xs text-muted flex items-center gap-1 mt-0.5">
-                <code class="font-mono text-xs">{{ r.id }}</code>
-                · {{ r.queueCount }} track{{ r.queueCount === 1 ? '' : 's' }}
-                <template v-if="r.currentSource">
-                  <span class="opacity-50">·</span>
-                  <UIcon :name="sourceIcon(r.currentSource)" class="size-3" />
-                </template>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2">
+                <p class="truncate font-semibold text-highlighted">
+                  {{ r.title }}
+                </p>
+                <UBadge
+                  v-if="r.isPlaying"
+                  label="Live"
+                  color="primary"
+                  variant="subtle"
+                  size="sm"
+                  class="shrink-0"
+                />
+              </div>
+              <p class="mt-1 text-xs text-muted">
+                <span class="font-mono tracking-wider">{{ r.id }}</span>
+                · {{ r.queueCount }} song{{ r.queueCount === 1 ? '' : 's' }}
+                · {{ timeAgo(r.createdAt) }}
               </p>
             </div>
-          </div>
-          <div class="flex items-center gap-3 shrink-0 ml-3">
-            <div class="text-right">
-              <template v-if="r.isPlaying">
-                <span class="text-xs text-green-500 font-medium">Live</span>
-              </template>
-              <template v-else>
-                <span class="text-xs text-muted">{{
-                  timeAgo(r.createdAt)
-                }}</span>
-              </template>
-            </div>
-            <UIcon name="i-lucide-chevron-right" class="size-4 text-muted" />
-          </div>
-        </NuxtLink>
-      </div>
-    </UCard>
+            <UIcon
+              name="i-lucide-chevron-right"
+              class="size-4 shrink-0 text-dimmed transition-transform group-hover:translate-x-0.5"
+            />
+          </NuxtLink>
+        </li>
+      </ul>
+    </div>
   </div>
 </template>
 
@@ -151,11 +161,18 @@ function timeAgo(ts: number): string {
   const diff = Date.now() - ts
   const min = Math.floor(diff / 60000)
   if (min < 1) return 'just now'
-  if (min < 60) return `${min}m ago`
+  if (min < 60) return `${min} min ago`
   const hrs = Math.floor(min / 60)
   if (hrs < 24) return `${hrs}h ago`
   return `${Math.floor(hrs / 24)}d ago`
 }
 
-onMounted(fetchRooms)
+let pollTimer: ReturnType<typeof setInterval> | undefined
+
+onMounted(() => {
+  fetchRooms()
+  pollTimer = setInterval(fetchRooms, 10_000)
+})
+
+onUnmounted(() => clearInterval(pollTimer))
 </script>

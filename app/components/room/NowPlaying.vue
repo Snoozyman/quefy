@@ -1,39 +1,38 @@
 <template>
-  <div
-    v-if="song"
-    class="rounded-xl border border-default p-4 flex items-center gap-3"
-  >
-    <img
-      v-if="song.albumImageUrl"
-      :src="song.albumImageUrl"
-      alt=""
-      class="size-12 rounded-lg object-cover shrink-0"
-    />
-    <div
-      v-else
-      class="size-12 shrink-0 rounded-lg bg-muted flex items-center justify-center"
-    >
-      <UIcon name="i-lucide-music" class="size-6 text-muted" />
-    </div>
-    <div class="min-w-0">
-      <p class="text-xs text-muted mb-0.5">Now Playing</p>
-      <p class="font-medium truncate">
-        {{ song.title }}
-      </p>
-      <p v-if="song.artists?.length" class="text-xs text-muted truncate">
-        {{ song.artists.join(', ') }}
-      </p>
-      <p v-if="song.source === 'spotify'" class="text-xs text-primary mt-0.5">
-        Spotify
-      </p>
-    </div>
-  </div>
+  <RoomPlayerCard
+    :title="song?.title"
+    :subtitle="songSubtitle(song)"
+    :image="song?.albumImageUrl"
+    :source="song?.source"
+    :is-playing="isPlaying"
+    :controllable="controllable"
+    :can-skip="!!song"
+    :toggle-disabled="toggleDisabled"
+    :empty-title="emptyTitle"
+    :hint="hint"
+    @toggle="$emit('toggle')"
+    @skip="$emit('skip')"
+  />
 </template>
 
 <script lang="ts" setup>
 import type { SongData } from '#shared/types/room'
 
+/**
+ * Player card without a local player: the guest view, and the host's view
+ * before playback starts (or while a Spotify track waits for the SDK).
+ */
 defineProps<{
   song: SongData | null
+  isPlaying: boolean
+  controllable?: boolean
+  toggleDisabled?: boolean
+  emptyTitle?: string
+  hint?: string
+}>()
+
+defineEmits<{
+  toggle: []
+  skip: []
 }>()
 </script>
