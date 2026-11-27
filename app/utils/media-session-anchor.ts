@@ -44,6 +44,25 @@ function silentWav(seconds: number): Blob {
   return new Blob([buf], { type: 'audio/wav' })
 }
 
+export interface MediaSessionAnchorHooks {
+  /** The anchor started playing: re-announce metadata and action handlers. */
+  onPlaying?: () => void
+  /**
+   * Something outside the app (an OS media widget) paused or resumed the
+   * anchor directly instead of calling our Media Session handlers.
+   */
+  onExternalPause?: () => void
+  onExternalPlay?: () => void
+}
+
+let hooks: MediaSessionAnchorHooks = {}
+/** Pause/play events we caused ourselves and still expect, to tell them apart. */
+let ownEvents = 0
+
+export function setMediaSessionAnchorHooks(h: MediaSessionAnchorHooks) {
+  hooks = h
+}
+
 function element(): HTMLAudioElement {
   if (!audio) {
     objectUrl = URL.createObjectURL(silentWav(SECONDS))
@@ -52,8 +71,32 @@ function element(): HTMLAudioElement {
     // Must be in the DOM: KDE's browser integration only sees attached players.
     audio.hidden = true
     document.body.appendChild(audio)
+    audio.addEventListener('playing', () => hooks.onPlaying?.())
+    audio.addEventListener('pause', () => {
+      if (ownEvents > 0) ownEvents--
+      else hooks.onExternalPause?.()
+    })
+    audio.addEventListener('play', () => {
+      if (ownEvents > 0) ownEvents--
+      else hooks.onExternalPlay?.()
+    })
   }
   return audio
+}
+
+function pauseOwn(el: HTMLAudioElement) {
+  if (el.paused) return
+  ownEvents++
+  el.pause()
+}
+
+function playOwn(el: HTMLAudioElement) {
+  if (!el.paused) return
+  ownEvents++
+  // A play() blocked by autoplay rules rejects without firing 'play'.
+  el.play().catch(() => {
+    ownEvents = Math.max(0, ownEvents - 1)
+  })
 }
 
 /**
@@ -67,18 +110,20 @@ export function setMediaSessionAnchor(
 ) {
   if (!import.meta.client) return
   if (!active) {
-    audio?.pause()
+    if (audio) pauseOwn(audio)
     return
   }
   const el = element()
-  if (restart) el.pause()
-  if (el.paused) el.play().catch(() => {})
+  if (restart) pauseOwn(el)
+  playOwn(el)
 }
 
 export function destroyMediaSessionAnchor() {
-  audio?.pause()
+  if (audio) pauseOwn(audio)
   audio?.remove()
   audio = null
+  hooks = {}
+  ownEvents = 0
   if (objectUrl) URL.revokeObjectURL(objectUrl)
   objectUrl = null
 }

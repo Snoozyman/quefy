@@ -790,6 +790,21 @@ watch(
   },
   { immediate: true }
 )
+// KDE's browser integration controls the anchor element itself (pause/play)
+// rather than calling our Media Session handlers, and reads metadata when a
+// player starts; route both back into the room.
+// (Registered on mount so a previous room page's cleanup can't clear them.)
+onMounted(() =>
+  setMediaSessionAnchorHooks({
+    onPlaying: () => updateMediaSession(roomState.value.currentSong),
+    onExternalPause: () => {
+      if (roomState.value.isPlaying) handleMediaPause()
+    },
+    onExternalPlay: () => {
+      if (!roomState.value.isPlaying) handleMediaPlay()
+    }
+  })
+)
 // A new Spotify track makes the SDK frame the newest player again.
 watch(
   () => spotifyPlayer.currentTrack.value?.uri,
