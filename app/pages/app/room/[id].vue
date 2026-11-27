@@ -401,12 +401,88 @@ function onSpotifyPlayerReady() {
 }
 
 let skipping = false
-let refreshingAudio = false
+const refreshingAudio = ref(false)
 let lastSongId: string | null = null
 let currentPlayingId = ''
-const retryCount = ref<Map<string, number>>(new Map())
+const retryCount = new Map<string, number>()
 const RETRY_LIMIT = 2
 const retryExhausted = ref(false)
+
+function audioRefreshBody(song: SongData): Record<string, string> | null {
+  const hostToken = hostData.value?.hostToken
+  if (!hostToken) return null
+  if (song.videoId) return { hostToken, videoId: song.videoId }
+  if (song.trackUrl) return { hostToken, trackUrl: song.trackUrl }
+  return null
+}
+
+/** Where to resume after a refresh: the live audio position, else the room's. */
+function resumeTimeSeconds(): number | undefined {
+  const live = audioPlayerRef.value?.state.currentTime.value ?? 0
+  if (live > 0) return live
+  return roomState.value.position > 0
+    ? roomState.value.position / 1000
+    : undefined
+}
+
+type RefreshResult = 'played' | 'stale' | 'exhausted' | 'failed' | 'busy'
+
+/**
+ * The one place that re-resolves a song's stream URL (YouTube / SoundCloud
+ * URLs expire) and starts playback. Automatic retries are capped per song;
+ * a manual refresh always tries and resets the cap on success.
+ */
+async function refreshAndPlay(
+  song: SongData,
+  { manual = false, play = true }: { manual?: boolean; play?: boolean } = {}
+): Promise<RefreshResult> {
+  if (refreshingAudio.value) return 'busy'
+  const body = audioRefreshBody(song)
+  if (!body) return 'failed'
+
+  const attempts = retryCount.get(song.id) ?? 0
+  if (!manual && attempts >= RETRY_LIMIT) {
+    retryExhausted.value = true
+    error.value = `Failed to load audio after ${RETRY_LIMIT} attempts.`
+    return 'exhausted'
+  }
+
+  refreshingAudio.value = true
+  if (!manual) retryCount.set(song.id, attempts + 1)
+  try {
+    const refreshed = await $fetch<{
+      url: string
+      title: string
+      durationMs: number
+    }>(`/api/room/${roomId}/audio/refresh`, { method: 'POST', body })
+    if (roomState.value.currentSong?.id !== song.id) return 'stale'
+
+    retryCount.delete(song.id)
+    retryExhausted.value = false
+    error.value = ''
+    song.url = refreshed.url
+    if (!song.title || song.title === 'Unknown Title') song.title = refreshed.title
+    if (!song.durationMs) song.durationMs = refreshed.durationMs
+
+    if (play) {
+      const startTime = resumeTimeSeconds()
+      nextTick(() => {
+        if (roomState.value.currentSong?.id !== song.id) return
+        audioPlayerRef.value?.play(refreshed.url, startTime)
+      })
+    }
+    return 'played'
+  } catch (err: unknown) {
+    error.value = `Could not load audio for "${song.title}": ${errorMessage(err)}`
+    if (manual) {
+      retryCount.set(song.id, RETRY_LIMIT)
+      retryExhausted.value = true
+    }
+    return 'failed'
+  } finally {
+    refreshingAudio.value = false
+  }
+}
 
 async function handleSongChange(song: SongData) {
   if (!isHost.value) return
@@ -436,47 +512,21 @@ async function handleSongChange(song: SongData) {
         })
       }
     }
-    if ((song.source === 'youtube' || song.source === 'soundcloud') && !song.url && hostData.value?.hostToken) {
-      const body: Record<string, string> = { hostToken: hostData.value.hostToken }
-      if (song.videoId) body.videoId = song.videoId
-      else if (song.trackUrl) body.trackUrl = song.trackUrl
-      else { skip(); return }
-
-      const attempts = retryCount.value.get(song.id) ?? 0
-      if (attempts >= RETRY_LIMIT) {
-        retryExhausted.value = true
-        error.value = `Failed to load audio after ${RETRY_LIMIT} attempts.`
+    if (
+      (song.source === 'youtube' || song.source === 'soundcloud') &&
+      !song.url
+    ) {
+      if (!audioRefreshBody(song)) {
+        skip()
         return
       }
-
       spotifyPlayer.setOnTrackEnd(null)
       spotifyPlayer.resetErrors()
       await spotifyPlayer.pause()
       if (song.id !== currentPlayingId) return
       if (roomState.value.isPlaying) {
-        try {
-          const refreshed = await $fetch<{ url: string; title: string; durationMs: number }>(
-            `/api/room/${roomId}/audio/refresh`,
-            { method: 'POST', body }
-          )
-          if (song.id !== currentPlayingId) return
-          retryCount.value.delete(song.id)
-          retryExhausted.value = false
-          song.url = refreshed.url
-          if (!song.title || song.title === 'Unknown Title') song.title = refreshed.title
-          if (!song.durationMs) song.durationMs = refreshed.durationMs
-          const startTime =
-            roomState.value.position > 0
-              ? roomState.value.position / 1000
-              : undefined
-          nextTick(() => {
-            if (song.id !== currentPlayingId) return
-            audioPlayerRef.value?.play(refreshed.url, startTime)
-          })
-        } catch {
-          retryCount.value.set(song.id, attempts + 1)
-          skip()
-        }
+        const result = await refreshAndPlay(song)
+        if (result === 'failed') skip()
       }
     }
   } catch (err: unknown) {
@@ -812,132 +862,27 @@ function onPlayBlocked() {
 }
 
 async function onAudioError(msg: string) {
-  if (refreshingAudio) return
+  if (refreshingAudio.value) return
   error.value = msg
-
   const song = roomState.value.currentSong
-  if (song && hostData.value?.hostToken) {
-    const body: Record<string, string> = { hostToken: hostData.value.hostToken }
-    if (song.videoId) {
-      body.videoId = song.videoId
-    } else if (song.trackUrl) {
-      body.trackUrl = song.trackUrl
-    }
-
-    if (body.videoId || body.trackUrl) {
-      const attempts = retryCount.value.get(song.id) ?? 0
-      if (attempts >= RETRY_LIMIT) {
-        retryExhausted.value = true
-        error.value = `Failed to load audio after ${RETRY_LIMIT} attempts.`
-        return
-      }
-
-      retryCount.value.set(song.id, attempts + 1)
-      refreshingAudio = true
-      try {
-        const refreshed = await $fetch<{ url: string; title: string }>(
-          `/api/room/${roomId}/audio/refresh`,
-          { method: 'POST', body }
-        )
-        if (roomState.value.currentSong?.id === song.id) {
-          song.url = refreshed.url
-          if (userActivated.value) {
-            error.value = ''
-            audioPlayerRef.value?.play(refreshed.url)
-            return
-          }
-        }
-      } catch {
-        // refresh failed, fall through to skip
-      } finally {
-        refreshingAudio = false
-      }
-    }
-  }
-
-  skip()
+  if (!song) return skip()
+  const result = await refreshAndPlay(song, { play: userActivated.value })
+  if (result === 'failed') skip()
 }
 
 async function onAudioExpired() {
-  if (refreshingAudio) return
+  if (refreshingAudio.value) return
   const song = roomState.value.currentSong
-  if (!song || !hostData.value?.hostToken) {
-    skip()
-    return
-  }
-
-  const body: Record<string, string> = { hostToken: hostData.value.hostToken }
-  if (song.trackUrl) {
-    body.trackUrl = song.trackUrl
-  } else if (song.videoId) {
-    body.videoId = song.videoId
-  } else {
-    skip()
-    return
-  }
-
-  const attempts = retryCount.value.get(song.id) ?? 0
-  if (attempts >= RETRY_LIMIT) {
-    retryExhausted.value = true
-    error.value = `Failed to load audio after ${RETRY_LIMIT} attempts.`
-    return
-  }
-
-  retryCount.value.set(song.id, attempts + 1)
-  refreshingAudio = true
-  try {
-    const refreshed = await $fetch<{ url: string; title: string }>(
-      `/api/room/${roomId}/audio/refresh`,
-      {
-        method: 'POST',
-        body
-      }
-    )
-    song.url = refreshed.url
-    if (userActivated.value) {
-      audioPlayerRef.value?.play(refreshed.url)
-    }
-  } catch {
-    skip()
-  } finally {
-    refreshingAudio = false
-  }
+  if (!song) return skip()
+  const result = await refreshAndPlay(song, { play: userActivated.value })
+  if (result === 'failed') skip()
 }
 
 async function manualRefreshAudio() {
   const song = roomState.value.currentSong
-  if (!song || !hostData.value?.hostToken) return
-
-  const body: Record<string, string> = { hostToken: hostData.value.hostToken }
-  if (song.videoId) body.videoId = song.videoId
-  else if (song.trackUrl) body.trackUrl = song.trackUrl
-  else return
-
-  refreshingAudio = true
-  error.value = ''
+  if (!song) return
   retryExhausted.value = false
-  try {
-    const refreshed = await $fetch<{ url: string; title: string; durationMs: number }>(
-      `/api/room/${roomId}/audio/refresh`,
-      { method: 'POST', body }
-    )
-    retryCount.value.delete(song.id)
-    song.url = refreshed.url
-    if (!song.title || song.title === 'Unknown Title') song.title = refreshed.title
-    if (!song.durationMs) song.durationMs = refreshed.durationMs
-    const startTime =
-      roomState.value.position > 0
-        ? roomState.value.position / 1000
-        : undefined
-    nextTick(() => {
-      audioPlayerRef.value?.play(refreshed.url, startTime)
-    })
-  } catch (err: unknown) {
-    retryCount.value.set(song.id, RETRY_LIMIT)
-    error.value = `Refresh failed: ${err instanceof Error ? err.message : err}`
-  } finally {
-    refreshingAudio = false
-  }
+  await refreshAndPlay(song, { manual: true })
 }
 
 async function exportQueue() {
