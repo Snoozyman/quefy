@@ -1,80 +1,45 @@
 <template>
-  <div class="search-container relative">
-    <div class="flex gap-2 flex-col">
-      <div class="flex grow gap-2 items-center">
-        <div class="grid grid-cols-3 gap-2 w-full">
-          <UButton
-            :color="mode === 'youtube' ? 'primary' : 'neutral'"
-            variant="solid"
-            icon="i-simple-icons-youtube"
-            class="text-xs"
-            @click="mode = 'youtube'"
-          >
-            YouTube
-          </UButton>
-          <UButton
-            :color="mode === 'spotify' ? 'primary' : 'neutral'"
-            variant="solid"
-            icon="i-simple-icons-spotify"
-            :disabled="!spotifyConnected"
-            :title="spotifyConnected ? '' : 'Host must connect Spotify first'"
-            class="text-xs"
-            @click="mode = 'spotify'"
-          >
-            Spotify
-          </UButton>
-          <UButton
-            :color="mode === 'soundcloud' ? 'primary' : 'neutral'"
-            variant="solid"
-            icon="i-simple-icons-soundcloud"
-            class="text-xs"
-            @click="mode = 'soundcloud'"
-          >
-            SC
-          </UButton>
-        </div>
-        <!-- <UButton
-          :loading="addingSong"
-          :disabled="!query.trim()"
-          class="shrink-0 justify-end"
-          @click="addHighlighted"
-        >
-          Add to Queue
-        </UButton>
-      --></div>
-      <UInput
-        v-model="query"
-        variant="subtle"
-        :placeholder="
-          mode === 'youtube'
-            ? 'Search YouTube or paste a URL'
-            : mode === 'spotify'
-              ? 'Search Spotify tracks...'
-              : 'Search SoundCloud or paste a URL'
-        "
-        class="grow"
-        :loading="searching"
-        @input="onInput"
-        @keydown.down.prevent="highlightNext"
-        @keydown.up.prevent="highlightPrev"
-        @keydown.enter="addHighlighted"
+  <section class="search-container relative space-y-3" aria-label="Add songs">
+    <div
+      class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <h2 class="text-sm font-semibold text-highlighted">Add songs</h2>
+      <UTabs
+        v-model="mode"
+        :items="sourceTabs"
+        :content="false"
+        size="xs"
+        color="neutral"
+        :ui="{ trigger: 'px-2.5' }"
       />
     </div>
+    <UInput
+      v-model="query"
+      size="lg"
+      icon="i-lucide-search"
+      :placeholder="placeholder"
+      class="w-full"
+      :loading="searching || addingSong"
+      @input="onInput"
+      @keydown.down.prevent="highlightNext"
+      @keydown.up.prevent="highlightPrev"
+      @keydown.enter="addHighlighted"
+    />
     <div
       v-if="showResults && results.length"
-      class="absolute z-10 mt-1 w-full rounded-xl border border-default bg-default shadow-lg max-h-72 overflow-y-auto"
+      class="absolute z-20 mt-1 w-full rounded-xl border border-default bg-default p-1 shadow-xl max-h-80 overflow-y-auto"
     >
       <button
         v-for="(r, i) in results"
         :key="r.id"
-        class="flex items-center gap-3 w-full px-3 py-2 text-left bg-default hover:bg-muted/50 transition-colors"
-        :class="{ 'bg-muted/50': i === highlightIdx }"
+        class="flex items-center gap-3 w-full rounded-lg px-2 py-2 text-left hover:bg-elevated transition-colors"
+        :class="{ 'bg-elevated': i === highlightIdx }"
         @click="selectResult(r)"
       >
         <img
           :src="r.thumbnail"
           alt=""
-          class="size-10 rounded object-cover shrink-0"
+          class="size-11 rounded-md object-cover shrink-0"
         />
         <div class="min-w-0 grow">
           <p class="text-sm truncate">
@@ -98,13 +63,13 @@
         />
       </button>
     </div>
-  </div>
+  </section>
 </template>
 
 <script lang="ts" setup>
 import type { SearchResult } from '#shared/types/room'
 
-defineProps<{
+const props = defineProps<{
   roomId: string
   addingSong: boolean
   spotifyConnected: boolean
@@ -126,6 +91,29 @@ const emit = defineEmits<{
 }>()
 
 const mode = ref<'youtube' | 'spotify' | 'soundcloud'>('youtube')
+
+const sourceTabs = computed(() => [
+  { label: 'YouTube', value: 'youtube', icon: 'i-simple-icons-youtube' },
+  {
+    label: 'Spotify',
+    value: 'spotify',
+    icon: 'i-simple-icons-spotify',
+    disabled: !props.spotifyConnected
+  },
+  {
+    label: 'SoundCloud',
+    value: 'soundcloud',
+    icon: 'i-simple-icons-soundcloud'
+  }
+])
+
+const placeholder = computed(() =>
+  mode.value === 'youtube'
+    ? 'Search YouTube or paste a link'
+    : mode.value === 'spotify'
+      ? 'Search Spotify tracks'
+      : 'Search SoundCloud or paste a link'
+)
 const query = ref('')
 const results = ref<SearchResult[]>([])
 const searching = ref(false)

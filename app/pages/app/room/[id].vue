@@ -16,69 +16,135 @@
     </p>
     <UButton to="/app/room" variant="outline"> Back to Rooms </UButton>
   </div>
-  <div v-else class="h-dvh overflow-y-auto mx-2 md:mx-4 md:w-2xl space-y-6 py-6">
-    <UCard>
-      <template #header>
-        <RoomHeader :room-id="roomId" :room-state="roomState" />
-      </template>
-      <template #default>
-        <div class="flex flex-col gap-2 mb-4">
-          <p class="text-sm text-muted">
-            {{ roomState.queue.length }} song(s) in queue
-          </p>
-          <p v-if="!isHost" class="text-sm text-muted">
-            You are a guest. Only the host can control playback.
-          </p>
-        </div>
+  <div v-else class="h-dvh overflow-y-auto pb-16">
+    <div class="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:py-8">
+      <RoomHeader
+        :room-id="roomId"
+        :room-state="roomState"
+        :is-host="isHost"
+        class="mb-6"
+        @settings="settingsOpen = true"
+      />
 
-        <UTabs v-model="activeTab" :items="tabItems" />
-
-        <div v-show="activeTab === 'player'">
+      <div
+        class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] xl:grid-cols-[minmax(0,1fr)_26rem]"
+      >
+        <div class="flex min-w-0 flex-col gap-4">
           <RoomSpotifyPlayer
-            :show="
-              isHost &&
-              !!roomState.currentSong &&
-              roomState.currentSong.source === 'spotify' &&
-              spotifyPlayer.isReady.value &&
-              !!spotifyPlayer.currentTrack.value &&
-              spotifyPlayer.currentTrack.value.uri ===
-                roomState.currentSong.trackUri
-            "
+            :show="showSpotifyPlayer"
             :track="spotifyPlayer.currentTrack.value ?? fallbackTrack"
             :paused="spotifyPlayer.paused.value"
             :position="spotifyPlayer.position.value"
             :duration="spotifyPlayer.duration.value"
-            @play="spotifyPlayer.play()"
-            @pause="spotifyPlayer.pause()"
+            @toggle="togglePlay"
+            @skip="skip"
             @seek="(v: number) => spotifyPlayer.seek(v)"
           />
 
           <RoomAudioPlayer
             ref="audioPlayerRef"
-            :show="isHost && currentSongIsAudio"
+            :show="showAudioPlayer"
             :current-song="roomState.currentSong"
             :is-playing="roomState.isPlaying"
+            @toggle="togglePlay"
+            @skip="skip"
             @ended="onAudioEnded"
             @error="(msg: string) => onAudioError(msg)"
             @expired="onAudioExpired"
             @play-blocked="onPlayBlocked"
           />
 
-          <RoomNowPlaying v-if="!isHost" :song="roomState.currentSong" />
-        </div>
+          <RoomNowPlaying
+            v-if="!showSpotifyPlayer && !showAudioPlayer"
+            :song="roomState.currentSong"
+            :is-playing="roomState.isPlaying"
+            :controllable="isHost"
+            :toggle-disabled="playDisabled"
+            :empty-title="
+              roomState.queue.length && isHost
+                ? 'Press play to start the queue'
+                : 'Add a song to get started'
+            "
+            :hint="isHost ? '' : 'The host controls playback.'"
+            @toggle="togglePlay"
+            @skip="skip"
+          />
 
-        <div v-show="activeTab === 'settings'">
-          <RoomSettingsTab
-            :is-host="isHost"
+          <UAlert
+            v-if="error"
+            color="error"
+            variant="soft"
+            :description="error"
+            closable
+            @close="error = ''; retryExhausted = false"
+          >
+            <template v-if="retryExhausted" #actions>
+              <div class="flex gap-2">
+                <UButton
+                  size="xs"
+                  color="error"
+                  variant="outline"
+                  icon="i-lucide-refresh-cw"
+                  :loading="refreshingAudio"
+                  @click="manualRefreshAudio"
+                >
+                  Refresh
+                </UButton>
+                <UButton
+                  size="xs"
+                  color="error"
+                  variant="outline"
+                  icon="i-lucide-skip-forward"
+                  @click="error = ''; retryExhausted = false; skip()"
+                >
+                  Skip
+                </UButton>
+              </div>
+            </template>
+          </UAlert>
+
+          <RoomSpotifyConnectBanner
             :room-id="roomId"
-            :host-token="hostData?.hostToken"
-            @import="showImportDialog = true"
-            @export="exportQueue"
-            @delete="deleteRoom"
+            @player-ready="onSpotifyPlayerReady"
+          />
+
+          <RoomSongSearch
+            :room-id="roomId"
+            :adding-song="addingSong"
+            :spotify-connected="roomState.spotifyConnected"
+            @add-youtube="addSongByVideoId"
+            @add-spotify="addSpotifyTrack"
+            @add-soundcloud="addSongBySoundcloudUrl"
           />
         </div>
+
+        <aside class="min-w-0 lg:sticky lg:top-6 lg:self-start">
+          <RoomSongQueue
+            :queue="roomState.queue"
+            :is-host="isHost"
+            @remove="removeSong"
+            @reorder="reorderQueue"
+          />
+        </aside>
+      </div>
+    </div>
+
+    <USlideover
+      v-model:open="settingsOpen"
+      title="Room settings"
+      :description="isHost ? 'You are the host of this room.' : 'You are a guest in this room.'"
+    >
+      <template #body>
+        <RoomSettingsTab
+          :is-host="isHost"
+          :room-id="roomId"
+          :host-token="hostData?.hostToken"
+          @import="openImport"
+          @export="exportQueue"
+          @delete="deleteRoom"
+        />
       </template>
-    </UCard>
+    </USlideover>
 
     <RoomImportDialog
       v-if="isHost && hostData?.hostToken"
@@ -86,81 +152,6 @@
       :room-id="roomId"
       :host-token="hostData.hostToken"
       @imported="fetchRoomState"
-    />
-
-    <div v-if="isHost" class="flex items-center gap-2">
-      <UButton
-        size="sm"
-        variant="outline"
-        :icon="roomState.isPlaying ? 'i-lucide-pause' : 'i-lucide-play'"
-        :disabled="playDisabled"
-        @click="togglePlay"
-      >
-        {{ roomState.isPlaying ? 'Pause' : 'Play' }}
-      </UButton>
-      <UButton
-        size="sm"
-        variant="outline"
-        icon="i-lucide-skip-forward"
-        :disabled="!roomState.currentSong"
-        @click="skip"
-      >
-        Skip
-      </UButton>
-    </div>
-
-    <RoomSpotifyConnectBanner
-      :room-id="roomId"
-      @player-ready="onSpotifyPlayerReady"
-    />
-
-    <UAlert
-      v-if="error"
-      color="error"
-      variant="soft"
-      :description="error"
-      closable
-      @close="error = ''; retryExhausted = false"
-    >
-      <template v-if="retryExhausted" #actions>
-        <div class="flex gap-2">
-          <UButton
-            size="xs"
-            color="error"
-            variant="outline"
-            icon="i-lucide-refresh-cw"
-            :loading="refreshingAudio"
-            @click="manualRefreshAudio"
-          >
-            Refresh
-          </UButton>
-          <UButton
-            size="xs"
-            color="error"
-            variant="outline"
-            icon="i-lucide-skip-forward"
-            @click="error = ''; retryExhausted = false; skip()"
-          >
-            Skip
-          </UButton>
-        </div>
-      </template>
-    </UAlert>
-
-    <RoomSongSearch
-      :room-id="roomId"
-      :adding-song="addingSong"
-      :spotify-connected="roomState.spotifyConnected"
-      @add-youtube="addSongByVideoId"
-      @add-spotify="addSpotifyTrack"
-      @add-soundcloud="addSongBySoundcloudUrl"
-    />
-
-    <RoomSongQueue
-      :queue="roomState.queue"
-      :is-host="isHost"
-      @remove="removeSong"
-      @reorder="reorderQueue"
     />
   </div>
 </template>
@@ -187,14 +178,26 @@ const spotifyPlayer = useSpotifyPlayer()
 
 const addingSong = ref(false)
 const showImportDialog = ref(false)
-const tabItems = [
-  { label: 'Player', value: 'player' },
-  { label: 'Settings', value: 'settings' }
-]
-const activeTab = ref<'player' | 'settings'>('player')
+const settingsOpen = ref(false)
+
+function openImport() {
+  settingsOpen.value = false
+  showImportDialog.value = true
+}
 
 const playDisabled = computed(
   () => !roomState.value.queue.length && !roomState.value.currentSong
+)
+const showSpotifyPlayer = computed(
+  () =>
+    isHost.value &&
+    roomState.value.currentSong?.source === 'spotify' &&
+    spotifyPlayer.isReady.value &&
+    !!spotifyPlayer.currentTrack.value &&
+    spotifyPlayer.currentTrack.value.uri === roomState.value.currentSong.trackUri
+)
+const showAudioPlayer = computed(
+  () => isHost.value && currentSongIsAudio.value
 )
 const currentSongIsAudio = computed(
   () =>
@@ -204,7 +207,7 @@ const currentSongIsAudio = computed(
 
 const audioPlayerRef = ref<{
   play: (url: string, startTime?: number) => void
-  pause: () => void
+  pause: (opts?: { keepAlive?: boolean }) => void
   resume: () => void
   seek: (time: number) => void
   unlockSilentAudio: () => void
@@ -219,6 +222,15 @@ const audioPlayerRef = ref<{
 
 const userActivated = ref(false)
 let userActivateDone = false
+
+/**
+ * Browsers only let the Spotify SDK start audio after it was "activated"
+ * inside a user gesture. The player may not exist at the first click, so do
+ * this on every click/key (capture phase = still inside the gesture).
+ */
+function activateSpotifyOnGesture() {
+  spotifyPlayer.activate()
+}
 
 function activateUser() {
   if (userActivateDone) return
@@ -405,6 +417,106 @@ const refreshingAudio = ref(false)
 let lastSongId: string | null = null
 let currentPlayingId = ''
 const retryCount = new Map<string, number>()
+
+/**
+ * Fetch the next track's stream once the current one has played this long
+ * (so rapid skipping doesn't fire requests), or near its end at the latest.
+ */
+const PREFETCH_AFTER_S = 5
+const PREFETCH_LEAD_S = 30
+/**
+ * Stream URLs resolved in this browser (prefetched or refreshed), by song id.
+ * Live room updates replace song objects and drop client-side `url`s, so
+ * this map is the source of truth for them.
+ */
+const prefetchedUrls = new Map<string, string>()
+/** Songs already tried (success or failure): at most one attempt each. */
+const prefetchAttempted = new Set<string>()
+/** Prefetches still running, so a skip can wait for one instead of racing it. */
+const prefetchInFlight = new Map<string, Promise<string | undefined>>()
+
+function isAudioSong(song: SongData | null | undefined): song is SongData {
+  return song?.source === 'youtube' || song?.source === 'soundcloud'
+}
+
+/** Remember a stream URL resolved in this browser for `songId`. */
+function resolvedUrlFor(songId: string, url: string) {
+  prefetchedUrls.set(songId, url)
+}
+
+/** A playable URL for `song` if we already have one, without a request. */
+function knownUrl(song: SongData): string | undefined {
+  return song.url ?? prefetchedUrls.get(song.id)
+}
+
+/**
+ * Resolve the next queued song's stream URL while the current one plays, so
+ * the track change (automatic or skip) needs no network round trip and no
+ * ~5s activation wait. Keeps playback going when the phone is locked.
+ */
+async function prefetchNext() {
+  const next = roomState.value.queue[0]
+  if (!isHost.value || !hostData.value?.hostToken) return
+  if (!isAudioSong(next) || knownUrl(next) || prefetchAttempted.has(next.id)) {
+    return
+  }
+  const body: Record<string, string> = { hostToken: hostData.value.hostToken }
+  if (next.videoId) body.videoId = next.videoId
+  else if (next.trackUrl) body.trackUrl = next.trackUrl
+  else return
+
+  prefetchAttempted.add(next.id)
+  const request = $fetch<{ url: string }>(`/api/room/${roomId}/audio/refresh`, {
+    method: 'POST',
+    body
+  })
+    .then((res) => {
+      prefetchedUrls.set(next.id, res.url)
+      return res.url
+    })
+    // Not fatal: the song is resolved normally when it starts.
+    .catch(() => undefined)
+    .finally(() => prefetchInFlight.delete(next.id))
+  prefetchInFlight.set(next.id, request)
+  await request
+}
+
+watch(
+  () => audioPlayerRef.value?.state.currentTime.value ?? 0,
+  (t) => {
+    const d = audioPlayerRef.value?.state.duration.value ?? 0
+    if (d > 0 && (t >= PREFETCH_AFTER_S || d - t <= PREFETCH_LEAD_S)) {
+      void prefetchNext()
+    }
+  }
+)
+
+// Same while a Spotify song plays, so a YouTube/SoundCloud song after it
+// is ready too.
+watch(
+  () => spotifyPlayer.position.value,
+  (ms) => {
+    if (roomState.value.currentSong?.source !== 'spotify') return
+    const d = spotifyPlayer.duration.value
+    if (d > 0 && (ms >= PREFETCH_AFTER_S * 1000 || d - ms <= PREFETCH_LEAD_S * 1000)) {
+      void prefetchNext()
+    }
+  }
+)
+
+// Forget prefetched URLs for songs that left the queue.
+watch(
+  () => roomState.value.queue.map((s) => s.id),
+  (ids) => {
+    const keep = new Set([...ids, roomState.value.currentSong?.id])
+    for (const id of prefetchedUrls.keys()) {
+      if (!keep.has(id)) prefetchedUrls.delete(id)
+    }
+    for (const id of prefetchAttempted) {
+      if (!keep.has(id)) prefetchAttempted.delete(id)
+    }
+  }
+)
 const RETRY_LIMIT = 2
 const retryExhausted = ref(false)
 
@@ -461,6 +573,7 @@ async function refreshAndPlay(
     retryExhausted.value = false
     error.value = ''
     song.url = refreshed.url
+    resolvedUrlFor(song.id, refreshed.url)
     if (!song.title || song.title === 'Unknown Title') song.title = refreshed.title
     if (!song.durationMs) song.durationMs = refreshed.durationMs
 
@@ -488,6 +601,12 @@ async function handleSongChange(song: SongData) {
   if (!isHost.value) return
   if (song.id === currentPlayingId) return
   currentPlayingId = song.id
+  if (isAudioSong(song) && !song.url) {
+    const pending = prefetchInFlight.get(song.id)
+    const prefetched = prefetchedUrls.get(song.id) ?? (await pending)
+    if (song.id !== currentPlayingId) return
+    if (prefetched) song.url = prefetched
+  }
   try {
     if (song.source === 'spotify' && song.trackUri) {
       audioPlayerRef.value?.pause()
@@ -615,10 +734,36 @@ watch(
   }
 )
 
-async function transferSpotifyPlayback(trackUri: string) {
+/**
+ * The first track a freshly connected Spotify player plays reports "paused"
+ * about a second in and really stops ~30s later. An SDK resume() without a
+ * click doesn't help, but re-sending the play request does (verified in
+ * Chrome). So shortly after starting a track, check, and if the room should
+ * be playing it but Spotify says paused, ask again from where it is.
+ */
+function confirmSpotifyStarted(trackUri: string, retriesLeft = 2) {
+  setTimeout(() => {
+    const song = roomState.value.currentSong
+    if (!roomState.value.isPlaying || song?.trackUri !== trackUri) return
+    if (spotifyPlayer.currentTrack.value?.uri !== trackUri) return
+    if (!spotifyPlayer.paused.value || retriesLeft <= 0) return
+    void transferSpotifyPlayback(trackUri, {
+      positionMs: spotifyPlayer.position.value,
+      retriesLeft: retriesLeft - 1
+    })
+  }, 2500)
+}
+
+async function transferSpotifyPlayback(
+  trackUri: string,
+  {
+    positionMs = roomState.value.position,
+    retriesLeft = 2
+  }: { positionMs?: number; retriesLeft?: number } = {}
+) {
   if (!roomState.value.isPlaying) return
 
-  spotifyPlayer.position.value = roomState.value.position
+  spotifyPlayer.position.value = positionMs
 
   let token = spotifyAuth.getAccessToken()
   if (!token) {
@@ -642,12 +787,10 @@ async function transferSpotifyPlayback(trackUri: string) {
     'Content-Type': 'application/json'
   }
 
-  await fetch('https://api.spotify.com/v1/me/player', {
-    method: 'PUT',
-    headers,
-    body: JSON.stringify({ device_ids: [deviceId], play: false })
-  })
-
+  // `play?device_id=` already moves playback to this device. A separate
+  // "transfer with play:false" first is not just redundant: Spotify applies
+  // it asynchronously, and its late "paused" state can land after playback
+  // started, so the SDK reports paused while audio is playing.
   for (let attempt = 0; attempt < 4; attempt++) {
     if (!roomState.value.isPlaying) return
 
@@ -662,11 +805,14 @@ async function transferSpotifyPlayback(trackUri: string) {
         headers,
         body: JSON.stringify({
           uris: [trackUri],
-          position_ms: roomState.value.position
+          position_ms: positionMs
         })
       }
     )
-    if (playRes.ok) return
+    if (playRes.ok) {
+      confirmSpotifyStarted(trackUri, retriesLeft)
+      return
+    }
 
     if (playRes.status === 403) {
       const body = await playRes.text().catch(() => '')
@@ -679,6 +825,14 @@ async function transferSpotifyPlayback(trackUri: string) {
       error.value = `Spotify play failed: ${body.slice(0, 200)}`
       return
     }
+
+    // 404: Spotify doesn't know this device yet (it only just registered).
+    // Make it the active device, then retry the play request.
+    await fetch('https://api.spotify.com/v1/me/player', {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ device_ids: [deviceId], play: false })
+    }).catch(() => {})
   }
 
   error.value = 'Spotify device did not become ready. Try again.'
@@ -762,8 +916,53 @@ function reorderQueue(songIds: string[]) {
   })
 }
 
+/** Whether this device is actually producing the current song right now. */
+function isPlayingLocally(song: SongData): boolean {
+  if (song.source === 'spotify') {
+    return (
+      !spotifyPlayer.paused.value &&
+      spotifyPlayer.currentTrack.value?.uri === song.trackUri
+    )
+  }
+  return audioPlayerRef.value?.state.playing.value ?? false
+}
+
+/** Start the current song on this device without changing room state. */
+function resumeLocally(song: SongData) {
+  error.value = ''
+  if (song.source === 'spotify' && song.trackUri) {
+    audioPlayerRef.value?.pause()
+    if (spotifyPlayer.currentTrack.value?.uri === song.trackUri) {
+      void spotifyPlayer.play()
+    } else {
+      void transferSpotifyPlayback(song.trackUri)
+    }
+    return
+  }
+  const dur = audioPlayerRef.value?.state.duration.value ?? 0
+  const url = knownUrl(song)
+  if (dur > 0) {
+    audioPlayerRef.value?.resume()
+  } else if (url) {
+    audioPlayerRef.value?.play(
+      url,
+      roomState.value.position > 0 ? roomState.value.position / 1000 : undefined
+    )
+  } else {
+    currentPlayingId = ''
+    void handleSongChange(song)
+  }
+}
+
 async function togglePlay() {
   if (!isHost.value || !hostData.value?.hostToken) return
+  const current = roomState.value.currentSong
+  // The room says "playing" but nothing plays here (autoplay was blocked,
+  // or the page just loaded): Play should start it, not pause the room.
+  if (current && roomState.value.isPlaying && !isPlayingLocally(current)) {
+    resumeLocally(current)
+    return
+  }
   const prevSongId = roomState.value.currentSong?.id
   try {
     const res = await $fetch<{
@@ -796,12 +995,16 @@ async function togglePlay() {
           const dur = audioPlayerRef.value?.state.duration.value ?? 0
           if (dur > 0) {
             audioPlayerRef.value!.resume()
-          } else if (song.url) {
+          } else if (knownUrl(song)) {
             const startTime =
               roomState.value.position > 0
                 ? roomState.value.position / 1000
                 : undefined
-            audioPlayerRef.value?.play(song.url, startTime)
+            audioPlayerRef.value?.play(knownUrl(song)!, startTime)
+          } else {
+            // No URL yet (e.g. live state replaced the song object): resolve it.
+            currentPlayingId = ''
+            void handleSongChange(song)
           }
         }
       }
@@ -814,12 +1017,15 @@ async function togglePlay() {
   }
 }
 
-async function skip() {
+async function skip(
+  { localAlreadyPlaying = false }: { localAlreadyPlaying?: boolean } = {}
+) {
   if (!isHost.value || !hostData.value?.hostToken) return
   if (skipping) return
   skipping = true
 
-  audioPlayerRef.value?.pause()
+  // Keep the iOS audio session alive through the track change.
+  if (!localAlreadyPlaying) audioPlayerRef.value?.pause({ keepAlive: true })
 
   try {
     const res = await $fetch<{
@@ -830,25 +1036,57 @@ async function skip() {
       body: { hostToken: hostData.value.hostToken }
     })
     roomState.value.position = 0
+    roomState.value.isPlaying = res.isPlaying
+
+    if (localAlreadyPlaying && res.currentSong?.id === currentPlayingId) {
+      // We already started this song locally; just adopt the server copy.
+      lastSongId = res.currentSong.id
+      res.currentSong.url ??= roomState.value.currentSong?.url
+      roomState.value.currentSong = res.currentSong
+      return
+    }
+
     if (res.currentSong) {
       lastSongId = res.currentSong.id
     }
     roomState.value.currentSong = res.currentSong
-    roomState.value.isPlaying = res.isPlaying
     if (res.currentSong) {
       void handleSongChange(res.currentSong)
     } else {
+      // Queue finished: now it's fine to release the audio session.
+      audioPlayerRef.value?.pause()
       spotifyPlayer.pause()
     }
-  } catch {
-    error.value = 'Failed to skip.'
+  } catch (err: unknown) {
+    error.value = `Failed to skip: ${errorMessage(err)}`
   } finally {
     skipping = false
   }
 }
 
+/**
+ * Track finished. If the next song is audio and its URL is already known
+ * (prefetched), start it immediately from this event and tell the server
+ * afterwards. Waiting for the network first leaves a silent gap in which a
+ * locked phone may suspend the page.
+ */
 function onAudioEnded() {
-  skip()
+  const next = roomState.value.queue[0]
+  const url = isAudioSong(next) ? knownUrl(next) : undefined
+  if (!next || !url || !roomState.value.isPlaying || skipping) {
+    skip()
+    return
+  }
+
+  next.url = url
+  currentPlayingId = next.id
+  lastSongId = next.id
+  roomState.value.position = 0
+  roomState.value.queue = roomState.value.queue.slice(1)
+  roomState.value.currentSong = next
+  spotifyPlayer.setOnTrackEnd(null)
+  nextTick(() => audioPlayerRef.value?.play(url))
+  void skip({ localAlreadyPlaying: true })
 }
 
 function onPlayBlocked() {
@@ -920,6 +1158,8 @@ onMounted(() => {
     positionTimer = setInterval(reportPosition, 2000)
   }
 
+  document.addEventListener('pointerdown', activateSpotifyOnGesture, true)
+  document.addEventListener('keydown', activateSpotifyOnGesture, true)
   document.addEventListener('pointerdown', activateUser, { once: true })
   document.addEventListener('keydown', activateUser, { once: true })
 })
@@ -939,6 +1179,8 @@ onUnmounted(() => {
   }
 
   if (positionTimer) clearInterval(positionTimer)
+  document.removeEventListener('pointerdown', activateSpotifyOnGesture, true)
+  document.removeEventListener('keydown', activateSpotifyOnGesture, true)
   spotifyPlayer.destroy()
 })
 </script>

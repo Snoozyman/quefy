@@ -31,10 +31,7 @@ export default defineEventHandler(async (event) => {
       statusMessage: 'Invalid YouTube playlist URL'
     })
 
-  const { execFile } = await import('node:child_process')
-  const { promisify } = await import('node:util')
-  const execFileAsync = promisify(execFile)
-  const { getYtDlpPath, getYtDlpBaseArgs } = await import('#server/utils/yt-dlp')
+  const { getYtDlpBaseArgs, runYtDlp } = await import('#server/utils/yt-dlp')
   const { getCookiesArgs } = await import('#server/utils/cookies')
   const { parseYtDlpError, getStderr } = await import(
     '#server/utils/yt-dlp-errors'
@@ -42,7 +39,7 @@ export default defineEventHandler(async (event) => {
 
   let stdout: string
   try {
-    const result = await execFileAsync(getYtDlpPath(), [
+    const result = await runYtDlp(() => [
       ...getYtDlpBaseArgs(),
       '--flat-playlist',
       '--print-json',

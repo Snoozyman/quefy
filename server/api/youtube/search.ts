@@ -1,10 +1,7 @@
-import { execFile } from 'node:child_process'
-import { promisify } from 'node:util'
 import { parseYtDlpError, getStderr } from '#server/utils/yt-dlp-errors'
 import { getCookiesArgs } from '#server/utils/cookies'
-import { getYtDlpPath, getYtDlpBaseArgs } from '#server/utils/yt-dlp'
+import { getYtDlpBaseArgs, runYtDlp } from '#server/utils/yt-dlp'
 
-const execFileAsync = promisify(execFile)
 
 interface SearchResult {
   id: string
@@ -26,7 +23,7 @@ export default defineEventHandler(async (event) => {
 
   let stdout: string
   try {
-    const result = await execFileAsync(getYtDlpPath(), [
+    const result = await runYtDlp(() => [
       '--flat-playlist',
       '--print-json',
       '--no-warnings',

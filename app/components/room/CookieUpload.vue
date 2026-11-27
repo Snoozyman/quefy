@@ -2,6 +2,7 @@
   <div>
     <UButton
       size="sm"
+      color="neutral"
       variant="outline"
       icon="i-lucide-cookie"
       @click="open = true"
@@ -9,28 +10,42 @@
       {{ statusText }}
     </UButton>
 
-    <UModal v-model:open="open">
-      <template #content>
-        <div class="p-4 space-y-4 min-w-sm">
-          <h2 class="text-lg font-semibold">
-            YouTube Cookies
-            <span v-if="cookieExists" class="text-sm text-muted font-normal">
-              ({{ cookieSize }} bytes)
-            </span>
-            <span v-else class="text-sm text-muted font-normal">
-              (not set)
-            </span>
-          </h2>
-
+    <UModal
+      v-model:open="open"
+      title="Cookies"
+      :description="
+        cookieExists
+          ? `Stored for YouTube and SoundCloud (${cookieSize} bytes)`
+          : 'No cookies stored yet'
+      "
+    >
+      <template #body>
+        <div class="space-y-5">
           <p class="text-sm text-muted">
-            Cookies help yt-dlp access age-restricted or private videos. You can
-            auto-fetch session cookies, or manually upload a Netscape-format
-            <code>cookies.txt</code> file.
+            yt-dlp uses these to reach YouTube and SoundCloud. Auto-fetch gets
+            anonymous session cookies; for age-restricted or members-only
+            videos, upload a Netscape-format
+            <code class="text-default">cookies.txt</code> exported from a
+            signed-in browser.
           </p>
 
-          <div class="flex items-center gap-2">
-            <UButton size="sm" variant="outline" @click="triggerFilePick">
-              Choose File
+          <div class="flex flex-wrap gap-2">
+            <UButton
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-wand-sparkles"
+              :loading="fetching"
+              @click="autoFetch"
+            >
+              Auto-fetch
+            </UButton>
+            <UButton
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-file-up"
+              @click="triggerFilePick"
+            >
+              Choose file
             </UButton>
             <input
               ref="fileInput"
@@ -39,84 +54,78 @@
               class="hidden"
               @change="onFilePicked"
             />
-            <span v-if="fileName" class="text-xs text-muted truncate">{{
-              fileName
-            }}</span>
           </div>
 
-          <textarea
-            v-model="pasteText"
-            placeholder="Or paste cookie contents here..."
-            class="w-full h-32 rounded-lg border border-default bg-muted/30 p-2 text-xs font-mono resize-none"
-          />
-
-          <div
-            v-if="saveMsg"
-            class="flex items-center gap-2 text-sm"
-            :class="saveOk ? 'text-green-600' : 'text-red-500'"
-          >
-            <UIcon v-if="saveOk" name="i-lucide-check-circle" class="size-4" />
-            <UIcon v-else name="i-lucide-alert-circle" class="size-4" />
-            <span>{{ saveMsg }}</span>
-          </div>
-
-          <div class="flex items-center gap-2">
+          <div class="space-y-2">
+            <UTextarea
+              v-model="pasteText"
+              :placeholder="fileName ? `Loaded ${fileName}` : 'Or paste cookies.txt contents here'"
+              :rows="5"
+              autoresize
+              :maxrows="10"
+              class="w-full"
+              :ui="{ base: 'font-mono text-xs' }"
+            />
             <UButton
-              size="sm"
-              color="primary"
+              block
               :disabled="!pasteText.trim()"
               :loading="saving"
               @click="save"
             >
-              Save Cookies
-            </UButton>
-            <UButton
-              size="sm"
-              variant="outline"
-              :loading="fetching"
-              @click="autoFetch"
-            >
-              Auto-Fetch
-            </UButton>
-            <UButton
-              v-if="cookieExists"
-              size="sm"
-              variant="outline"
-              color="error"
-              :loading="deleting"
-              @click="deleteCookies"
-            >
-              Remove
+              Save cookies
             </UButton>
           </div>
+
+          <UAlert
+            v-if="saveMsg"
+            :color="saveOk ? 'success' : 'error'"
+            variant="soft"
+            :icon="saveOk ? 'i-lucide-circle-check' : 'i-lucide-circle-alert'"
+            :description="saveMsg"
+          />
 
           <div
             v-if="cookieExists && (ytCookies.length || scCookies.length)"
             class="space-y-2"
           >
-            <UTabs v-model="activeTab" :items="tabItems" />
-
+            <div class="flex items-center justify-between gap-2">
+              <UTabs
+                v-model="activeTab"
+                :items="tabItems"
+                :content="false"
+                size="xs"
+                color="neutral"
+              />
+              <UButton
+                size="xs"
+                color="error"
+                variant="ghost"
+                icon="i-lucide-trash-2"
+                :loading="deleting"
+                @click="deleteCookies"
+              >
+                Remove all
+              </UButton>
+            </div>
             <div
-              class="max-h-32 overflow-y-auto rounded-lg border border-default"
+              class="max-h-40 overflow-y-auto rounded-lg border border-default"
             >
               <div
                 v-if="activeCookies.length === 0"
-                class="text-xs text-muted text-center py-4"
+                class="py-4 text-center text-xs text-muted"
               >
-                No cookies found
+                No cookies for this site
               </div>
               <div
                 v-for="c in activeCookies"
-                :key="c.name"
-                class="flex items-center justify-between px-3 py-1.5 text-xs border-b border-default last:border-b-0"
+                :key="`${c.domain}-${c.name}`"
+                class="flex items-center gap-2 border-b border-default px-3 py-1.5 text-xs last:border-b-0"
               >
-                <span class="font-mono truncate mr-2 min-w-0">{{
+                <span class="min-w-0 flex-1 truncate font-mono">{{
                   c.name
                 }}</span>
-                <span class="text-muted truncate mr-2 min-w-0">{{
-                  c.domain
-                }}</span>
-                <span class="text-muted shrink-0">{{
+                <span class="min-w-0 truncate text-muted">{{ c.domain }}</span>
+                <span class="shrink-0 tabular-nums text-muted">{{
                   formatExpiry(c.expires)
                 }}</span>
               </div>
@@ -193,8 +202,8 @@ const activeCookies = computed(() =>
 )
 
 const statusText = computed(() => {
-  if (cookieExists.value) return `Cookies (${cookieSize.value}b)`
-  return 'Cookies'
+  if (cookieExists.value) return 'Manage'
+  return 'Add'
 })
 
 async function fetchStatus() {

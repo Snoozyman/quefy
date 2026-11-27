@@ -6,7 +6,7 @@ import {
   unlinkSync,
   writeFileSync
 } from 'node:fs'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 
 const DATA_DIR = join(process.cwd(), 'data')
 
@@ -169,4 +169,47 @@ export function hasCookiesFor(domain: string): boolean {
   return parseCookieLines(readFileSync(path, 'utf-8')).some((line) =>
     line.split('\t')[0]!.includes(domain)
   )
+}
+
+/**
+ * Merge `incoming` cookies without overriding anything still valid: a cookie
+ * is written only if the file lacks it or the stored copy has expired.
+ * Protects uploaded (logged-in) cookies from being replaced by anonymous
+ * ones. Returns how many cookies were added or replaced.
+ */
+export function mergeMissingOrExpiredCookies(
+  incoming: string,
+  nowSeconds = Math.floor(Date.now() / 1000)
+): number {
+  const path = getCookiePath()
+  const existing = existsSync(path)
+    ? parseCookieLines(readFileSync(path, 'utf-8'))
+    : []
+
+  const keyOf = (line: string) => {
+    const f = line.split('\t')
+    return f[0]! + '\t' + f[5]!
+  }
+  const isExpired = (line: string) => {
+    const expires = parseInt(line.split('\t')[4]!, 10) || 0
+    return expires > 0 && expires <= nowSeconds
+  }
+
+  const byKey = new Map(existing.map((l) => [keyOf(l), l]))
+  let changed = 0
+  for (const line of parseCookieLines(incoming)) {
+    const current = byKey.get(keyOf(line))
+    if (current && !isExpired(current)) continue
+    byKey.set(keyOf(line), line)
+    changed++
+  }
+  if (changed === 0) return 0
+
+  mkdirSync(dirname(path), { recursive: true })
+  writeFileSync(
+    path,
+    `# Netscape HTTP Cookie File\n${[...byKey.values()].join('\n')}\n`,
+    'utf-8'
+  )
+  return changed
 }

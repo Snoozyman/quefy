@@ -68,3 +68,30 @@ export function getStderr(err: unknown): string {
   }
   return ''
 }
+
+/**
+ * True when a yt-dlp failure looks like stale or missing *anonymous* cookies:
+ * bot checks, generic 403s, and sign-in prompts. Age-restricted, members-only
+ * and private videos need a logged-in account, so refreshing anonymous
+ * cookies cannot fix them and they return false.
+ */
+export function isCookieRefreshable(stderr: string): boolean {
+  const lower = stderr.toLowerCase()
+  if (
+    lower.includes('confirm your age') ||
+    lower.includes('age-restricted') ||
+    lower.includes('only available to members') ||
+    lower.includes('member-only') ||
+    lower.includes('private video')
+  ) {
+    return false
+  }
+  return (
+    lower.includes('not a bot') ||
+    lower.includes('http error 403') ||
+    lower.includes('forbidden') ||
+    lower.includes('sign in') ||
+    lower.includes('login required') ||
+    lower.includes('use --cookies')
+  )
+}
