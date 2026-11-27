@@ -4,7 +4,8 @@ import {
   registerRoomClient,
   unregisterRoomClient,
   isHostDisconnect,
-  emitRoomUpdate
+  emitRoomUpdate,
+  scheduleHostAbsence
 } from '#server/utils/room-events'
 
 export default defineEventHandler(async (event) => {
@@ -56,11 +57,16 @@ export default defineEventHandler(async (event) => {
   })
 
   stream.onClosed(() => {
-    if (isHostDisconnect(id, stream)) {
-      room.isPlaying = false
-      emitRoomUpdate(id, room)
-    }
+    const wasHost = isHostDisconnect(id, stream)
     unregisterRoomClient(id, stream)
+    if (wasHost) {
+      scheduleHostAbsence(id, () => {
+        const current = getRoom(id)
+        if (!current || !current.isPlaying) return
+        current.isPlaying = false
+        emitRoomUpdate(id, current)
+      })
+    }
   })
 
   return stream.send()
