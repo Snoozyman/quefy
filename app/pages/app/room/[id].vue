@@ -722,6 +722,33 @@ watch(
   }
 )
 
+// Spotify plays inside the SDK's iframe, which OS media widgets then show as
+// "Spotify Embedded Player". A silent loop in this page keeps our metadata
+// (title, artist, artwork) the one that is shown.
+watch(
+  () =>
+    isHost.value &&
+    roomState.value.currentSong?.source === 'spotify' &&
+    !spotifyPlayer.paused.value,
+  (active) => {
+    setMediaSessionAnchor(active)
+    if (active) updateMediaSession(roomState.value.currentSong)
+  },
+  { immediate: true }
+)
+// A new Spotify track makes the SDK frame the newest player again.
+watch(
+  () => spotifyPlayer.currentTrack.value?.uri,
+  (uri, prev) => {
+    if (!uri || uri === prev) return
+    if (roomState.value.currentSong?.source !== 'spotify') return
+    setTimeout(
+      () => setMediaSessionAnchor(!spotifyPlayer.paused.value, { restart: true }),
+      1000
+    )
+  }
+)
+
 watch(
   () => [
     spotifyPlayer.position.value,
@@ -1181,6 +1208,7 @@ onUnmounted(() => {
   if (positionTimer) clearInterval(positionTimer)
   document.removeEventListener('pointerdown', activateSpotifyOnGesture, true)
   document.removeEventListener('keydown', activateSpotifyOnGesture, true)
+  destroyMediaSessionAnchor()
   spotifyPlayer.destroy()
 })
 </script>
