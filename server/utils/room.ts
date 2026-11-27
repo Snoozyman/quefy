@@ -261,6 +261,8 @@ export function listRooms(): RoomSummary[] {
       createdAt: r.createdAt,
       isPlaying: r.isPlaying,
       currentSource: r.currentSong?.source ?? null,
-      currentThumbnail: r.currentSong?.albumImageUrl ?? null
+      // Idle rooms show what's up next rather than a blank tile
+      currentThumbnail:
+        (r.currentSong ?? r.queue[0])?.albumImageUrl ?? null
     }))
 }
