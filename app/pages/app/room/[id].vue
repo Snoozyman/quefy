@@ -776,6 +776,13 @@ watch(
   }
 )
 
+function spotifyAnchorTiming() {
+  return {
+    durationMs: spotifyPlayer.duration.value,
+    positionMs: spotifyPlayer.position.value
+  }
+}
+
 // Spotify plays inside the SDK's iframe, which OS media widgets then show as
 // "Spotify Embedded Player". A silent loop in this page keeps our metadata
 // (title, artist, artwork) the one that is shown.
@@ -785,10 +792,18 @@ watch(
     roomState.value.currentSong?.source === 'spotify' &&
     !spotifyPlayer.paused.value,
   (active) => {
-    setMediaSessionAnchor(active)
+    setMediaSessionAnchor(active, spotifyAnchorTiming())
     if (active) updateMediaSession(roomState.value.currentSong)
   },
   { immediate: true }
+)
+// Widgets show the anchor's length/progress: keep it matching Spotify's.
+watch(
+  () => [spotifyPlayer.duration.value, spotifyPlayer.position.value] as const,
+  ([durationMs, positionMs]) => {
+    if (roomState.value.currentSong?.source !== 'spotify') return
+    syncMediaSessionAnchor(durationMs, positionMs)
+  }
 )
 // KDE's browser integration controls the anchor element itself (pause/play)
 // rather than calling our Media Session handlers, and reads metadata when a
@@ -796,25 +811,47 @@ watch(
 // (Registered on mount so a previous room page's cleanup can't clear them.)
 onMounted(() =>
   setMediaSessionAnchorHooks({
-    onPlaying: () => updateMediaSession(roomState.value.currentSong),
+    // Widgets register a new player slightly after it starts; re-send the
+    // metadata then (cleared first so it counts as a change).
+    onPlaying: () =>
+      setTimeout(() => {
+        if ('mediaSession' in navigator) navigator.mediaSession.metadata = null
+        updateMediaSession(roomState.value.currentSong)
+      }, 500),
     onExternalPause: () => {
       if (roomState.value.isPlaying) handleMediaPause()
     },
     onExternalPlay: () => {
       if (!roomState.value.isPlaying) handleMediaPlay()
+    },
+    onExternalSeek: (seconds) => {
+      if (roomState.value.currentSong?.source !== 'spotify') return
+      spotifyPlayer.seek(Math.round(seconds * 1000))
     }
   })
 )
-// A new Spotify track makes the SDK frame the newest player again.
+// Widgets follow the most recently started player. The Spotify frame
+// (re)starts its audio a moment after it reports playing: on resume, on a
+// new track, and when a stuck start is re-sent. Restart the anchor after
+// each of those so it stays the newest.
+let anchorReassertTimer: ReturnType<typeof setTimeout> | undefined
+function reassertAnchorSoon() {
+  clearTimeout(anchorReassertTimer)
+  anchorReassertTimer = setTimeout(() => {
+    const active =
+      isHost.value &&
+      roomState.value.currentSong?.source === 'spotify' &&
+      !spotifyPlayer.paused.value
+    if (active) {
+      setMediaSessionAnchor(true, { ...spotifyAnchorTiming(), restart: true })
+    }
+  }, 1500)
+}
 watch(
-  () => spotifyPlayer.currentTrack.value?.uri,
-  (uri, prev) => {
-    if (!uri || uri === prev) return
-    if (roomState.value.currentSong?.source !== 'spotify') return
-    setTimeout(
-      () => setMediaSessionAnchor(!spotifyPlayer.paused.value, { restart: true }),
-      1000
-    )
+  () => [spotifyPlayer.currentTrack.value?.uri, spotifyPlayer.paused.value] as const,
+  ([uri, paused], [prevUri, prevPaused]) => {
+    if (paused || !uri) return
+    if (uri !== prevUri || prevPaused) reassertAnchorSoon()
   }
 )
 
@@ -1286,6 +1323,7 @@ onUnmounted(() => {
   if (positionTimer) clearInterval(positionTimer)
   document.removeEventListener('pointerdown', activateSpotifyOnGesture, true)
   document.removeEventListener('keydown', activateSpotifyOnGesture, true)
+  clearTimeout(anchorReassertTimer)
   destroyMediaSessionAnchor()
   spotifyPlayer.destroy()
 })
