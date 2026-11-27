@@ -75,6 +75,11 @@ export function useRoomState(roomId: Ref<string>) {
       stopPolling()
     })
 
+    es.addEventListener('room-deleted', () => {
+      notFound.value = true
+      stopRealtime()
+    })
+
     es.onerror = () => {
       if (pageLeaving || eventSource !== es) return
       // Poll while the stream is down so the UI stays current.

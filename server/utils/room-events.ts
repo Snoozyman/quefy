@@ -1,4 +1,5 @@
 import type { EventStream } from 'h3'
+import { onRoomDeleted, toRoomState } from './room'
 import type { Room } from './room'
 
 const roomClients = new Map<string, Set<EventStream>>()
@@ -66,37 +67,30 @@ export function emitRoomUpdate(roomId: string, room: Room) {
   const clients = roomClients.get(roomId)
   if (!clients || clients.size === 0) return
 
-  const state = {
-    id: room.id,
-    title: room.title,
-    currentSong: room.currentSong,
-    queue: room.queue.map((s) => ({
-      id: s.id,
-      source: s.source,
-      title: s.title,
-      addedBy: s.addedBy,
-      addedAt: s.addedAt,
-      videoId: s.videoId,
-      url: s.url,
-      trackUri: s.trackUri,
-      artists: s.artists,
-      albumName: s.albumName,
-      albumImageUrl: s.albumImageUrl,
-      durationMs: s.durationMs
-    })),
-    isPlaying: room.isPlaying,
-    spotifyConnected: room.spotifyConnected,
-    createdAt: room.createdAt,
-    position: room.position
-  }
-
-  const data = JSON.stringify(state)
-  clients.forEach((stream) => {
-    try {
-      stream.push({ data, event: 'room-update' })
-    } catch (err: unknown) {
+  const data = JSON.stringify(toRoomState(room))
+  for (const stream of clients) {
+    stream.push({ data, event: 'room-update' }).catch((err: unknown) => {
       console.error('Failed to push SSE event:', err)
       clients.delete(stream)
-    }
-  })
+    })
+  }
 }
+
+/** Tell every client the room is gone and close their streams. */
+function closeRoomStreams(roomId: string) {
+  const clients = roomClients.get(roomId)
+  roomClients.delete(roomId)
+  hostStreams.delete(roomId)
+  cancelHostAbsence(roomId)
+  if (!clients) return
+  for (const stream of clients) {
+    stream
+      .push({ event: 'room-deleted', data: roomId })
+      .catch(() => {})
+      .finally(() => stream.close())
+  }
+}
+
+// Registered when this module first loads, which happens before any stream
+// exists (events.ts imports it), so no open stream can be missed.
+onRoomDeleted(closeRoomStreams)

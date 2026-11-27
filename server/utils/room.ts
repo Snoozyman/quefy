@@ -1,23 +1,11 @@
 import { randomUUID } from 'node:crypto'
+import type { RoomState, SongData } from '#shared/types/room'
 
-export interface QueuedSong {
-  id: string
-  source: 'youtube' | 'spotify' | 'soundcloud'
-  title: string
-  addedBy: string
-  addedAt: number
-  // YouTube
-  videoId?: string
-  url?: string
-  // Spotify
-  trackUri?: string
-  // SoundCloud
-  trackUrl?: string
-  artists?: string[]
-  albumName?: string
-  albumImageUrl?: string
-  durationMs?: number
-}
+/** A song as stored server-side: identical to what clients receive. */
+export type QueuedSong = SongData
+
+/** Fields a caller supplies when queueing a song; the rest are generated. */
+export type NewSong = Omit<SongData, 'id' | 'addedAt'>
 
 export interface Room {
   id: string
@@ -31,7 +19,42 @@ export interface Room {
   position: number
 }
 
+export interface RoomSummary {
+  id: string
+  title: string
+  queueCount: number
+  createdAt: number
+  isPlaying: boolean
+  currentSource: string | null
+  currentThumbnail: string | null
+}
+
+/** Rooms are kept in memory and expire this long after creation. */
+export const ROOM_TTL_MS = 86_400_000
+
 const rooms = new Map<string, Room>()
+const deleteListeners: Array<(roomId: string) => void> = []
+
+/** Register a callback run whenever a room is deleted or expires. */
+export function onRoomDeleted(listener: (roomId: string) => void): void {
+  deleteListeners.push(listener)
+}
+
+function isExpired(room: Room, now = Date.now()): boolean {
+  return now - room.createdAt >= ROOM_TTL_MS
+}
+
+function removeRoom(id: string): boolean {
+  const existed = rooms.delete(id)
+  if (existed) for (const listener of deleteListeners) listener(id)
+  return existed
+}
+
+function purgeExpired(now = Date.now()): void {
+  for (const [id, room] of rooms) {
+    if (isExpired(room, now)) removeRoom(id)
+  }
+}
 
 function generateId(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -46,9 +69,11 @@ function generateId(): string {
 }
 
 export function createRoom(title?: string): Room {
+  purgeExpired()
+  const id = generateId()
   const room: Room = {
-    id: generateId(),
-    title: (title || '').trim() || `${generateId()}'s Room`,
+    id,
+    title: (title || '').trim() || `${id}'s Room`,
     hostToken: randomUUID(),
     queue: [],
     currentSong: null,
@@ -61,105 +86,78 @@ export function createRoom(title?: string): Room {
   return room
 }
 
+/** Returns the room, or undefined if it never existed or has expired. */
 export function getRoom(id: string): Room | undefined {
-  return rooms.get(id)
+  const room = rooms.get(id)
+  if (room && isExpired(room)) {
+    removeRoom(id)
+    return undefined
+  }
+  return room
 }
 
 export function deleteRoom(id: string): boolean {
-  return rooms.delete(id)
+  return removeRoom(id)
+}
+
+/** The public view of a room sent to clients (everything but the token). */
+export function toRoomState(room: Room): RoomState {
+  return {
+    id: room.id,
+    title: room.title,
+    currentSong: room.currentSong,
+    queue: room.queue,
+    isPlaying: room.isPlaying,
+    spotifyConnected: room.spotifyConnected,
+    createdAt: room.createdAt,
+    position: room.position
+  }
 }
 
 export function verifyHost(roomId: string, token: string): boolean {
-  const room = rooms.get(roomId)
-  return room?.hostToken === token
+  return getRoom(roomId)?.hostToken === token
 }
 
 export function setSpotifyConnected(
   roomId: string,
   connected: boolean
 ): boolean {
-  const room = rooms.get(roomId)
+  const room = getRoom(roomId)
   if (!room) return false
   room.spotifyConnected = connected
   return true
 }
 
-export function addToQueue(
-  roomId: string,
-  data: {
-    source: 'youtube' | 'spotify' | 'soundcloud'
-    title: string
-    addedBy: string
-    videoId?: string
-    url?: string
-    trackUri?: string
-    trackUrl?: string
-    artists?: string[]
-    albumName?: string
-    albumImageUrl?: string
-    durationMs?: number
-  }
-): QueuedSong | null {
-  const room = rooms.get(roomId)
-  if (!room) return null
-  const song: QueuedSong = {
+export function setPosition(roomId: string, positionMs: number): boolean {
+  const room = getRoom(roomId)
+  if (!room) return false
+  room.position = Math.max(0, Math.round(positionMs))
+  return true
+}
+
+function buildSong(data: NewSong, addedAt: number): QueuedSong {
+  return {
+    ...data,
     id: randomUUID(),
-    source: data.source,
-    title: data.title,
     addedBy: data.addedBy || 'Anonymous',
-    addedAt: Date.now(),
-    videoId: data.videoId,
-    url: data.url,
-    trackUri: data.trackUri,
-    trackUrl: data.trackUrl,
-    artists: data.artists,
-    albumName: data.albumName,
-    albumImageUrl: data.albumImageUrl,
-    durationMs: data.durationMs
+    addedAt
   }
+}
+
+export function addToQueue(roomId: string, data: NewSong): QueuedSong | null {
+  const room = getRoom(roomId)
+  if (!room) return null
+  const song = buildSong(data, Date.now())
   room.queue.push(song)
   return song
 }
 
-export function bulkAddToQueue(
-  roomId: string,
-  songs: Array<{
-    source: 'youtube' | 'spotify' | 'soundcloud'
-    title: string
-    addedBy: string
-    videoId?: string
-    url?: string
-    trackUri?: string
-    trackUrl?: string
-    artists?: string[]
-    albumName?: string
-    albumImageUrl?: string
-    durationMs?: number
-  }>
-): QueuedSong[] {
-  const room = rooms.get(roomId)
+export function bulkAddToQueue(roomId: string, songs: NewSong[]): QueuedSong[] {
+  const room = getRoom(roomId)
   if (!room) return []
   const now = Date.now()
-  const added: QueuedSong[] = []
-  for (const data of songs) {
-    const song: QueuedSong = {
-      id: randomUUID(),
-      source: data.source,
-      title: data.title,
-      addedBy: data.addedBy || 'Anonymous',
-      addedAt: now,
-      videoId: data.videoId,
-      url: data.url,
-      trackUri: data.trackUri,
-      trackUrl: data.trackUrl,
-      artists: data.artists,
-      albumName: data.albumName,
-      albumImageUrl: data.albumImageUrl,
-      durationMs: data.durationMs
-    }
-    room.queue.push(song)
-    added.push(song)
-  }
+  const added = songs.map((data) => buildSong(data, now))
+  room.queue.push(...added)
   return added
 }
 
@@ -168,14 +166,15 @@ export function reorderQueue(
   songIds: string[],
   hostToken: string
 ): boolean {
-  const room = rooms.get(roomId)
+  const room = getRoom(roomId)
   if (!room || room.hostToken !== hostToken) return false
   if (songIds.length !== room.queue.length) return false
-  const songMap = new Map(room.queue.map(s => [s.id, s]))
+  const songMap = new Map(room.queue.map((s) => [s.id, s]))
+  if (new Set(songIds).size !== songIds.length) return false
   for (const id of songIds) {
     if (!songMap.has(id)) return false
   }
-  room.queue = songIds.map(id => songMap.get(id)!)
+  room.queue = songIds.map((id) => songMap.get(id)!)
   return true
 }
 
@@ -184,7 +183,7 @@ export function removeFromQueue(
   songId: string,
   hostToken: string
 ): boolean {
-  const room = rooms.get(roomId)
+  const room = getRoom(roomId)
   if (!room || room.hostToken !== hostToken) return false
   const idx = room.queue.findIndex((s) => s.id === songId)
   if (idx === -1) return false
@@ -192,20 +191,38 @@ export function removeFromQueue(
   return true
 }
 
+/**
+ * Toggle play/pause, loading the first queued song if nothing is current.
+ * Returns false if the token is wrong or there is nothing to play.
+ */
 export function togglePlay(roomId: string, hostToken: string): boolean {
-  const room = rooms.get(roomId)
+  const room = getRoom(roomId)
   if (!room || room.hostToken !== hostToken) return false
   if (!room.currentSong && room.queue.length === 0) return false
   if (!room.currentSong) {
     room.currentSong = room.queue.shift()!
+    room.position = 0
   }
   room.isPlaying = !room.isPlaying
   return true
 }
 
+/** Pause without toggling (used when the host goes away). */
+export function pauseRoom(roomId: string): boolean {
+  const room = getRoom(roomId)
+  if (!room || !room.isPlaying) return false
+  room.isPlaying = false
+  return true
+}
+
+/**
+ * Advance to the next queued song and reset the position. With an empty
+ * queue, clears the current song and stops. Returns the new current song.
+ */
 export function skipSong(roomId: string, hostToken: string): QueuedSong | null {
-  const room = rooms.get(roomId)
+  const room = getRoom(roomId)
   if (!room || room.hostToken !== hostToken) return null
+  room.position = 0
   if (room.queue.length === 0) {
     room.currentSong = null
     room.isPlaying = false
@@ -215,8 +232,14 @@ export function skipSong(roomId: string, hostToken: string): QueuedSong | null {
   return room.currentSong
 }
 
-export function exportRoom(roomId: string): object | null {
-  const room = rooms.get(roomId)
+export function exportRoom(roomId: string): {
+  id: string
+  title: string
+  createdAt: number
+  currentSong: QueuedSong | null
+  queue: QueuedSong[]
+} | null {
+  const room = getRoom(roomId)
   if (!room) return null
   return {
     id: room.id,
@@ -228,15 +251,9 @@ export function exportRoom(roomId: string): object | null {
 }
 
 export function listRooms(): RoomSummary[] {
-  const now = Date.now()
-  const entries = Array.from(rooms.values())
-  entries.sort((a, b) => b.createdAt - a.createdAt)
-  const expiry = 86_400_000
-  for (const [id, r] of rooms) {
-    if (now - r.createdAt >= expiry) rooms.delete(id)
-  }
-  return entries
-    .filter((r) => now - r.createdAt < expiry)
+  purgeExpired()
+  return Array.from(rooms.values())
+    .sort((a, b) => b.createdAt - a.createdAt)
     .map((r) => ({
       id: r.id,
       title: r.title,
@@ -246,14 +263,4 @@ export function listRooms(): RoomSummary[] {
       currentSource: r.currentSong?.source ?? null,
       currentThumbnail: r.currentSong?.albumImageUrl ?? null
     }))
-}
-
-interface RoomSummary {
-  id: string
-  title: string
-  queueCount: number
-  createdAt: number
-  isPlaying: boolean
-  currentSource: string | null
-  currentThumbnail: string | null
 }

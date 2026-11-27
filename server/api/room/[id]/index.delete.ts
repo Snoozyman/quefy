@@ -1,38 +1,25 @@
+import { deleteRoom, getRoom, verifyHost } from '#server/utils/room'
+
 export default defineEventHandler(async (event) => {
-  const { id } = event.context.params as { id: string }
-  const { hostToken } = await readBody<{ hostToken: string }>(event)
+  const id = getRouterParam(event, 'id')
+  if (!id)
+    throw createError({ statusCode: 400, statusMessage: 'Missing room ID' })
 
-  if (!hostToken) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Missing hostToken'
-    })
-  }
+  const body = await readBody<{ hostToken?: string }>(event)
+  if (!body?.hostToken)
+    throw createError({ statusCode: 400, statusMessage: 'Missing hostToken' })
 
-  const room = await getRoom(id)
-  if (!room) {
-    throw createError({
-      statusCode: 404,
-      statusMessage: 'Room not found'
-    })
-  }
-  if (!verifyHost(room?.id, hostToken)) {
+  if (!getRoom(id))
+    throw createError({ statusCode: 404, statusMessage: 'Room not found' })
+
+  if (!verifyHost(id, body.hostToken))
     throw createError({
       statusCode: 403,
       statusMessage: 'Only the host can delete the room'
     })
-  }
 
-  if (!room) {
-    throw createError({
-      statusCode: 404,
-      statusMessage: 'Room not found'
-    })
-  }
+  // Also closes every client's event stream (see room-events.ts).
+  deleteRoom(id)
 
-  await deleteRoom(id)
-
-  return {
-    message: 'Room deleted successfully'
-  }
+  return { message: 'Room deleted successfully' }
 })
