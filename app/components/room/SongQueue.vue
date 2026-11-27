@@ -76,6 +76,33 @@
             {{ songSubtitle(song) }}
           </p>
         </div>
+        <UTooltip
+          v-if="prefetchStatus?.[song.id]"
+          :text="
+            prefetchStatus[song.id] === 'loading'
+              ? 'Preparing stream…'
+              : 'Ready to play'
+          "
+        >
+          <UIcon
+            :name="
+              prefetchStatus[song.id] === 'loading'
+                ? 'i-lucide-loader-circle'
+                : 'i-lucide-circle-check'
+            "
+            :class="
+              prefetchStatus[song.id] === 'loading'
+                ? 'animate-spin text-muted'
+                : 'text-primary'
+            "
+            class="size-4 shrink-0"
+            :aria-label="
+              prefetchStatus[song.id] === 'loading'
+                ? 'Preparing stream'
+                : 'Ready to play'
+            "
+          />
+        </UTooltip>
         <span
           v-if="song.durationMs"
           class="shrink-0 text-xs tabular-nums text-muted"
@@ -106,6 +133,8 @@ import { VueDraggable } from 'vue-draggable-plus'
 const props = defineProps<{
   queue: SongData[]
   isHost: boolean
+  /** Host only: stream prefetch state of upcoming songs, by song id. */
+  prefetchStatus?: Record<string, 'loading' | 'ready'>
 }>()
 
 const emit = defineEmits<{

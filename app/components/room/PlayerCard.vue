@@ -30,11 +30,20 @@
         <div class="flex min-w-0 flex-1 flex-col gap-1.5">
           <div class="flex items-center gap-2 text-xs font-medium text-muted">
             <template v-if="title">
-              <span
-                class="size-2 rounded-full"
-                :class="isPlaying ? 'animate-pulse bg-primary' : 'bg-dimmed'"
-              />
-              <span>{{ isPlaying ? 'Now playing' : 'Paused' }}</span>
+              <template v-if="loading">
+                <UIcon
+                  name="i-lucide-loader-circle"
+                  class="size-3.5 animate-spin text-primary"
+                />
+                <span role="status">Loading…</span>
+              </template>
+              <template v-else>
+                <span
+                  class="size-2 rounded-full"
+                  :class="isPlaying ? 'animate-pulse bg-primary' : 'bg-dimmed'"
+                />
+                <span>{{ isPlaying ? 'Now playing' : 'Paused' }}</span>
+              </template>
               <UBadge
                 v-if="source"
                 :icon="sourceMeta[source].icon"
@@ -79,10 +88,17 @@
 
       <div v-if="controllable" class="flex items-center gap-2">
         <UButton
-          :icon="isPlaying ? 'i-lucide-pause' : 'i-lucide-play'"
-          :aria-label="isPlaying ? 'Pause' : 'Play'"
+          :icon="
+            loading
+              ? 'i-lucide-loader-circle'
+              : isPlaying
+                ? 'i-lucide-pause'
+                : 'i-lucide-play'
+          "
+          :aria-label="isPlaying || loading ? 'Pause' : 'Play'"
           size="xl"
           class="rounded-full"
+          :ui="{ leadingIcon: loading ? 'animate-spin' : '' }"
           :disabled="toggleDisabled"
           @click="$emit('toggle')"
         />
@@ -137,6 +153,8 @@ const props = withDefaults(
     image?: string
     source?: Source
     isPlaying?: boolean
+    /** Playback is being prepared: spinner instead of play/pause state. */
+    loading?: boolean
     /** Seconds. */
     currentTime?: number
     /** Seconds; 0 hides the progress bar. */
@@ -156,6 +174,7 @@ const props = withDefaults(
     image: '',
     source: undefined,
     isPlaying: false,
+    loading: false,
     currentTime: 0,
     duration: 0,
     volume: undefined,
