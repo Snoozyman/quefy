@@ -223,6 +223,15 @@ const audioPlayerRef = ref<{
 const userActivated = ref(false)
 let userActivateDone = false
 
+/**
+ * Browsers only let the Spotify SDK start audio after it was "activated"
+ * inside a user gesture. The player may not exist at the first click, so do
+ * this on every click/key (capture phase = still inside the gesture).
+ */
+function activateSpotifyOnGesture() {
+  spotifyPlayer.activate()
+}
+
 function activateUser() {
   if (userActivateDone) return
   userActivateDone = true
@@ -568,10 +577,36 @@ watch(
   }
 )
 
-async function transferSpotifyPlayback(trackUri: string) {
+/**
+ * The first track a freshly connected Spotify player plays reports "paused"
+ * about a second in and really stops ~30s later. An SDK resume() without a
+ * click doesn't help, but re-sending the play request does (verified in
+ * Chrome). So shortly after starting a track, check, and if the room should
+ * be playing it but Spotify says paused, ask again from where it is.
+ */
+function confirmSpotifyStarted(trackUri: string, retriesLeft = 2) {
+  setTimeout(() => {
+    const song = roomState.value.currentSong
+    if (!roomState.value.isPlaying || song?.trackUri !== trackUri) return
+    if (spotifyPlayer.currentTrack.value?.uri !== trackUri) return
+    if (!spotifyPlayer.paused.value || retriesLeft <= 0) return
+    void transferSpotifyPlayback(trackUri, {
+      positionMs: spotifyPlayer.position.value,
+      retriesLeft: retriesLeft - 1
+    })
+  }, 2500)
+}
+
+async function transferSpotifyPlayback(
+  trackUri: string,
+  {
+    positionMs = roomState.value.position,
+    retriesLeft = 2
+  }: { positionMs?: number; retriesLeft?: number } = {}
+) {
   if (!roomState.value.isPlaying) return
 
-  spotifyPlayer.position.value = roomState.value.position
+  spotifyPlayer.position.value = positionMs
 
   let token = spotifyAuth.getAccessToken()
   if (!token) {
@@ -595,12 +630,10 @@ async function transferSpotifyPlayback(trackUri: string) {
     'Content-Type': 'application/json'
   }
 
-  await fetch('https://api.spotify.com/v1/me/player', {
-    method: 'PUT',
-    headers,
-    body: JSON.stringify({ device_ids: [deviceId], play: false })
-  })
-
+  // `play?device_id=` already moves playback to this device. A separate
+  // "transfer with play:false" first is not just redundant: Spotify applies
+  // it asynchronously, and its late "paused" state can land after playback
+  // started, so the SDK reports paused while audio is playing.
   for (let attempt = 0; attempt < 4; attempt++) {
     if (!roomState.value.isPlaying) return
 
@@ -615,11 +648,14 @@ async function transferSpotifyPlayback(trackUri: string) {
         headers,
         body: JSON.stringify({
           uris: [trackUri],
-          position_ms: roomState.value.position
+          position_ms: positionMs
         })
       }
     )
-    if (playRes.ok) return
+    if (playRes.ok) {
+      confirmSpotifyStarted(trackUri, retriesLeft)
+      return
+    }
 
     if (playRes.status === 403) {
       const body = await playRes.text().catch(() => '')
@@ -632,6 +668,14 @@ async function transferSpotifyPlayback(trackUri: string) {
       error.value = `Spotify play failed: ${body.slice(0, 200)}`
       return
     }
+
+    // 404: Spotify doesn't know this device yet (it only just registered).
+    // Make it the active device, then retry the play request.
+    await fetch('https://api.spotify.com/v1/me/player', {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ device_ids: [deviceId], play: false })
+    }).catch(() => {})
   }
 
   error.value = 'Spotify device did not become ready. Try again.'
@@ -978,6 +1022,8 @@ onMounted(() => {
     positionTimer = setInterval(reportPosition, 2000)
   }
 
+  document.addEventListener('pointerdown', activateSpotifyOnGesture, true)
+  document.addEventListener('keydown', activateSpotifyOnGesture, true)
   document.addEventListener('pointerdown', activateUser, { once: true })
   document.addEventListener('keydown', activateUser, { once: true })
 })
@@ -997,6 +1043,8 @@ onUnmounted(() => {
   }
 
   if (positionTimer) clearInterval(positionTimer)
+  document.removeEventListener('pointerdown', activateSpotifyOnGesture, true)
+  document.removeEventListener('keydown', activateSpotifyOnGesture, true)
   spotifyPlayer.destroy()
 })
 </script>

@@ -13,6 +13,8 @@ interface SpotifyPlayerInstance {
   getCurrentState: () => Promise<SpotifyPlaybackState | null>
   disconnect: () => void
   connect: () => Promise<boolean>
+  /** Must run inside a user gesture so later SDK playback isn't autoplay-blocked. */
+  activateElement: () => Promise<void>
   // The SDK passes a different payload per event; callers narrow it.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   on: (event: string, cb: (...args: any[]) => void) => void
@@ -78,9 +80,11 @@ let trackEndNotified = false
 let onTrackEnd: (() => void) | null = null
 let iosShouldBePlaying = false
 
+let syncTimer: ReturnType<typeof setInterval> | null = null
+let lastTrackUri = ''
+
 function startTick() {
   stopTick()
-  trackEndNotified = false
   tickTimer = setInterval(() => {
     if (paused.value || !playerState.value) return
     const elapsed = Date.now() - lastSyncTime
@@ -97,7 +101,69 @@ function stopTick() {
     clearInterval(tickTimer)
     tickTimer = null
   }
-  trackEndNotified = false
+}
+
+/**
+ * Single place that ingests a playback state, from SDK events or from
+ * polling getCurrentState(). Starts/stops the progress tick only on real
+ * transitions and fires onTrackEnd at most once per play-through.
+ */
+function applyState(state: SpotifyPlaybackState) {
+  const uri = state.track_window?.current_track?.uri ?? ''
+  if (uri !== lastTrackUri) {
+    lastTrackUri = uri
+    trackEndNotified = false
+  }
+  // Well away from the end again (e.g. same track queued twice): re-arm.
+  if (state.duration > 0 && state.position < state.duration - 5000) {
+    trackEndNotified = false
+  }
+
+  playerState.value = state
+  if (state.paused) {
+    stopTick()
+    if (
+      wasPlaying &&
+      !trackEndNotified &&
+      state.duration > 0 &&
+      (state.position >= state.duration - 1500 ||
+        position.value >= state.duration - 1500)
+    ) {
+      trackEndNotified = true
+      onTrackEnd?.()
+    }
+    wasPlaying = false
+  } else {
+    if (!wasPlaying) startTick()
+    wasPlaying = true
+  }
+  lastSyncPosition = state.position
+  lastSyncTime = Date.now()
+  position.value = state.position
+}
+
+/**
+ * The SDK's player_state_changed events can be wrong: on the first track of
+ * a freshly connected player they keep saying `paused` while audio plays.
+ * getCurrentState() stays accurate, so poll it (it's local, no network).
+ */
+function startStateSync() {
+  stopStateSync()
+  syncTimer = setInterval(async () => {
+    try {
+      const state = await player.value?.getCurrentState()
+      if (state) applyState(state)
+    } catch {
+      // player went away; the next init restarts syncing
+    }
+  }, 1000)
+}
+
+function stopStateSync() {
+  if (syncTimer) {
+    clearInterval(syncTimer)
+    syncTimer = null
+  }
 }
 
 function isIOS(): boolean {
@@ -214,6 +280,11 @@ export function useSpotifyPlayer() {
         readyResolve(true)
       })
 
+      p.addListener('autoplay_failed', () => {
+        error.value =
+          'The browser blocked Spotify from starting on its own. Press play to start it.'
+      })
+
       p.addListener('not_ready', () => {
         isReady.value = false
       })
@@ -221,28 +292,8 @@ export function useSpotifyPlayer() {
       p.addListener(
         'player_state_changed',
         (state: SpotifyPlaybackState | null) => {
-          playerState.value = state
-          if (state) {
-            if (state.paused) {
-              stopTick()
-              if (
-                wasPlaying &&
-                state.duration > 0 &&
-                (state.position >= state.duration - 1500 ||
-                  position.value >= state.duration - 1500)
-              ) {
-                onTrackEnd?.()
-              }
-              wasPlaying = false
-            } else {
-              wasPlaying = true
-              trackEndNotified = false
-              startTick()
-            }
-            lastSyncPosition = state.position
-            lastSyncTime = Date.now()
-            position.value = state.position
-          }
+          if (state) applyState(state)
+          else playerState.value = null
         }
       )
 
@@ -319,6 +370,7 @@ export function useSpotifyPlayer() {
 
       isReady.value = true
       isConnecting.value = false
+      startStateSync()
       return true
     } catch (err: unknown) {
       error.value = `Failed to initialize Spotify player: ${errorMessage(err)}`
@@ -398,6 +450,12 @@ export function useSpotifyPlayer() {
   async function pause(): Promise<void> {
     iosShouldBePlaying = false
     try {
+      // Only pause if this device is actually playing. A pause sent while
+      // nothing is loaded is remembered by the SDK and applied to the next
+      // track ~1s after it starts (e.g. a YouTube song ends, the Spotify one
+      // after it starts, then silently stops).
+      const state = await player.value?.getCurrentState()
+      if (!state || state.paused) return
       await player.value?.pause()
     } catch (err) {
       error.value = `Failed to pause Spotify playback: ${err instanceof Error ? err.message : 'unknown error'}`
@@ -423,6 +481,15 @@ export function useSpotifyPlayer() {
     }
   }
 
+  /**
+   * Unlock SDK playback for this page. Call synchronously from a click or
+   * key handler; afterwards Spotify may start tracks without a gesture
+   * (e.g. when a YouTube song ends and a Spotify one is next).
+   */
+  function activate() {
+    player.value?.activateElement().catch(() => {})
+  }
+
   function setVolume(v: number) {
     volume.value = Math.max(0, Math.min(1, v))
     player.value?.setVolume(volume.value).catch(() => {})
@@ -430,6 +497,7 @@ export function useSpotifyPlayer() {
 
   function destroy() {
     stopTick()
+    stopStateSync()
     playbackErrorWindow = []
     destroyedByErrors = false
     player.value?.disconnect()
@@ -467,6 +535,7 @@ export function useSpotifyPlayer() {
     setVolume,
     destroy,
     resetErrors,
-    setOnTrackEnd
+    setOnTrackEnd,
+    activate
   }
 }
