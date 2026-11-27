@@ -1,3 +1,4 @@
+import { isYoutubePlaylistUrl } from '#shared/utils/urls'
 import { getRoom, verifyHost, bulkAddToQueue } from '#server/utils/room'
 import { emitRoomUpdate } from '#server/utils/room-events'
 
@@ -24,7 +25,7 @@ export default defineEventHandler(async (event) => {
       statusMessage: 'Only the host can import'
     })
 
-  if (!body.playlistUrl || !body.playlistUrl.includes('list='))
+  if (!body.playlistUrl || !isYoutubePlaylistUrl(body.playlistUrl))
     throw createError({
       statusCode: 400,
       statusMessage: 'Invalid YouTube playlist URL'
@@ -47,6 +48,7 @@ export default defineEventHandler(async (event) => {
       '--print-json',
       '--no-warnings',
       ...getCookiesArgs(),
+      '--',
       body.playlistUrl
     ])
     stdout = result.stdout

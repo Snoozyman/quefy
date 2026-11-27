@@ -3,6 +3,7 @@ import { promisify } from 'node:util'
 import { parseYtDlpError, getStderr } from './yt-dlp-errors'
 import { getCookiesArgs } from './cookies'
 import { getYtDlpPath, getYtDlpBaseArgs } from './yt-dlp'
+import { isYoutubeVideoId } from '#shared/utils/urls'
 
 const execFileAsync = promisify(execFile)
 
@@ -24,6 +25,10 @@ export function clearAudioCache(): void {
 }
 
 export async function getAudioStreamUrl(videoId: string): Promise<AudioStream> {
+  if (!isYoutubeVideoId(videoId)) {
+    throw new Error(`Invalid YouTube video id: ${videoId.slice(0, 32)}`)
+  }
+
   const cached = cache.get(videoId)
   if (cached && Date.now() - cached.ts < CACHE_TTL) {
     return cached.data
@@ -40,6 +45,7 @@ export async function getAudioStreamUrl(videoId: string): Promise<AudioStream> {
       '--print',
       'url',
       ...getCookiesArgs(),
+      '--',
       `https://www.youtube.com/watch?v=${videoId}`
     ])
     stdout = result.stdout
