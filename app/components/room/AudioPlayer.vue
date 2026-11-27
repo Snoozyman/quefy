@@ -1,70 +1,22 @@
 <template>
-  <div v-if="show" class="rounded-xl border border-default p-4 space-y-3">
-    <div class="flex items-center gap-3">
-      <img
-        v-if="currentSong?.albumImageUrl"
-        :src="currentSong.albumImageUrl"
-        alt=""
-        class="size-12 shrink-0 rounded-lg object-cover"
-      />
-      <div
-        v-else
-        class="size-12 shrink-0 rounded-lg bg-muted flex items-center justify-center"
-      >
-        <UIcon name="i-lucide-music" class="size-6 text-muted" />
-      </div>
-      <div class="min-w-0">
-        <p v-if="currentSong" class="font-medium truncate">
-          {{ currentSong.title }}
-        </p>
-        <p v-else class="text-muted text-sm">Nothing playing</p>
-        <p class="text-xs text-muted">
-          {{ currentSong ? (isPlaying ? 'Playing' : 'Paused') : 'Idle' }}
-        </p>
-      </div>
-    </div>
-    <div v-if="currentSong" class="space-y-1">
-      <input
-        type="range"
-        min="0"
-        max="1000"
-        :value="seekValue"
-        class="w-full accent-primary"
-        @input="onSeek"
-      />
-      <div class="flex justify-between text-xs text-muted">
-        <span>{{ formatTime(currentTime) }}</span>
-        <span>{{ formatTime(duration) }}</span>
-      </div>
-    </div>
-    <div v-if="currentSong" class="flex items-center gap-3">
-      <UButton
-        :icon="playing ? 'i-lucide-pause' : 'i-lucide-play'"
-        size="md"
-        color="primary"
-        variant="solid"
-        @click="togglePlay"
-      />
-      <button
-        class="shrink-0 cursor-pointer bg-transparent border-none p-0"
-        @click="toggleMute"
-      >
-        <UIcon
-          :name="volume === 0 ? 'i-lucide-volume-x' : 'i-lucide-volume-2'"
-          class="size-5 text-muted"
-        />
-      </button>
-      <input
-        type="range"
-        min="0"
-        max="1"
-        step="0.05"
-        :value="volume"
-        class="w-20 accent-primary"
-        @input="onVolumeChange"
-        @change="onVolumeChange"
-      />
-    </div>
+  <div v-if="show">
+    <RoomPlayerCard
+      :title="currentSong?.title"
+      :subtitle="songSubtitle(currentSong)"
+      :image="currentSong?.albumImageUrl"
+      :source="currentSong?.source"
+      :is-playing="playing"
+      :current-time="currentTime"
+      :duration="duration || (currentSong?.durationMs ?? 0) / 1000"
+      :volume="volume"
+      :can-skip="!!currentSong"
+      controllable
+      @toggle="$emit('toggle')"
+      @skip="$emit('skip')"
+      @seek="seek"
+      @volume="setVolume"
+      @mute="toggleMute"
+    />
     <audio
       ref="audioEl"
       hidden
@@ -84,13 +36,15 @@ import type { SongData } from '#shared/types/room'
 
 const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='
 
-defineProps<{
+const props = defineProps<{
   show: boolean
   currentSong: SongData | null
   isPlaying: boolean
 }>()
 
 const emit = defineEmits<{
+  toggle: []
+  skip: []
   ended: []
   error: [message: string]
   expired: []
@@ -150,7 +104,21 @@ function destroyHls() {
   errorEmitted = false
 }
 
+// A new song may arrive while paused (e.g. skip): don't keep showing the
+// previous track's position and length until it is actually loaded.
+watch(
+  () => props.currentSong?.id,
+  (id, prev) => {
+    if (id === prev || lastLoadedSongId === id) return
+    currentTime.value = 0
+    duration.value = 0
+    seekValue.value = 0
+  }
+)
+let lastLoadedSongId: string | undefined
+
 function play(url: string, startTime?: number) {
+  lastLoadedSongId = props.currentSong?.id
   if (!audioEl.value) return
   lastUrl.value = url
   destroyHls()
@@ -245,21 +213,17 @@ function play(url: string, startTime?: number) {
   })
 }
 
-function pause() {
+/**
+ * Pause playback. `keepAlive` is for track changes: on iOS the silent loop
+ * keeps the audio session (and so the backgrounded page) alive until the
+ * next track starts. Only a real pause/stop should release it.
+ */
+function pause({ keepAlive = false }: { keepAlive?: boolean } = {}) {
   audioEl.value?.pause()
   playing.value = false
-  toggleSilentAudio(false)
+  if (!keepAlive) toggleSilentAudio(false)
 }
 
-function togglePlay() {
-  if (audioEl.value?.paused) {
-    audioEl.value.play()
-    playing.value = true
-  } else {
-    audioEl.value?.pause()
-    playing.value = false
-  }
-}
 
 function resume() {
   const el = audioEl.value
@@ -327,12 +291,6 @@ function onInterruption() {
   playing.value = false
 }
 
-function formatTime(s: number): string {
-  if (!s || !isFinite(s)) return '0:00'
-  const m = Math.floor(s / 60)
-  const sec = Math.floor(s % 60)
-  return `${m}:${sec.toString().padStart(2, '0')}`
-}
 
 function onTimeUpdate() {
   if (!audioEl.value) return
@@ -353,16 +311,9 @@ function onLoadedMetadata() {
   duration.value = d
 }
 
-function onSeek(e: Event) {
-  const val = Number((e.target as HTMLInputElement).value)
-  seekValue.value = val
-  if (audioEl.value && duration.value) {
-    audioEl.value.currentTime = (val / 1000) * duration.value
-  }
-}
 
-function onVolumeChange(e: Event) {
-  volume.value = Number((e.target as HTMLInputElement).value)
+function setVolume(v: number) {
+  volume.value = v
   if (audioEl.value) audioEl.value.volume = volume.value
 }
 
@@ -374,7 +325,9 @@ function toggleMute() {
 function onEnded() {
   destroyHls()
   playing.value = false
-  toggleSilentAudio(false)
+  // Deliberately keep the iOS silent loop running: the next track is
+  // started from this event, and if the audio session goes quiet now iOS
+  // suspends the backgrounded page before it can.
   emit('ended')
 }
 
