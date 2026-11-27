@@ -59,14 +59,6 @@ export function getCookiesArgs(): string[] {
   }
 }
 
-export function saveCookieContent(content: string): { ok: true; size: number } {
-  const path = getCookiePath()
-  const normalized = normalizeCurlOutput(content.trim())
-  mkdirSync(DATA_DIR, { recursive: true })
-  writeFileSync(path, normalized, 'utf-8')
-  const size = Buffer.byteLength(normalized, 'utf-8')
-  return { ok: true, size }
-}
 
 export function mergeAndSaveCookieContent(incoming: string): {
   ok: true
@@ -128,11 +120,6 @@ export function getCookieInfo(): { exists: boolean; size: number } {
   return { exists: false, size: 0 }
 }
 
-export function getCookiePreview(): string {
-  const path = getCookiePath()
-  if (!existsSync(path)) return ''
-  return readFileSync(path, 'utf-8').slice(0, 500)
-}
 
 export function deleteCookieFile(): void {
   const path = getCookiePath()
