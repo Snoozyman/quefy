@@ -1,5 +1,8 @@
-import { execSync } from 'node:child_process'
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
 import { normalizeCurlOutput } from './cookies'
+
+const execFileAsync = promisify(execFile)
 
 export interface CookieEntry {
   name: string
@@ -31,19 +34,27 @@ function randomChromeVersion(): number {
   )
 }
 
-function buildCurlHeaders(): string {
+function buildCurlHeaderArgs(): string[] {
   const version = randomChromeVersion()
-  return (
-    ` -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${version}.0.0.0 Safari/537.36"` +
-    ' -H "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"' +
-    ' -H "Accept-Language: en-us,en;q=0.5"' +
-    ' -H "Sec-Fetch-Mode: navigate"'
-  )
+  return [
+    '-H',
+    `User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${version}.0.0.0 Safari/537.36`,
+    '-H',
+    'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    '-H',
+    'Accept-Language: en-us,en;q=0.5',
+    '-H',
+    'Sec-Fetch-Mode: navigate'
+  ]
 }
 
-function fetchCookies(url: string): { cookies: string; count: number } {
-  const raw = execSync(
-    `curl -s -c - -L -o /dev/null${buildCurlHeaders()} ${url}`,
+async function fetchCookies(
+  url: string
+): Promise<{ cookies: string; count: number }> {
+  // Async so a slow site never blocks the event loop (and every SSE stream).
+  const { stdout: raw } = await execFileAsync(
+    'curl',
+    ['-s', '-c', '-', '-L', '-o', '/dev/null', ...buildCurlHeaderArgs(), url],
     { timeout: 30000, encoding: 'utf-8' }
   )
 
@@ -62,7 +73,7 @@ export async function fetchYouTubeCookies(): Promise<{
   count: number
 }> {
   try {
-    return fetchCookies('https://www.youtube.com')
+    return await fetchCookies('https://www.youtube.com')
   } catch (err: unknown) {
     if (err instanceof Error && 'stderr' in err) {
       throw new Error(
@@ -79,7 +90,7 @@ export async function fetchSoundCloudCookies(): Promise<{
   count: number
 }> {
   try {
-    return fetchCookies('https://www.soundcloud.com')
+    return await fetchCookies('https://www.soundcloud.com')
   } catch (err: unknown) {
     if (err instanceof Error && 'stderr' in err) {
       throw new Error(
