@@ -53,15 +53,16 @@ Multi-user YouTube / Spotify / SoundCloud audio streaming rooms.
 
 ```
 app/
-  components/room/    # UI components: NowPlaying, SongSearch, SongQueue, AudioPlayer, SpotifyPlayer, SpotifyConnectBanner, CookieUpload
+  components/room/    # PlayerCard (shared now-playing UI) used by AudioPlayer, SpotifyPlayer, NowPlaying; RoomHeader, SongSearch, SongQueue, RoomSettingsTab, SpotifyConnectBanner, CookieUpload, ImportDialog
   composables/        # useRoomState (SSE + polling fallback), useSpotifyAuth, useSpotifyPlayer (singleton module refs)
-  pages/app/room/     # [id].vue — main room page (host playback orchestrator, ~950 lines)
+  pages/app/room/     # [id].vue — main room page (host playback orchestrator, next-song prefetch, ~1200 lines)
+  utils/              # song.ts (songSubtitle)
 server/
   api/                # API endpoints: room/*, spotify/*, youtube/*, soundcloud/*, cookies.*
-  utils/              # room.ts, room-events.ts, auth.ts, spotify.ts, youtube.ts, soundcloud.ts, cookies.ts, cookie-fetcher.ts, yt-dlp.ts, yt-dlp-errors.ts, logger.ts
+  utils/              # room.ts, room-events.ts, auth.ts, spotify.ts, youtube.ts, soundcloud.ts, cookies.ts, cookie-fetcher.ts, cookie-refresh.ts (auto-refresh on yt-dlp blocks), yt-dlp.ts (runYtDlp, waitUntilAvailable), yt-dlp-errors.ts, logger.ts
 shared/types/         # room.ts, spotify.ts — shared TypeScript types
 shared/utils/         # error.ts (errorMessage), urls.ts (media URL validation), format.ts
-tests/                # room, urls, logger, yt-dlp-errors
+tests/                # room, urls, logger, yt-dlp-errors, run-yt-dlp, cookie-refresh, availability
 ```
 
 ## Architecture notes
