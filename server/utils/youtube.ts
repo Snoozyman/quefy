@@ -1,11 +1,8 @@
-import { execFile } from 'node:child_process'
-import { promisify } from 'node:util'
 import { parseYtDlpError, getStderr } from './yt-dlp-errors'
 import { getCookiesArgs } from './cookies'
-import { getYtDlpPath, getYtDlpBaseArgs } from './yt-dlp'
+import { getYtDlpBaseArgs, runYtDlp } from './yt-dlp'
 import { isYoutubeVideoId } from '#shared/utils/urls'
 
-const execFileAsync = promisify(execFile)
 
 interface AudioStream {
   url: string
@@ -37,7 +34,7 @@ export async function getAudioStreamUrl(videoId: string): Promise<AudioStream> {
   let stdout: string
   let stderr: string
   try {
-    const result = await execFileAsync(getYtDlpPath(), [
+    const result = await runYtDlp(() => [
       ...getYtDlpBaseArgs(),
       '-f',
       'bestaudio',
