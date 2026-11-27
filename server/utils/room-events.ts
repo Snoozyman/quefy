@@ -3,6 +3,31 @@ import type { Room } from './room'
 
 const roomClients = new Map<string, Set<EventStream>>()
 const hostStreams = new Map<string, EventStream>()
+const hostGraceTimers = new Map<string, ReturnType<typeof setTimeout>>()
+
+/** How long a host may be disconnected (e.g. SSE reconnect) before pausing. */
+export const HOST_GRACE_MS = 15_000
+
+/**
+ * Run `onExpire` unless the host reconnects within HOST_GRACE_MS. Stops a
+ * brief network blip from pausing the room for everyone.
+ */
+export function scheduleHostAbsence(roomId: string, onExpire: () => void) {
+  cancelHostAbsence(roomId)
+  hostGraceTimers.set(
+    roomId,
+    setTimeout(() => {
+      hostGraceTimers.delete(roomId)
+      if (!hostStreams.has(roomId)) onExpire()
+    }, HOST_GRACE_MS)
+  )
+}
+
+function cancelHostAbsence(roomId: string) {
+  const timer = hostGraceTimers.get(roomId)
+  if (timer) clearTimeout(timer)
+  hostGraceTimers.delete(roomId)
+}
 
 export function registerRoomClient(roomId: string, stream: EventStream): void {
   if (!roomClients.has(roomId)) {
@@ -12,6 +37,7 @@ export function registerRoomClient(roomId: string, stream: EventStream): void {
 }
 
 export function registerHostStream(roomId: string, stream: EventStream): void {
+  cancelHostAbsence(roomId)
   hostStreams.set(roomId, stream)
   registerRoomClient(roomId, stream)
 }

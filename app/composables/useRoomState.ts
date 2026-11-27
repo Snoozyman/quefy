@@ -28,33 +28,64 @@ export function useRoomState(roomId: Ref<string>) {
   async function fetchRoomState() {
     try {
       roomState.value = await $fetch<RoomState>(`/api/room/${roomId.value}`)
-    } catch {
-      // network error, stale state is ok
+    } catch (err: unknown) {
+      const status = (err as { statusCode?: number })?.statusCode
+      if (status === 404) {
+        // Room expired, was deleted, or the server restarted.
+        notFound.value = true
+        stopRealtime()
+      }
+      // other network errors: keep the stale state and try again later
     }
   }
+
+  let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  let reconnectDelay = 1000
 
   function startPolling() {
     if (pollTimer) return
     pollTimer = setInterval(fetchRoomState, 3000)
   }
 
-  function connectSSE() {
-    const sseUrl = hostData.value?.hostToken
-      ? `/api/room/${roomId.value}/events?hostToken=${hostData.value.hostToken}`
-      : `/api/room/${roomId.value}/events`
-    eventSource = new EventSource(sseUrl)
+  function stopPolling() {
+    if (pollTimer) clearInterval(pollTimer)
+    pollTimer = null
+  }
 
-    eventSource.addEventListener('room-update', (event) => {
-      const newState = JSON.parse(event.data) as RoomState
-      roomState.value = newState
+  function stopRealtime() {
+    stopPolling()
+    if (reconnectTimer) clearTimeout(reconnectTimer)
+    reconnectTimer = null
+    eventSource?.close()
+    eventSource = null
+  }
+
+  function connectSSE() {
+    if (pageLeaving || notFound.value) return
+    const sseUrl = hostData.value?.hostToken
+      ? `/api/room/${roomId.value}/events?hostToken=${encodeURIComponent(hostData.value.hostToken)}`
+      : `/api/room/${roomId.value}/events`
+    const es = new EventSource(sseUrl)
+    eventSource = es
+
+    es.addEventListener('room-update', (event) => {
+      roomState.value = JSON.parse(event.data) as RoomState
+      // Stream is healthy again: drop the polling fallback.
+      reconnectDelay = 1000
+      stopPolling()
     })
 
-    eventSource.onerror = () => {
-      if (pageLeaving) return
-      console.warn('SSE connection failed, falling back to polling')
-      eventSource?.close()
-      eventSource = null
+    es.onerror = () => {
+      if (pageLeaving || eventSource !== es) return
+      // Poll while the stream is down so the UI stays current.
       startPolling()
+      if (es.readyState === EventSource.CLOSED) {
+        // The browser gave up (e.g. HTTP error); retry ourselves with backoff.
+        eventSource = null
+        reconnectTimer = setTimeout(connectSSE, reconnectDelay)
+        reconnectDelay = Math.min(reconnectDelay * 2, 30_000)
+      }
+      // Otherwise readyState is CONNECTING: EventSource reconnects by itself.
     }
   }
 
@@ -66,8 +97,7 @@ export function useRoomState(roomId: Ref<string>) {
         body: { hostToken: hostData.value.hostToken }
       }).catch(() => {})
     }
-    eventSource?.close()
-    if (pollTimer) clearInterval(pollTimer)
+    stopRealtime()
   }
 
   onMounted(async () => {
