@@ -161,3 +161,12 @@ export function getSoundcloudCookieHeader(): string {
 
   return cookies.join('; ')
 }
+
+/** True if the cookie file already holds at least one cookie for `domain`. */
+export function hasCookiesFor(domain: string): boolean {
+  const path = getCookiePath()
+  if (!existsSync(path)) return false
+  return parseCookieLines(readFileSync(path, 'utf-8')).some((line) =>
+    line.split('\t')[0]!.includes(domain)
+  )
+}
