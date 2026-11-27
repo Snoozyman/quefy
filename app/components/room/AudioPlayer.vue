@@ -213,10 +213,15 @@ function play(url: string, startTime?: number) {
   })
 }
 
-function pause() {
+/**
+ * Pause playback. `keepAlive` is for track changes: on iOS the silent loop
+ * keeps the audio session (and so the backgrounded page) alive until the
+ * next track starts. Only a real pause/stop should release it.
+ */
+function pause({ keepAlive = false }: { keepAlive?: boolean } = {}) {
   audioEl.value?.pause()
   playing.value = false
-  toggleSilentAudio(false)
+  if (!keepAlive) toggleSilentAudio(false)
 }
 
 
@@ -320,7 +325,9 @@ function toggleMute() {
 function onEnded() {
   destroyHls()
   playing.value = false
-  toggleSilentAudio(false)
+  // Deliberately keep the iOS silent loop running: the next track is
+  // started from this event, and if the audio session goes quiet now iOS
+  // suspends the backgrounded page before it can.
   emit('ended')
 }
 
