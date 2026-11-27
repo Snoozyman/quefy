@@ -46,6 +46,7 @@
             :show="showAudioPlayer"
             :current-song="roomState.currentSong"
             :is-playing="roomState.isPlaying"
+            :loading="audioLoading"
             @toggle="togglePlay"
             @skip="skip"
             @ended="onAudioEnded"
@@ -122,6 +123,7 @@
           <RoomSongQueue
             :queue="roomState.queue"
             :is-host="isHost"
+            :prefetch-status="upNextStatus"
             @remove="removeSong"
             @reorder="reorderQueue"
           />
@@ -271,9 +273,9 @@ function updateMediaSession(song: SongData | null) {
       title: song.title,
       artist: song.artists?.join(', ') || song.addedBy,
       album: song.albumName || '',
-      artwork: song.albumImageUrl
-        ? [{ src: song.albumImageUrl, sizes: '512x512', type: 'image/png' }]
-        : []
+      // No `type`: covers are JPEG (Spotify) or WebP/JPEG (YouTube), and a
+      // wrong type can make widgets skip the image.
+      artwork: song.albumImageUrl ? [{ src: song.albumImageUrl }] : []
     })
 
     navigator.mediaSession.playbackState = roomState.value.isPlaying
@@ -434,6 +436,25 @@ const prefetchedUrls = new Map<string, string>()
 const prefetchAttempted = new Set<string>()
 /** Prefetches still running, so a skip can wait for one instead of racing it. */
 const prefetchInFlight = new Map<string, Promise<string | undefined>>()
+/** Shown on the "Up next" row: preparing the stream, or ready to play. */
+const prefetchStatus = ref<Record<string, 'loading' | 'ready'>>({})
+/**
+ * The audio song this device is starting (resolving its URL, waiting for
+ * YouTube's activation delay, buffering). Cleared once audio plays.
+ */
+const loadingSongId = ref<string | null>(null)
+/** Status badge for the next song only (host only; others don't prefetch). */
+const upNextStatus = computed<Record<string, 'loading' | 'ready'>>(() => {
+  const next = roomState.value.queue[0]
+  if (!isHost.value || !isAudioSong(next)) return {}
+  const status = prefetchStatus.value[next.id] ?? (next.url ? 'ready' : undefined)
+  return status ? { [next.id]: status } : {}
+})
+const audioLoading = computed(
+  () =>
+    !!loadingSongId.value &&
+    loadingSongId.value === roomState.value.currentSong?.id
+)
 
 function isAudioSong(song: SongData | null | undefined): song is SongData {
   return song?.source === 'youtube' || song?.source === 'soundcloud'
@@ -466,16 +487,22 @@ async function prefetchNext() {
   else return
 
   prefetchAttempted.add(next.id)
+  prefetchStatus.value = { ...prefetchStatus.value, [next.id]: 'loading' }
   const request = $fetch<{ url: string }>(`/api/room/${roomId}/audio/refresh`, {
     method: 'POST',
     body
   })
     .then((res) => {
       prefetchedUrls.set(next.id, res.url)
+      prefetchStatus.value = { ...prefetchStatus.value, [next.id]: 'ready' }
       return res.url
     })
     // Not fatal: the song is resolved normally when it starts.
-    .catch(() => undefined)
+    .catch(() => {
+      const { [next.id]: _, ...rest } = prefetchStatus.value
+      prefetchStatus.value = rest
+      return undefined
+    })
     .finally(() => prefetchInFlight.delete(next.id))
   prefetchInFlight.set(next.id, request)
   await request
@@ -515,8 +542,32 @@ watch(
     for (const id of prefetchAttempted) {
       if (!keep.has(id)) prefetchAttempted.delete(id)
     }
+    prefetchStatus.value = Object.fromEntries(
+      Object.entries(prefetchStatus.value).filter(([id]) => ids.includes(id))
+    )
   }
 )
+
+// The loading state ends when audio actually plays, the room stops (pause,
+// blocked autoplay), or an error is shown.
+watch(
+  () => audioPlayerRef.value?.state.playing.value,
+  (playing) => {
+    if (playing) loadingSongId.value = null
+  }
+)
+watch(
+  () => [roomState.value.isPlaying, error.value] as const,
+  ([playing, err]) => {
+    if (!playing || err) loadingSongId.value = null
+  }
+)
+
+/** Mark `song` as starting on this device, if it is an audio song. */
+function markLoading(song: SongData | null | undefined) {
+  loadingSongId.value =
+    isAudioSong(song) && roomState.value.isPlaying ? song.id : null
+}
 const RETRY_LIMIT = 2
 const retryExhausted = ref(false)
 
@@ -580,7 +631,9 @@ async function refreshAndPlay(
     if (play) {
       const startTime = resumeTimeSeconds()
       nextTick(() => {
+        // Paused while the URL was resolving: don't start it.
         if (roomState.value.currentSong?.id !== song.id) return
+        if (!roomState.value.isPlaying) return
         audioPlayerRef.value?.play(refreshed.url, startTime)
       })
     }
@@ -601,6 +654,7 @@ async function handleSongChange(song: SongData) {
   if (!isHost.value) return
   if (song.id === currentPlayingId) return
   currentPlayingId = song.id
+  markLoading(song)
   if (isAudioSong(song) && !song.url) {
     const pending = prefetchInFlight.get(song.id)
     const prefetched = prefetchedUrls.get(song.id) ?? (await pending)
@@ -626,7 +680,7 @@ async function handleSongChange(song: SongData) {
             ? roomState.value.position / 1000
             : undefined
         nextTick(() => {
-          if (song.id !== currentPlayingId) return
+          if (song.id !== currentPlayingId || !roomState.value.isPlaying) return
           audioPlayerRef.value?.play(url, startTime)
         })
       }
@@ -719,6 +773,85 @@ watch(
   () => roomState.value.isPlaying,
   () => {
     updateMediaSessionPlaybackState()
+  }
+)
+
+function spotifyAnchorTiming() {
+  return {
+    durationMs: spotifyPlayer.duration.value,
+    positionMs: spotifyPlayer.position.value
+  }
+}
+
+// Spotify plays inside the SDK's iframe, which OS media widgets then show as
+// "Spotify Embedded Player". A silent loop in this page keeps our metadata
+// (title, artist, artwork) the one that is shown.
+watch(
+  () =>
+    isHost.value &&
+    roomState.value.currentSong?.source === 'spotify' &&
+    !spotifyPlayer.paused.value,
+  (active) => {
+    setMediaSessionAnchor(active, spotifyAnchorTiming())
+    if (active) updateMediaSession(roomState.value.currentSong)
+  },
+  { immediate: true }
+)
+// Widgets show the anchor's length/progress: keep it matching Spotify's.
+watch(
+  () => [spotifyPlayer.duration.value, spotifyPlayer.position.value] as const,
+  ([durationMs, positionMs]) => {
+    if (roomState.value.currentSong?.source !== 'spotify') return
+    syncMediaSessionAnchor(durationMs, positionMs)
+  }
+)
+// KDE's browser integration controls the anchor element itself (pause/play)
+// rather than calling our Media Session handlers, and reads metadata when a
+// player starts; route both back into the room.
+// (Registered on mount so a previous room page's cleanup can't clear them.)
+onMounted(() =>
+  setMediaSessionAnchorHooks({
+    // Widgets register a new player slightly after it starts; re-send the
+    // metadata then (cleared first so it counts as a change).
+    onPlaying: () =>
+      setTimeout(() => {
+        if ('mediaSession' in navigator) navigator.mediaSession.metadata = null
+        updateMediaSession(roomState.value.currentSong)
+      }, 500),
+    onExternalPause: () => {
+      if (roomState.value.isPlaying) handleMediaPause()
+    },
+    onExternalPlay: () => {
+      if (!roomState.value.isPlaying) handleMediaPlay()
+    },
+    onExternalSeek: (seconds) => {
+      if (roomState.value.currentSong?.source !== 'spotify') return
+      spotifyPlayer.seek(Math.round(seconds * 1000))
+    }
+  })
+)
+// Widgets follow the most recently started player. The Spotify frame
+// (re)starts its audio a moment after it reports playing: on resume, on a
+// new track, and when a stuck start is re-sent. Restart the anchor after
+// each of those so it stays the newest.
+let anchorReassertTimer: ReturnType<typeof setTimeout> | undefined
+function reassertAnchorSoon() {
+  clearTimeout(anchorReassertTimer)
+  anchorReassertTimer = setTimeout(() => {
+    const active =
+      isHost.value &&
+      roomState.value.currentSong?.source === 'spotify' &&
+      !spotifyPlayer.paused.value
+    if (active) {
+      setMediaSessionAnchor(true, { ...spotifyAnchorTiming(), restart: true })
+    }
+  }, 1500)
+}
+watch(
+  () => [spotifyPlayer.currentTrack.value?.uri, spotifyPlayer.paused.value] as const,
+  ([uri, paused], [prevUri, prevPaused]) => {
+    if (paused || !uri) return
+    if (uri !== prevUri || prevPaused) reassertAnchorSoon()
   }
 )
 
@@ -944,6 +1077,7 @@ function resumeLocally(song: SongData) {
   if (dur > 0) {
     audioPlayerRef.value?.resume()
   } else if (url) {
+    markLoading(song)
     audioPlayerRef.value?.play(
       url,
       roomState.value.position > 0 ? roomState.value.position / 1000 : undefined
@@ -959,7 +1093,13 @@ async function togglePlay() {
   const current = roomState.value.currentSong
   // The room says "playing" but nothing plays here (autoplay was blocked,
   // or the page just loaded): Play should start it, not pause the room.
-  if (current && roomState.value.isPlaying && !isPlayingLocally(current)) {
+  // While a song is still loading, the button is Pause.
+  if (
+    current &&
+    roomState.value.isPlaying &&
+    !audioLoading.value &&
+    !isPlayingLocally(current)
+  ) {
     resumeLocally(current)
     return
   }
@@ -1000,6 +1140,7 @@ async function togglePlay() {
               roomState.value.position > 0
                 ? roomState.value.position / 1000
                 : undefined
+            markLoading(song)
             audioPlayerRef.value?.play(knownUrl(song)!, startTime)
           } else {
             // No URL yet (e.g. live state replaced the song object): resolve it.
@@ -1085,6 +1226,7 @@ function onAudioEnded() {
   roomState.value.queue = roomState.value.queue.slice(1)
   roomState.value.currentSong = next
   spotifyPlayer.setOnTrackEnd(null)
+  markLoading(next)
   nextTick(() => audioPlayerRef.value?.play(url))
   void skip({ localAlreadyPlaying: true })
 }
@@ -1181,6 +1323,8 @@ onUnmounted(() => {
   if (positionTimer) clearInterval(positionTimer)
   document.removeEventListener('pointerdown', activateSpotifyOnGesture, true)
   document.removeEventListener('keydown', activateSpotifyOnGesture, true)
+  clearTimeout(anchorReassertTimer)
+  destroyMediaSessionAnchor()
   spotifyPlayer.destroy()
 })
 </script>

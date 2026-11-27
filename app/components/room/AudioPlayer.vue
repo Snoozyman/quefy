@@ -6,6 +6,7 @@
       :image="currentSong?.albumImageUrl"
       :source="currentSong?.source"
       :is-playing="playing"
+      :loading="loading"
       :current-time="currentTime"
       :duration="duration || (currentSong?.durationMs ?? 0) / 1000"
       :volume="volume"
@@ -40,6 +41,8 @@ const props = defineProps<{
   show: boolean
   currentSong: SongData | null
   isPlaying: boolean
+  /** The stream is still being prepared (URL, activation delay, buffering). */
+  loading?: boolean
 }>()
 
 const emit = defineEmits<{
