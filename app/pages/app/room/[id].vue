@@ -70,6 +70,8 @@
         <div v-show="activeTab === 'settings'">
           <RoomSettingsTab
             :is-host="isHost"
+            :room-id="roomId"
+            :host-token="hostData?.hostToken"
             @import="showImportDialog = true"
             @export="exportQueue"
             @delete="deleteRoom"

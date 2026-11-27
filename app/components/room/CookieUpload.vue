@@ -129,6 +129,18 @@
 </template>
 
 <script lang="ts" setup>
+import { errorMessage } from '#shared/utils/error'
+
+const props = defineProps<{
+  roomId: string
+  hostToken: string
+}>()
+
+const hostHeaders = computed(() => ({
+  'x-room-id': props.roomId,
+  'x-host-token': props.hostToken
+}))
+
 interface CookieEntry {
   name: string
   domain: string
@@ -225,6 +237,7 @@ async function save() {
   try {
     const res = await $fetch<CookieSaveResponse>('/api/cookies', {
       method: 'POST',
+      headers: hostHeaders.value,
       body: { cookies: content }
     })
     if (res.verified) {
@@ -242,9 +255,9 @@ async function save() {
       pasteText.value = ''
       fileName.value = ''
     }
-  } catch {
+  } catch (err: unknown) {
     saveOk.value = false
-    saveMsg.value = 'Failed to save cookies.'
+    saveMsg.value = `Failed to save cookies: ${errorMessage(err)}`
   } finally {
     saving.value = false
   }
@@ -254,7 +267,10 @@ async function autoFetch() {
   fetching.value = true
   saveMsg.value = ''
   try {
-    const res = await $fetch<CookieRefreshResponse>('/api/cookies/refresh')
+    const res = await $fetch<CookieRefreshResponse>('/api/cookies/refresh', {
+      method: 'POST',
+      headers: hostHeaders.value
+    })
     ytCookies.value = res.youtube ?? []
     scCookies.value = res.soundcloud ?? []
     activeTab.value = ytCookies.value.length ? 'youtube' : 'soundcloud'
@@ -262,10 +278,8 @@ async function autoFetch() {
     saveMsg.value = `Fetched ${res.count} cookies.`
     await fetchStatus()
   } catch (err: unknown) {
-    const e = err as { data?: { statusMessage?: string }; message?: string }
     saveOk.value = false
-    saveMsg.value =
-      e?.data?.statusMessage || e?.message || 'Failed to auto-fetch cookies.'
+    saveMsg.value = errorMessage(err, 'Failed to auto-fetch cookies.')
   } finally {
     fetching.value = false
   }
@@ -277,6 +291,7 @@ async function deleteCookies() {
   try {
     await $fetch('/api/cookies', {
       method: 'POST',
+      headers: hostHeaders.value,
       body: { cookies: '' }
     })
     cookieExists.value = false
@@ -286,9 +301,9 @@ async function deleteCookies() {
     saveOk.value = true
     saveMsg.value = 'Cookies removed.'
     pasteText.value = ''
-  } catch {
+  } catch (err: unknown) {
     saveOk.value = false
-    saveMsg.value = 'Failed to remove cookies.'
+    saveMsg.value = `Failed to remove cookies: ${errorMessage(err)}`
   } finally {
     deleting.value = false
   }
