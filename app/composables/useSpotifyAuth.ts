@@ -1,4 +1,5 @@
 import type { TokenResponse } from '#shared/types/spotify'
+import { errorMessage } from '#shared/utils/error'
 
 const STORAGE_KEY = 'quefy-spotify'
 
@@ -20,7 +21,9 @@ function load(): StoredAuth | null {
       auth.value = data
       return data
     }
-  } catch {}
+  } catch {
+    // corrupt or unavailable storage: treat as logged out
+  }
   return null
 }
 
@@ -71,8 +74,9 @@ export function useSpotifyAuth() {
 
       window.location.href = `https://accounts.spotify.com/authorize?${params.toString()}`
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err)
-      throw new Error(`Spotify login failed: ${message}`)
+      throw new Error(`Spotify login failed: ${errorMessage(err)}`, {
+        cause: err
+      })
     }
   }
 

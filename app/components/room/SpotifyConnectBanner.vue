@@ -60,6 +60,7 @@
 </template>
 
 <script lang="ts" setup>
+import { errorMessage } from '#shared/utils/error'
 const props = defineProps<{
   roomId: string
 }>()
@@ -91,8 +92,8 @@ async function connect() {
   processing.value = true
   try {
     await spotifyAuth.login(props.roomId)
-  } catch (err: any) {
-    spotifyError.value = err.message || 'Failed to connect to Spotify'
+  } catch (err: unknown) {
+    spotifyError.value = errorMessage(err, 'Failed to connect to Spotify')
     processing.value = false
   }
 }
@@ -140,7 +141,9 @@ async function verifyHost() {
       body: { roomId: props.roomId, hostToken: storageHostData.value.hostToken }
     })
     if (res.isHost) emit('host-verified', true)
-  } catch {}
+  } catch {
+    // background check; guests simply stay guests
+  }
 }
 
 async function handleOAuthCallback() {
@@ -174,10 +177,12 @@ async function handleOAuthCallback() {
     await verifyHost()
 
     await initSpotifyPlayer()
-  } catch (err: any) {
+  } catch (err: unknown) {
     processing.value = false
-    spotifyError.value =
-      err?.message || 'Failed to complete Spotify authentication'
+    spotifyError.value = errorMessage(
+      err,
+      'Failed to complete Spotify authentication'
+    )
   }
 }
 

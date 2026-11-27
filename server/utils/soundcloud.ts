@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
-import { parseYtDlpError } from './yt-dlp-errors'
+import { parseYtDlpError, getStderr } from './yt-dlp-errors'
 import { getCookiesArgs } from './cookies'
 import { getYtDlpPath, getYtDlpBaseArgs } from './yt-dlp'
 
@@ -50,7 +50,7 @@ export async function getSoundcloudAudioStreamUrl(
     stdout = result.stdout
     stderr = result.stderr
   } catch (err: unknown) {
-    stderr = (err as any)?.stderr || ''
+    stderr = getStderr(err)
     console.error('[yt-dlp soundcloud]', stderr)
     throw new Error(parseYtDlpError(stderr), { cause: err })
   }

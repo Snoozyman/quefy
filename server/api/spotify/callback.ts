@@ -1,3 +1,4 @@
+import { errorMessage } from '#shared/utils/error'
 import { exchangeCode } from '#server/utils/spotify'
 
 export default defineEventHandler(async (event) => {
@@ -29,10 +30,11 @@ export default defineEventHandler(async (event) => {
       ? `/app/room/${roomId}?${params.toString()}`
       : `/app/room?${params.toString()}`
     return sendRedirect(event, redirect)
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = encodeURIComponent(errorMessage(err, 'Auth failed'))
     const redirect = roomId
-      ? `/app/room/${roomId}?spotify_error=${encodeURIComponent(err.message || 'Auth failed')}`
-      : `/app/room?spotify_error=${encodeURIComponent(err.message || 'Auth failed')}`
+      ? `/app/room/${roomId}?spotify_error=${message}`
+      : `/app/room?spotify_error=${message}`
     return sendRedirect(event, redirect)
   }
 })

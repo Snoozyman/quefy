@@ -1,4 +1,5 @@
 import { useSpotifyAuth } from './useSpotifyAuth'
+import { errorMessage } from '#shared/utils/error'
 
 interface SpotifyPlayerInstance {
   play: () => Promise<void>
@@ -12,7 +13,10 @@ interface SpotifyPlayerInstance {
   getCurrentState: () => Promise<SpotifyPlaybackState | null>
   disconnect: () => void
   connect: () => Promise<boolean>
+  // The SDK passes a different payload per event; callers narrow it.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   on: (event: string, cb: (...args: any[]) => void) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   addListener: (event: string, cb: (...args: any[]) => void) => void
   name: string
 }
@@ -64,7 +68,6 @@ let sdkLoaded = false
 let loadResolve: (() => void) | null = null
 let loadPromise: Promise<void> | null = null
 
-let playbackErrorCount = 0
 let playbackErrorWindow: number[] = []
 let destroyedByErrors = false
 let lastSyncPosition = 0
@@ -163,7 +166,6 @@ export function useSpotifyPlayer() {
     }
 
     destroyedByErrors = false
-    playbackErrorCount = 0
     playbackErrorWindow = []
 
     if (isFirefox()) {
@@ -191,7 +193,9 @@ export function useSpotifyPlayer() {
           if (!token) {
             try {
               await auth.refreshToken()
-            } catch {}
+            } catch {
+              // fall back to the token the player was created with
+            }
             token = auth.getAccessToken()
           }
           cb(token ?? accessToken)
@@ -264,7 +268,6 @@ export function useSpotifyPlayer() {
         const now = Date.now()
         playbackErrorWindow = playbackErrorWindow.filter((t) => now - t < 10000)
         playbackErrorWindow.push(now)
-        playbackErrorCount++
 
         if (playbackErrorWindow.length >= 3) {
           destroyedByErrors = true
@@ -317,8 +320,8 @@ export function useSpotifyPlayer() {
       isReady.value = true
       isConnecting.value = false
       return true
-    } catch (err: any) {
-      error.value = err.message || 'Failed to initialize Spotify player'
+    } catch (err: unknown) {
+      error.value = `Failed to initialize Spotify player: ${errorMessage(err)}`
       isConnecting.value = false
       return false
     }
@@ -425,21 +428,8 @@ export function useSpotifyPlayer() {
     player.value?.setVolume(volume.value).catch(() => {})
   }
 
-  async function getVolume(): Promise<number> {
-    try {
-      const v = await player.value?.getVolume()
-      if (typeof v === 'number' && v >= 0 && v <= 1) {
-        volume.value = v
-      }
-      return volume.value
-    } catch {
-      return volume.value
-    }
-  }
-
   function destroy() {
     stopTick()
-    playbackErrorCount = 0
     playbackErrorWindow = []
     destroyedByErrors = false
     player.value?.disconnect()
@@ -450,7 +440,6 @@ export function useSpotifyPlayer() {
   }
 
   function resetErrors() {
-    playbackErrorCount = 0
     playbackErrorWindow = []
     destroyedByErrors = false
   }

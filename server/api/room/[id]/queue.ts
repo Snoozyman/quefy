@@ -1,3 +1,4 @@
+import { errorMessage } from '#shared/utils/error'
 import { getRoom, addToQueue } from '#server/utils/room'
 import { getAudioStreamUrl } from '#server/utils/youtube'
 import { getSoundcloudAudioStreamUrl } from '#server/utils/soundcloud'
@@ -71,10 +72,11 @@ export default defineEventHandler(async (event) => {
     let audio
     try {
       audio = await getSoundcloudAudioStreamUrl(body.trackUrl)
-    } catch (err: any) {
+    } catch (err: unknown) {
       throw createError({
         statusCode: 422,
-        statusMessage: err.message || 'Failed to fetch SoundCloud track'
+        statusMessage: errorMessage(err, 'Failed to fetch SoundCloud track'),
+        cause: err
       })
     }
 
@@ -125,10 +127,11 @@ export default defineEventHandler(async (event) => {
   let audio
   try {
     audio = await getAudioStreamUrl(body.videoId)
-  } catch (err: any) {
+  } catch (err: unknown) {
     throw createError({
       statusCode: 422,
-      statusMessage: err.message || 'Failed to fetch video'
+      statusMessage: errorMessage(err, 'Failed to fetch video'),
+      cause: err
     })
   }
 

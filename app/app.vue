@@ -24,7 +24,7 @@ const isApp = computed(() => route.path.startsWith('/app'))
 
 <template>
   <UApp>
-    <Header v-if="!isApp" />
+    <AppHeader v-if="!isApp" />
 
     <UMain v-if="!isApp">
       <NuxtPage />

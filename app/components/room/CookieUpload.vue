@@ -94,7 +94,7 @@
             v-if="cookieExists && (ytCookies.length || scCookies.length)"
             class="space-y-2"
           >
-            <UTabs :items="tabItems" v-model="activeTab" />
+            <UTabs v-model="activeTab" :items="tabItems" />
 
             <div
               class="max-h-32 overflow-y-auto rounded-lg border border-default"

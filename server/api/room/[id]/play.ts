@@ -1,4 +1,4 @@
-import { verifyHost, togglePlay, getRoom, skipSong } from '#server/utils/room'
+import { verifyHost, getRoom } from '#server/utils/room'
 import { emitRoomUpdate } from '#server/utils/room-events'
 
 export default defineEventHandler(async (event) => {

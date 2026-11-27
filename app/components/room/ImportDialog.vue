@@ -2,7 +2,7 @@
   <UModal v-model:open="open" title="Import Queue">
     <template #body>
       <UTabs :items="tabs" variant="link">
-        <template #youtube="{ item }">
+        <template #youtube>
           <div class="flex flex-col gap-3 pt-3">
             <UInput
               v-model="playlistUrl"
@@ -19,7 +19,7 @@
             />
           </div>
         </template>
-        <template #file="{ item }">
+        <template #file>
           <div class="flex flex-col gap-3 pt-3">
             <UInput
               type="file"
@@ -49,6 +49,7 @@
 
 <script lang="ts" setup>
 import type { SongData } from '#shared/types/room'
+import { errorMessage } from '#shared/utils/error'
 
 const props = defineProps<{
   roomId: string
@@ -96,10 +97,9 @@ async function importYoutube() {
     resultMessage.value = `Imported ${res.count} song${res.count === 1 ? '' : 's'}.`
     playlistUrl.value = ''
     emit('imported')
-  } catch (err: any) {
+  } catch (err: unknown) {
     resultSuccess.value = false
-    resultMessage.value =
-      err?.data?.statusMessage || 'Failed to import playlist.'
+    resultMessage.value = errorMessage(err, 'Failed to import playlist.')
   } finally {
     importing.value = false
   }
@@ -129,9 +129,9 @@ async function importFile() {
     resultMessage.value = `Imported ${res.count} song${res.count === 1 ? '' : 's'}.`
     selectedFile.value = null
     emit('imported')
-  } catch (err: any) {
+  } catch (err: unknown) {
     resultSuccess.value = false
-    resultMessage.value = err?.data?.statusMessage || 'Failed to import file.'
+    resultMessage.value = errorMessage(err, 'Failed to import file.')
   } finally {
     importing.value = false
   }

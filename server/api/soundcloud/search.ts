@@ -1,3 +1,4 @@
+import { errorMessage } from '#shared/utils/error'
 import type { SearchResult } from '#shared/types/room'
 import { formatDurationMs } from '#shared/utils/format'
 import { getSoundcloudCookieHeader } from '#server/utils/cookies'
@@ -85,9 +86,8 @@ export default defineEventHandler(async (event) => {
     }))
 
     return results
-  } catch (err: any) {
-    const detail =
-      err.statusMessage || err.data?.message || err.data?.error || err.message
+  } catch (err: unknown) {
+    const detail = errorMessage(err)
     console.error('[soundcloud search]', detail)
     throw createError({
       statusCode: 502,

@@ -31,6 +31,8 @@
     "@nuxt/eslint": "^1.16.0",
     "@types/bun": "^1.3.14",
     "eslint": "^10.5.0",
+    "eslint-config-prettier": "^10.1.9",
+    "prettier": "^3.10.1",
     "typescript": "^6.0.3",
     "vue-tsc": "^3.3.5"
   },

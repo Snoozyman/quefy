@@ -1,5 +1,4 @@
-import { verifyHost, getRoom, skipSong } from '#server/utils/room'
-import { getAudioStreamUrl } from '#server/utils/youtube'
+import { verifyHost, getRoom } from '#server/utils/room'
 import { emitRoomUpdate } from '#server/utils/room-events'
 
 export default defineEventHandler(async (event) => {

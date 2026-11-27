@@ -58,3 +58,13 @@ export function parseYtDlpError(stderr: string): string {
 
   return 'Failed to process video. The video may be unavailable or require authentication.'
 }
+
+/** Read the stderr captured by `execFile` from a failed child process. */
+export function getStderr(err: unknown): string {
+  if (err && typeof err === 'object' && 'stderr' in err) {
+    const { stderr } = err as { stderr: unknown }
+    if (typeof stderr === 'string') return stderr
+    if (stderr instanceof Buffer) return stderr.toString('utf-8')
+  }
+  return ''
+}
