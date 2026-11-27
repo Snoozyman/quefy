@@ -4,6 +4,37 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.1.2] - 2026-11-27
+
+### Commits
+
+- [`89db15f`](https://github.com/Snoozyman/quefy/commit/89db15ff12c2f3665b9be1ebee916f2849d3900f) chore: add missing prettier and eslint-config-prettier deps
+- [`04173ab`](https://github.com/Snoozyman/quefy/commit/04173ab077bd62fedd6af0956922eb2addb6e6d6) refactor: rename Header component to AppHeader
+- [`6199e32`](https://github.com/Snoozyman/quefy/commit/6199e3213ffaa071cf984f14b3c9d94586988e20) fix: resolve all eslint errors and warnings
+- [`4a799b5`](https://github.com/Snoozyman/quefy/commit/4a799b552229295659e9ec908767c75d5811e94c) Merge pull request #87 from Snoozyman/chore/lint-deps
+- [`4daecbc`](https://github.com/Snoozyman/quefy/commit/4daecbcb7e891c48533e3c49687d60bcdf81964c) fix: require a room host token to change server cookies
+- [`277c892`](https://github.com/Snoozyman/quefy/commit/277c8922690d53ea50a5448236da11d23b258e6a) fix: remove unauthenticated debug audio endpoint
+- [`89a9ddb`](https://github.com/Snoozyman/quefy/commit/89a9ddbbe45ab0f2d8578a62346ee02831dbdca0) fix: validate media URLs before passing them to yt-dlp
+- [`581860f`](https://github.com/Snoozyman/quefy/commit/581860f00f653dcf3adb4ca603d894598ac0bf8a) fix: redact host tokens and OAuth secrets from request logs
+- [`d3863cb`](https://github.com/Snoozyman/quefy/commit/d3863cbf91132260ad25c6fba9f3f995683e8fef) fix: verify Spotify OAuth state and pass tokens in URL fragment
+- [`b1e71d1`](https://github.com/Snoozyman/quefy/commit/b1e71d1f7ee5a1ff165328c598bc0c73f1c1ae7c) fix: fetch cookies asynchronously so curl never blocks the server
+- [`eecb873`](https://github.com/Snoozyman/quefy/commit/eecb873f12a96668adf6752206c3be0b6e7d148f) fix: only seed anonymous cookies for sites that have none
+- [`3587ee4`](https://github.com/Snoozyman/quefy/commit/3587ee4f6a575aefd6d4603926a05422f49beaf0) Merge pull request #88 from Snoozyman/fix/security-hardening
+- [`15dab87`](https://github.com/Snoozyman/quefy/commit/15dab876f54775210341fdca69bebb287c4fe018) fix: let room SSE reconnect instead of falling back to polling forever
+- [`4ea7f3e`](https://github.com/Snoozyman/quefy/commit/4ea7f3e4ba2131e07771f5932327f85ca8f3f27b) fix: give a disconnected host 15s to reconnect before pausing
+- [`be0216f`](https://github.com/Snoozyman/quefy/commit/be0216fad3eb2ba1ad658097526728aeb69fcb35) Merge pull request #89 from Snoozyman/fix/cookie-fetch-blocking
+- [`191a309`](https://github.com/Snoozyman/quefy/commit/191a309384c2b7e7b759b40d0cb595a277bc0267) Merge pull request #90 from Snoozyman/fix/sse-reconnect
+- [`2945d6e`](https://github.com/Snoozyman/quefy/commit/2945d6e303383b5aa7648c896c1888fc043ad863) refactor: route all room state changes through room.ts
+- [`8dcd5fe`](https://github.com/Snoozyman/quefy/commit/8dcd5fecf991ae1cd972bfd727410b7710583a6b) fix: show room not found when the host deletes the room
+- [`351d489`](https://github.com/Snoozyman/quefy/commit/351d48937efc7d1fbec34aa307f0f88aff1dace2) Merge pull request #91 from Snoozyman/refactor/room-state
+- [`068185d`](https://github.com/Snoozyman/quefy/commit/068185d5cae42de7a7becf475f6d369eab18f1bf) feat: refresh cookies automatically when yt-dlp is blocked
+- [`a09c26a`](https://github.com/Snoozyman/quefy/commit/a09c26a0c5f8b41c395a5c4af8b5148dcc074e3c) fix: wait for stream URLs to activate before returning them
+- [`5a21b05`](https://github.com/Snoozyman/quefy/commit/5a21b052e0fda8b590b4805e2729d918c137364b) feat: redesign the home, lobby and room list pages
+- [`f926df9`](https://github.com/Snoozyman/quefy/commit/f926df90a6ec30ae0ba2e8fd6e2a1cf1b870dae7) feat: redesign the room page around a shared player card
+- [`362f689`](https://github.com/Snoozyman/quefy/commit/362f689537229f9cfef81d622dfbe2679984411d) fix: keep Spotify playing when the SDK reports a false pause
+- [`b9e3f20`](https://github.com/Snoozyman/quefy/commit/b9e3f20c55b1eddeb276a69db58f15dd14b6a83c) feat: prefetch the next song for gapless background playback
+- [`bde7962`](https://github.com/Snoozyman/quefy/commit/bde79629e88338c872d9800ef41c6df7a8274969) Merge pull request #94 from Snoozyman/feat/room-ui
+
 ## [0.1.1] - 2026-07-18
 
 ### Commits
