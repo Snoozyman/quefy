@@ -71,3 +71,24 @@ export async function runYtDlp(
   }
 }
 
+/** Longest we will hold a request waiting for a stream URL to activate. */
+export const MAX_AVAILABILITY_WAIT_MS = 30_000
+
+/**
+ * YouTube stream URLs now carry an `available_at` time (unix seconds): until
+ * then googlevideo answers 403. yt-dlp waits for it when it downloads, but we
+ * hand the URL to the browser, so we have to wait for it ourselves.
+ */
+export async function waitUntilAvailable(
+  meta: { available_at?: unknown },
+  now = Date.now()
+): Promise<number> {
+  const availableAt = Number(meta.available_at)
+  if (!Number.isFinite(availableAt) || availableAt <= 0) return 0
+  const waitMs = Math.min(
+    Math.max(0, availableAt * 1000 - now + 250),
+    MAX_AVAILABILITY_WAIT_MS
+  )
+  if (waitMs > 0) await new Promise((r) => setTimeout(r, waitMs))
+  return waitMs
+}

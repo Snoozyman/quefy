@@ -1,6 +1,6 @@
 import { parseYtDlpError, getStderr } from './yt-dlp-errors'
 import { getCookiesArgs } from './cookies'
-import { getYtDlpBaseArgs, runYtDlp } from './yt-dlp'
+import { getYtDlpBaseArgs, runYtDlp, waitUntilAvailable } from './yt-dlp'
 import { isYoutubeVideoId } from '#shared/utils/urls'
 
 
@@ -58,6 +58,9 @@ export async function getAudioStreamUrl(videoId: string): Promise<AudioStream> {
   const meta = JSON.parse(lines[1]!)
 
   if (!url) throw new Error('No audio URL returned from yt-dlp')
+
+  // The URL 403s until YouTube's activation delay has passed.
+  await waitUntilAvailable(meta)
 
   const duration = Number(meta.duration) || 0
   if (!duration)
