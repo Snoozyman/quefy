@@ -26,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [`191a309`](https://github.com/Snoozyman/quefy/commit/191a309384c2b7e7b759b40d0cb595a277bc0267) Merge pull request #90 from Snoozyman/fix/sse-reconnect
 - [`2945d6e`](https://github.com/Snoozyman/quefy/commit/2945d6e303383b5aa7648c896c1888fc043ad863) refactor: route all room state changes through room.ts
 - [`8dcd5fe`](https://github.com/Snoozyman/quefy/commit/8dcd5fecf991ae1cd972bfd727410b7710583a6b) fix: show room not found when the host deletes the room
+- [`79d94bb`](https://github.com/Snoozyman/quefy/commit/79d94bb75bf71ac14453047e5935823b78be725f) refactor: merge the four audio refresh paths into one function
+- [`175adba`](https://github.com/Snoozyman/quefy/commit/175adba6edd1478be04d45a72598d1fa12260891) chore: remove unused helpers, Result util and websocket flag
+- [`b3f8a0d`](https://github.com/Snoozyman/quefy/commit/b3f8a0de95bfca806aac5674e2d8e3c2adf2de5f) docs: update AGENTS.md to match the current architecture
 - [`351d489`](https://github.com/Snoozyman/quefy/commit/351d48937efc7d1fbec34aa307f0f88aff1dace2) Merge pull request #91 from Snoozyman/refactor/room-state
 - [`068185d`](https://github.com/Snoozyman/quefy/commit/068185d5cae42de7a7becf475f6d369eab18f1bf) feat: refresh cookies automatically when yt-dlp is blocked
 - [`a09c26a`](https://github.com/Snoozyman/quefy/commit/a09c26a0c5f8b41c395a5c4af8b5148dcc074e3c) fix: wait for stream URLs to activate before returning them
@@ -34,6 +37,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [`362f689`](https://github.com/Snoozyman/quefy/commit/362f689537229f9cfef81d622dfbe2679984411d) fix: keep Spotify playing when the SDK reports a false pause
 - [`b9e3f20`](https://github.com/Snoozyman/quefy/commit/b9e3f20c55b1eddeb276a69db58f15dd14b6a83c) feat: prefetch the next song for gapless background playback
 - [`bde7962`](https://github.com/Snoozyman/quefy/commit/bde79629e88338c872d9800ef41c6df7a8274969) Merge pull request #94 from Snoozyman/feat/room-ui
+- [`cb00bb2`](https://github.com/Snoozyman/quefy/commit/cb00bb2de04744ad66b7355450eeb0db481837b0) Merge branch 'main' into refactor/audio-refresh
+- [`60969af`](https://github.com/Snoozyman/quefy/commit/60969af2f457d64c772a25e69e06244043a2dd54) Merge branch 'main' into chore/cleanup-and-docs
+- [`eca74f7`](https://github.com/Snoozyman/quefy/commit/eca74f7b3ac2f083574de14128af30c46fc5fe14) docs: list the new room UI and cookie refresh files in AGENTS.md
+- [`0e22e9b`](https://github.com/Snoozyman/quefy/commit/0e22e9b9b6e06d5aa8529f82fc238d7b6a4953bb) Merge pull request #92 from Snoozyman/refactor/audio-refresh
+- [`44d0b05`](https://github.com/Snoozyman/quefy/commit/44d0b0577065deb0783843173ceef562d6eeaa08) Merge pull request #93 from Snoozyman/chore/cleanup-and-docs
 
 ## [0.1.1] - 2026-07-18
 
