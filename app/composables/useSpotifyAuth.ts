@@ -2,6 +2,7 @@ import type { TokenResponse } from '#shared/types/spotify'
 import { errorMessage } from '#shared/utils/error'
 
 const STORAGE_KEY = 'quefy-spotify'
+const STATE_KEY = 'quefy-spotify-oauth-state'
 
 interface StoredAuth {
   accessToken: string
@@ -63,6 +64,7 @@ export function useSpotifyAuth() {
         'user-read-playback-state',
         'user-modify-playback-state'
       ].join(' ')
+      sessionStorage.setItem(STATE_KEY, state)
 
       const params = new URLSearchParams({
         client_id: clientId,
@@ -78,6 +80,13 @@ export function useSpotifyAuth() {
         cause: err
       })
     }
+  }
+
+  /** True (once) if `state` matches the nonce stored when login started. */
+  function consumeOAuthState(state: string | null): boolean {
+    const expected = sessionStorage.getItem(STATE_KEY)
+    sessionStorage.removeItem(STATE_KEY)
+    return !!state && !!expected && state === expected
   }
 
   function logout() {
@@ -115,6 +124,7 @@ export function useSpotifyAuth() {
     loading: readonly(loading),
     isAuthenticated,
     login,
+    consumeOAuthState,
     logout,
     refreshToken,
     getAccessToken,

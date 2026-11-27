@@ -1,10 +1,26 @@
 import { errorMessage } from '#shared/utils/error'
 import { exchangeCode } from '#server/utils/spotify'
 
+/**
+ * OAuth redirect target. Tokens are handed to the client in the URL
+ * fragment (never sent to servers, proxies or logs) together with the
+ * original `state`, which the client checks against the nonce it stored
+ * before starting the login.
+ */
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
-  const code = query.code as string
-  const state = (query.state as string) ?? ''
+  const code = typeof query.code === 'string' ? query.code : ''
+  const state = typeof query.state === 'string' ? query.state : ''
+
+  const roomId = state.split(':')[0] ?? ''
+  const base = /^[A-Za-z0-9]{1,16}$/.test(roomId)
+    ? `/app/room/${roomId}`
+    : '/app/room'
+
+  if (typeof query.error === 'string') {
+    const params = new URLSearchParams({ spotify_error: query.error, state })
+    return sendRedirect(event, `${base}#${params.toString()}`)
+  }
 
   if (!code) {
     throw createError({
@@ -13,28 +29,20 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  let roomId = ''
-  if (state) {
-    const parts = state.split(':')
-    if (parts.length >= 1) roomId = parts[0]!
-  }
-
   try {
     const tokens = await exchangeCode(code)
     const params = new URLSearchParams({
       access_token: tokens.accessToken,
       refresh_token: tokens.refreshToken,
-      expires_in: String(tokens.expiresIn)
+      expires_in: String(tokens.expiresIn),
+      state
     })
-    const redirect = roomId
-      ? `/app/room/${roomId}?${params.toString()}`
-      : `/app/room?${params.toString()}`
-    return sendRedirect(event, redirect)
+    return sendRedirect(event, `${base}#${params.toString()}`)
   } catch (err: unknown) {
-    const message = encodeURIComponent(errorMessage(err, 'Auth failed'))
-    const redirect = roomId
-      ? `/app/room/${roomId}?spotify_error=${message}`
-      : `/app/room?spotify_error=${message}`
-    return sendRedirect(event, redirect)
+    const params = new URLSearchParams({
+      spotify_error: errorMessage(err, 'Auth failed'),
+      state
+    })
+    return sendRedirect(event, `${base}#${params.toString()}`)
   }
 })
