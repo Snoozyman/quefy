@@ -27,12 +27,13 @@ export default defineEventHandler(async (event) => {
   let stdout: string
   try {
     const result = await execFileAsync(getYtDlpPath(), [
-      `ytsearch${maxResults}:${q}`,
       '--flat-playlist',
       '--print-json',
       '--no-warnings',
       ...getYtDlpBaseArgs(),
-      ...getCookiesArgs()
+      ...getCookiesArgs(),
+      '--',
+      `ytsearch${maxResults}:${q}`
     ])
     stdout = result.stdout
   } catch (err: unknown) {

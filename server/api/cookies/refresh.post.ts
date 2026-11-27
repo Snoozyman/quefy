@@ -10,8 +10,11 @@ import {
 } from '#server/utils/cookies'
 import { clearAudioCache } from '#server/utils/youtube'
 import { clearSoundcloudAudioCache } from '#server/utils/soundcloud'
+import { requireRoomHost } from '#server/utils/auth'
 
-export default defineEventHandler(async () => {
+export default defineEventHandler(async (event) => {
+  requireRoomHost(event, 'refresh cookies')
+
   try {
     const [ytResult, scResult] = await Promise.allSettled([
       fetchYouTubeCookies(),

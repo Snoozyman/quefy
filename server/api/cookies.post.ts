@@ -9,10 +9,13 @@ import {
 } from '#server/utils/cookies'
 import { clearAudioCache } from '#server/utils/youtube'
 import { getYtDlpPath, getYtDlpBaseArgs } from '#server/utils/yt-dlp'
+import { requireRoomHost } from '#server/utils/auth'
 
 const execFileAsync = promisify(execFile)
 
 export default defineEventHandler(async (event) => {
+  requireRoomHost(event, 'change cookies')
+
   const contentType = getHeader(event, 'content-type') ?? ''
 
   let content: string

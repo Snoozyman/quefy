@@ -147,12 +147,18 @@ async function verifyHost() {
 }
 
 async function handleOAuthCallback() {
-  const params = new URLSearchParams(window.location.search)
-  const spotifyErr = params.get('spotify_error')
+  const params = new URLSearchParams(window.location.hash.slice(1))
+  window.history.replaceState({}, '', `/app/room/${props.roomId}`)
 
+  if (!spotifyAuth.consumeOAuthState(params.get('state'))) {
+    spotifyError.value =
+      'Spotify login could not be verified (state mismatch). Click Connect to try again.'
+    return
+  }
+
+  const spotifyErr = params.get('spotify_error')
   if (spotifyErr) {
-    spotifyError.value = spotifyErr
-    window.history.replaceState({}, '', `/app/room/${props.roomId}`)
+    spotifyError.value = `Spotify login failed: ${spotifyErr}`
     return
   }
 
@@ -166,8 +172,6 @@ async function handleOAuthCallback() {
   spotifyError.value = ''
 
   try {
-    window.history.replaceState({}, '', `/app/room/${props.roomId}`)
-
     spotifyAuth.save({
       accessToken,
       refreshToken,
@@ -187,10 +191,8 @@ async function handleOAuthCallback() {
 }
 
 onMounted(() => {
-  const hasTokens = !!new URLSearchParams(window.location.search).get(
-    'access_token'
-  )
-  if (hasTokens) {
+  const hash = new URLSearchParams(window.location.hash.slice(1))
+  if (hash.has('access_token') || hash.has('spotify_error')) {
     handleOAuthCallback()
     return
   }

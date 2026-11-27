@@ -1,8 +1,11 @@
 <template>
   <div class="flex flex-col gap-3">
-    <div v-if="isHost" class="flex items-center justify-between">
+    <div
+      v-if="isHost && hostToken"
+      class="flex items-center justify-between"
+    >
       <span class="text-sm">Cookies</span>
-      <RoomCookieUpload />
+      <RoomCookieUpload :room-id="roomId" :host-token="hostToken" />
     </div>
     <div v-if="isHost" class="flex items-center justify-between">
       <span class="text-sm">Import queue</span>
@@ -43,6 +46,8 @@
 <script lang="ts" setup>
 defineProps<{
   isHost: boolean
+  roomId: string
+  hostToken?: string
 }>()
 
 defineEmits<{

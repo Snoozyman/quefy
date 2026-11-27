@@ -3,6 +3,7 @@ import { promisify } from 'node:util'
 import { parseYtDlpError, getStderr } from './yt-dlp-errors'
 import { getCookiesArgs } from './cookies'
 import { getYtDlpPath, getYtDlpBaseArgs } from './yt-dlp'
+import { isSoundcloudUrl } from '#shared/utils/urls'
 
 const execFileAsync = promisify(execFile)
 
@@ -29,6 +30,10 @@ export function clearSoundcloudAudioCacheFor(url: string): void {
 export async function getSoundcloudAudioStreamUrl(
   trackUrl: string
 ): Promise<AudioStream> {
+  if (!isSoundcloudUrl(trackUrl)) {
+    throw new Error('Not a SoundCloud URL: expected https://soundcloud.com/...')
+  }
+
   const cached = cache.get(trackUrl)
   if (cached && Date.now() - cached.ts < CACHE_TTL) {
     return cached.data
@@ -45,6 +50,7 @@ export async function getSoundcloudAudioStreamUrl(
       '--print',
       'url',
       ...getCookiesArgs(),
+      '--',
       trackUrl
     ])
     stdout = result.stdout
