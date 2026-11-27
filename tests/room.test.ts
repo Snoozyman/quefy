@@ -8,7 +8,13 @@ import {
   togglePlay,
   skipSong,
   exportRoom,
-  listRooms
+  listRooms,
+  deleteRoom,
+  onRoomDeleted,
+  toRoomState,
+  reorderQueue,
+  setPosition,
+  ROOM_TTL_MS
 } from '../server/utils/room'
 
 describe('createRoom', () => {
@@ -304,5 +310,66 @@ describe('listRooms', () => {
       expect(r).toHaveProperty('queueCount')
       expect(r).toHaveProperty('createdAt')
     }
+  })
+})
+
+describe('room lifecycle', () => {
+  test('default title uses the room id', () => {
+    const room = createRoom()
+    expect(room.title).toBe(`${room.id}'s Room`)
+  })
+
+  test('expired rooms are invisible to getRoom and verifyHost', () => {
+    const room = createRoom()
+    room.createdAt = Date.now() - ROOM_TTL_MS
+    expect(verifyHost(room.id, room.hostToken)).toBe(false)
+    expect(getRoom(room.id)).toBeUndefined()
+  })
+
+  test('deleting a room notifies listeners', () => {
+    const deleted: string[] = []
+    onRoomDeleted((id) => deleted.push(id))
+    const room = createRoom()
+    expect(deleteRoom(room.id)).toBe(true)
+    expect(deleted).toContain(room.id)
+    expect(getRoom(room.id)).toBeUndefined()
+  })
+})
+
+describe('toRoomState', () => {
+  test('omits the host token and keeps every song field', () => {
+    const room = createRoom()
+    addToQueue(room.id, {
+      source: 'soundcloud',
+      title: 'SC',
+      addedBy: 'A',
+      trackUrl: 'https://soundcloud.com/a/b'
+    })
+    const state = toRoomState(room)
+    expect(JSON.stringify(state)).not.toContain(room.hostToken)
+    expect(state.queue[0]!.trackUrl).toBe('https://soundcloud.com/a/b')
+  })
+})
+
+describe('skipSong position', () => {
+  test('resets the playback position', () => {
+    const room = createRoom()
+    for (const title of ['A', 'B']) {
+      addToQueue(room.id, { source: 'youtube', title, addedBy: 'x' })
+    }
+    togglePlay(room.id, room.hostToken)
+    setPosition(room.id, 42_000)
+    expect(getRoom(room.id)!.position).toBe(42_000)
+    skipSong(room.id, room.hostToken)
+    expect(getRoom(room.id)!.position).toBe(0)
+  })
+})
+
+describe('reorderQueue', () => {
+  test('rejects duplicated ids', () => {
+    const room = createRoom()
+    const a = addToQueue(room.id, { source: 'youtube', title: 'A', addedBy: 'x' })!
+    addToQueue(room.id, { source: 'youtube', title: 'B', addedBy: 'x' })
+    expect(reorderQueue(room.id, [a.id, a.id], room.hostToken)).toBe(false)
   })
 })

@@ -1,4 +1,9 @@
-import { getRoom, verifyHost } from '#server/utils/room'
+import {
+  getRoom,
+  pauseRoom,
+  toRoomState,
+  verifyHost
+} from '#server/utils/room'
 import {
   registerHostStream,
   registerRoomClient,
@@ -29,32 +34,9 @@ export default defineEventHandler(async (event) => {
     registerRoomClient(id, stream)
   }
 
-  stream.push({
-    event: 'room-update',
-    data: JSON.stringify({
-      id: room.id,
-      title: room.title,
-      currentSong: room.currentSong,
-      queue: room.queue.map((s) => ({
-        id: s.id,
-        source: s.source,
-        title: s.title,
-        addedBy: s.addedBy,
-        addedAt: s.addedAt,
-        videoId: s.videoId,
-        url: s.url,
-        trackUri: s.trackUri,
-        artists: s.artists,
-        albumName: s.albumName,
-        albumImageUrl: s.albumImageUrl,
-        durationMs: s.durationMs
-      })),
-      isPlaying: room.isPlaying,
-      spotifyConnected: room.spotifyConnected,
-      createdAt: room.createdAt,
-      position: room.position
-    })
-  })
+  stream
+    .push({ event: 'room-update', data: JSON.stringify(toRoomState(room)) })
+    .catch(() => {})
 
   stream.onClosed(() => {
     const wasHost = isHostDisconnect(id, stream)
@@ -62,9 +44,7 @@ export default defineEventHandler(async (event) => {
     if (wasHost) {
       scheduleHostAbsence(id, () => {
         const current = getRoom(id)
-        if (!current || !current.isPlaying) return
-        current.isPlaying = false
-        emitRoomUpdate(id, current)
+        if (current && pauseRoom(id)) emitRoomUpdate(id, current)
       })
     }
   })

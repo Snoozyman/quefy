@@ -1,4 +1,4 @@
-import { verifyHost, getRoom } from '#server/utils/room'
+import { verifyHost, getRoom, skipSong } from '#server/utils/room'
 import { emitRoomUpdate } from '#server/utils/room-events'
 
 export default defineEventHandler(async (event) => {
@@ -10,6 +10,10 @@ export default defineEventHandler(async (event) => {
   if (!body?.hostToken)
     throw createError({ statusCode: 400, statusMessage: 'Missing hostToken' })
 
+  const room = getRoom(id)
+  if (!room)
+    throw createError({ statusCode: 404, statusMessage: 'Room not found' })
+
   if (!verifyHost(id, body.hostToken)) {
     throw createError({
       statusCode: 403,
@@ -17,22 +21,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const room = getRoom(id)
-  if (!room)
-    throw createError({ statusCode: 404, statusMessage: 'Room not found' })
-
-  if (room.queue.length === 0) {
-    room.currentSong = null
-    room.isPlaying = false
-    room.position = 0
-    emitRoomUpdate(id, room)
-    return { currentSong: null, isPlaying: false }
-  }
-
-  const next = room.queue.shift()!
-  room.currentSong = next
-  room.position = 0
-
+  const next = skipSong(id, body.hostToken)
   emitRoomUpdate(id, room)
 
   return { currentSong: next, isPlaying: room.isPlaying }

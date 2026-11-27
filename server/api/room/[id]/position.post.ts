@@ -1,4 +1,4 @@
-import { verifyHost, getRoom } from '#server/utils/room'
+import { verifyHost, setPosition } from '#server/utils/room'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
@@ -18,10 +18,8 @@ export default defineEventHandler(async (event) => {
   if (typeof body.position !== 'number' || !isFinite(body.position))
     throw createError({ statusCode: 400, statusMessage: 'Invalid position' })
 
-  const room = getRoom(id)
-  if (!room)
+  if (!setPosition(id, body.position))
     throw createError({ statusCode: 404, statusMessage: 'Room not found' })
 
-  room.position = Math.max(0, Math.round(body.position))
   return { ok: true }
 })
