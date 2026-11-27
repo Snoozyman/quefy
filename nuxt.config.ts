@@ -62,11 +62,6 @@ export default defineNuxtConfig({
   },
 
   compatibilityDate: '2025-01-15',
-  nitro: {
-    experimental: {
-      websocket: true
-    }
-  },
   vite: {
     optimizeDeps: {
       include: [
@@ -92,7 +87,7 @@ export default defineNuxtConfig({
     manifest: {
       name: 'Quefy',
       short_name: 'Quefy',
-      description: 'Multi-user YouTube audio streaming rooms',
+      description: 'Multi-user YouTube, Spotify and SoundCloud listening rooms',
       theme_color: '#09090b',
       background_color: '#09090b',
       display: 'standalone',
