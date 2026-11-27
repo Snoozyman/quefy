@@ -7,8 +7,8 @@
             :color="mode === 'youtube' ? 'primary' : 'neutral'"
             variant="solid"
             icon="i-simple-icons-youtube"
-            @click="mode = 'youtube'"
             class="text-xs"
+            @click="mode = 'youtube'"
           >
             YouTube
           </UButton>
@@ -18,8 +18,8 @@
             icon="i-simple-icons-spotify"
             :disabled="!spotifyConnected"
             :title="spotifyConnected ? '' : 'Host must connect Spotify first'"
-            @click="mode = 'spotify'"
             class="text-xs"
+            @click="mode = 'spotify'"
           >
             Spotify
           </UButton>
@@ -27,8 +27,8 @@
             :color="mode === 'soundcloud' ? 'primary' : 'neutral'"
             variant="solid"
             icon="i-simple-icons-soundcloud"
-            @click="mode = 'soundcloud'"
             class="text-xs"
+            @click="mode = 'soundcloud'"
           >
             SC
           </UButton>
@@ -104,7 +104,7 @@
 <script lang="ts" setup>
 import type { SearchResult } from '#shared/types/room'
 
-const props = defineProps<{
+defineProps<{
   roomId: string
   addingSong: boolean
   spotifyConnected: boolean

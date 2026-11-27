@@ -31,7 +31,7 @@
           </p>
         </div>
 
-        <UTabs :items="tabItems" v-model="activeTab" />
+        <UTabs v-model="activeTab" :items="tabItems" />
 
         <div v-show="activeTab === 'player'">
           <RoomSpotifyPlayer
@@ -165,6 +165,7 @@
 
 <script lang="ts" setup>
 import type { SongData } from '#shared/types/room'
+import { errorMessage } from '#shared/utils/error'
 
 const route = useRoute()
 const router = useRouter()
@@ -225,9 +226,12 @@ function activateUser() {
   document.removeEventListener('keydown', activateUser)
   audioPlayerRef.value?.unlockSilentAudio()
   try {
-    const session = (navigator as any).audioSession
+    const session = (navigator as Navigator & { audioSession?: { type: string } })
+      .audioSession
     if (session) session.type = 'playback'
-  } catch {}
+  } catch {
+    // audioSession is a Safari-only hint; ignore if unsupported
+  }
 }
 
 const fallbackTrack = {
@@ -637,8 +641,8 @@ async function addSongByVideoId(data: { videoId: string; title?: string; duratio
       body: { videoId: data.videoId, title: data.title, durationMs: data.durationMs, albumImageUrl: data.albumImageUrl, addedBy: 'Guest' }
     })
     await fetchRoomState()
-  } catch (e: any) {
-    error.value = e?.data?.statusMessage || 'Failed to add song.'
+  } catch (err: unknown) {
+    error.value = errorMessage(err, 'Failed to add song.')
   } finally {
     addingSong.value = false
   }
@@ -660,8 +664,8 @@ async function addSpotifyTrack(track: {
       body: { source: 'spotify', addedBy: 'Guest', ...track }
     })
     await fetchRoomState()
-  } catch (e: any) {
-    error.value = e?.data?.statusMessage || 'Failed to add song.'
+  } catch (err: unknown) {
+    error.value = errorMessage(err, 'Failed to add song.')
   } finally {
     addingSong.value = false
   }
@@ -676,9 +680,8 @@ async function addSongBySoundcloudUrl(trackUrl: string) {
       body: { source: 'soundcloud', trackUrl, addedBy: 'Guest' }
     })
     await fetchRoomState()
-  } catch (e: any) {
-    error.value =
-      e?.data?.statusMessage || e?.message || 'Failed to add SoundCloud track.'
+  } catch (err: unknown) {
+    error.value = errorMessage(err, 'Failed to add SoundCloud track.')
   } finally {
     addingSong.value = false
   }
@@ -754,8 +757,8 @@ async function togglePlay() {
       spotifyPlayer.pause()
       audioPlayerRef.value?.pause()
     }
-  } catch (e: any) {
-    error.value = e?.message || 'Playback failed.'
+  } catch (err: unknown) {
+    error.value = `Playback failed: ${errorMessage(err)}`
   }
 }
 

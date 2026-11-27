@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
-import { parseYtDlpError } from '#server/utils/yt-dlp-errors'
+import { parseYtDlpError, getStderr } from '#server/utils/yt-dlp-errors'
 import { getCookiesArgs } from '#server/utils/cookies'
 import { getYtDlpPath, getYtDlpBaseArgs } from '#server/utils/yt-dlp'
 
@@ -35,8 +35,8 @@ export default defineEventHandler(async (event) => {
       ...getCookiesArgs()
     ])
     stdout = result.stdout
-  } catch (err: any) {
-    const stderr = err.stderr || ''
+  } catch (err: unknown) {
+    const stderr = getStderr(err)
     console.error('[yt-dlp]', stderr)
     throw createError({
       statusCode: 500,

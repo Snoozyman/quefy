@@ -123,7 +123,7 @@ function unlockSilentAudio() {
   const el = new Audio(SILENT_WAV)
   el.loop = true
   el.volume = 0
-  ;(el as any).playsInline = true
+  el.setAttribute('playsinline', '')
   document.body.appendChild(el)
   silentAudio.value = el
   el.play().then(() => {

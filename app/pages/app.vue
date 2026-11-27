@@ -7,7 +7,7 @@
         mode="slideover"
         :ui="{ footer: 'border-t border-default' }"
       >
-        <template #header="{ collapsed }">
+        <template #header>
           <UDashboardSidebarCollapse />
         </template>
 

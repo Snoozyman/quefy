@@ -1,5 +1,4 @@
 import { getRoom, verifyHost, bulkAddToQueue } from '#server/utils/room'
-import { getAudioStreamUrl } from '#server/utils/youtube'
 import { emitRoomUpdate } from '#server/utils/room-events'
 
 export default defineEventHandler(async (event) => {
@@ -36,7 +35,9 @@ export default defineEventHandler(async (event) => {
   const execFileAsync = promisify(execFile)
   const { getYtDlpPath, getYtDlpBaseArgs } = await import('#server/utils/yt-dlp')
   const { getCookiesArgs } = await import('#server/utils/cookies')
-  const { parseYtDlpError } = await import('#server/utils/yt-dlp-errors')
+  const { parseYtDlpError, getStderr } = await import(
+    '#server/utils/yt-dlp-errors'
+  )
 
   let stdout: string
   try {
@@ -50,7 +51,7 @@ export default defineEventHandler(async (event) => {
     ])
     stdout = result.stdout
   } catch (err: unknown) {
-    const stderr = (err as any)?.stderr || ''
+    const stderr = getStderr(err)
     console.error('[yt-dlp playlist]', stderr)
     throw createError({
       statusCode: 502,

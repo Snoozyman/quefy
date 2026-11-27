@@ -1,3 +1,4 @@
+import { errorMessage } from '#shared/utils/error'
 import { verifyHost } from '#server/utils/room'
 import {
   getSoundcloudAudioStreamUrl,
@@ -49,10 +50,11 @@ export default defineEventHandler(async (event) => {
       durationMs = Math.round(audio.duration * 1000)
     }
     return { url, title, durationMs }
-  } catch (err: any) {
+  } catch (err: unknown) {
     throw createError({
       statusCode: 502,
-      statusMessage: err.message || 'Failed to refresh audio stream'
+      statusMessage: errorMessage(err, 'Failed to refresh audio stream'),
+      cause: err
     })
   }
 })
