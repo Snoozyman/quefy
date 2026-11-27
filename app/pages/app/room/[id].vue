@@ -273,9 +273,9 @@ function updateMediaSession(song: SongData | null) {
       title: song.title,
       artist: song.artists?.join(', ') || song.addedBy,
       album: song.albumName || '',
-      artwork: song.albumImageUrl
-        ? [{ src: song.albumImageUrl, sizes: '512x512', type: 'image/png' }]
-        : []
+      // No `type`: covers are JPEG (Spotify) or WebP/JPEG (YouTube), and a
+      // wrong type can make widgets skip the image.
+      artwork: song.albumImageUrl ? [{ src: song.albumImageUrl }] : []
     })
 
     navigator.mediaSession.playbackState = roomState.value.isPlaying
