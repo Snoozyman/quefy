@@ -1,5 +1,7 @@
+import { redactPath } from '#server/utils/logger'
+
 export default defineEventHandler((event) => {
-  const path = event.path || event.node?.req?.url || '?'
+  const path = redactPath(event.path || event.node?.req?.url || '?')
   const method = event.method || '?'
   const start = Date.now()
 
