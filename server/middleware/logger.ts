@@ -5,7 +5,8 @@ export default defineEventHandler((event) => {
   const method = event.method || '?'
   const start = Date.now()
 
-  if (!path.startsWith('/api/')) return
+  // The Docker healthcheck polls /api/health every 30s; keep it out of the log.
+  if (!path.startsWith('/api/') || path === '/api/health') return
 
   console.log(`[${new Date().toISOString()}] --> ${method} ${path}`)
 
