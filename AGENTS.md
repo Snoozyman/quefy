@@ -55,19 +55,22 @@ Multi-user YouTube / Spotify / SoundCloud audio streaming rooms.
 app/
   components/room/    # PlayerCard (shared now-playing UI) used by AudioPlayer, SpotifyPlayer, NowPlaying; RoomHeader, SongSearch, SongQueue, RoomSettingsTab, SpotifyConnectBanner, CookieUpload, ImportDialog
   composables/        # useRoomState (SSE + polling fallback), useSpotifyAuth, useSpotifyPlayer (singleton module refs)
-  pages/app/room/     # [id].vue — main room page (host playback orchestrator, next-song prefetch, ~1200 lines)
+  pages/app/room/     # [id].vue — room page: wires playback modules to the UI, queue actions
+  playback/           # host playback, testable without Nuxt: useRoomPlayback (song change, toggle, skip, track end, refresh), prefetch, spotifyStart, mediaSession, types
   utils/              # song.ts (songSubtitle)
 server/
+  plugins/            # rooms.ts — load saved rooms at startup, save after changes
   api/                # API endpoints: room/*, spotify/*, youtube/*, soundcloud/*, cookies.*
-  utils/              # room.ts, room-events.ts, auth.ts, spotify.ts, youtube.ts, soundcloud.ts, cookies.ts, cookie-fetcher.ts, cookie-refresh.ts (auto-refresh on yt-dlp blocks), yt-dlp.ts (runYtDlp, waitUntilAvailable), yt-dlp-errors.ts, logger.ts
+  utils/              # room.ts, room-events.ts, auth.ts, spotify.ts, youtube.ts, soundcloud.ts, cookies.ts, cookie-fetcher.ts, room-store.ts (rooms.json), data-dir.ts, cookie-refresh.ts (auto-refresh on yt-dlp blocks), yt-dlp.ts (runYtDlp, waitUntilAvailable), yt-dlp-errors.ts, logger.ts
 shared/types/         # room.ts, spotify.ts — shared TypeScript types
 shared/utils/         # error.ts (errorMessage), urls.ts (media URL validation), format.ts
-tests/                # room, urls, logger, yt-dlp-errors, run-yt-dlp, cookie-refresh, availability
+tests/                # room, room-store, urls, logger, yt-dlp-errors, run-yt-dlp, cookie-refresh, availability; playback/ (client playback with fakes)
 ```
 
 ## Architecture notes
 
-- **Room state** is in-memory (`Map<string, Room>`), not persisted; rooms expire 24h after creation
+- **Room state** is in memory (`Map<string, Room>`) and saved to `rooms.json` in the data dir (`DATA_DIR`, else the `YT_DLP_COOKIES` folder, else `data/`) by `server/plugins/rooms.ts`, so rooms survive restarts; rooms expire 24h after creation
+- **Playback modules** in `app/playback/` take their dependencies as arguments (no auto-imports, no `$fetch`) so `bun test` can drive them with fakes; import shared code via `#shared/*` (resolved by package.json `imports` under Bun)
 - **`server/utils/room.ts` owns room state** — endpoints never mutate a `Room` directly; they call `togglePlay`, `skipSong`, `setPosition`, etc., then `emitRoomUpdate`. Clients get `toRoomState(room)` (never the `hostToken`)
 - **Realtime** — `GET /api/room/:id/events` is an SSE stream (`room-update`, `room-deleted`). The client polls only while the stream is down. If the host's stream closes for more than 15s, the room is paused
 - **Only the host plays audio** — guests see state; the host's browser drives YouTube/SoundCloud (`<audio>`) and Spotify (Web Playback SDK) and reports position every 2s

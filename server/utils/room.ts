@@ -29,15 +29,51 @@ export interface RoomSummary {
   currentThumbnail: string | null
 }
 
-/** Rooms are kept in memory and expire this long after creation. */
+/**
+ * Rooms are kept in memory (saved to disk by the rooms plugin, see
+ * onRoomsChanged) and expire this long after creation.
+ */
 export const ROOM_TTL_MS = 86_400_000
 
 const rooms = new Map<string, Room>()
 const deleteListeners: Array<(roomId: string) => void> = []
+let changeListener: (() => void) | null = null
 
 /** Register a callback run whenever a room is deleted or expires. */
 export function onRoomDeleted(listener: (roomId: string) => void): void {
   deleteListeners.push(listener)
+}
+
+/**
+ * Register the callback run after any room changes (used to save rooms).
+ * This module never touches the disk itself.
+ */
+export function onRoomsChanged(listener: (() => void) | null): void {
+  changeListener = listener
+}
+
+function changed(): void {
+  changeListener?.()
+}
+
+/** All live rooms, e.g. to save them. */
+export function snapshotRooms(): Room[] {
+  purgeExpired()
+  return Array.from(rooms.values())
+}
+
+/**
+ * Put saved rooms back after a restart. Expired rooms and ids already in
+ * use are skipped. Returns the rooms restored.
+ */
+export function restoreRooms(saved: Room[], now = Date.now()): Room[] {
+  const restored: Room[] = []
+  for (const room of saved) {
+    if (rooms.has(room.id) || isExpired(room, now)) continue
+    rooms.set(room.id, room)
+    restored.push(room)
+  }
+  return restored
 }
 
 function isExpired(room: Room, now = Date.now()): boolean {
@@ -46,7 +82,10 @@ function isExpired(room: Room, now = Date.now()): boolean {
 
 function removeRoom(id: string): boolean {
   const existed = rooms.delete(id)
-  if (existed) for (const listener of deleteListeners) listener(id)
+  if (existed) {
+    for (const listener of deleteListeners) listener(id)
+    changed()
+  }
   return existed
 }
 
@@ -83,6 +122,7 @@ export function createRoom(title?: string): Room {
     position: 0
   }
   rooms.set(room.id, room)
+  changed()
   return room
 }
 
@@ -125,6 +165,7 @@ export function setSpotifyConnected(
   const room = getRoom(roomId)
   if (!room) return false
   room.spotifyConnected = connected
+  changed()
   return true
 }
 
@@ -132,6 +173,7 @@ export function setPosition(roomId: string, positionMs: number): boolean {
   const room = getRoom(roomId)
   if (!room) return false
   room.position = Math.max(0, Math.round(positionMs))
+  changed()
   return true
 }
 
@@ -149,6 +191,7 @@ export function addToQueue(roomId: string, data: NewSong): QueuedSong | null {
   if (!room) return null
   const song = buildSong(data, Date.now())
   room.queue.push(song)
+  changed()
   return song
 }
 
@@ -158,6 +201,7 @@ export function bulkAddToQueue(roomId: string, songs: NewSong[]): QueuedSong[] {
   const now = Date.now()
   const added = songs.map((data) => buildSong(data, now))
   room.queue.push(...added)
+  changed()
   return added
 }
 
@@ -175,6 +219,7 @@ export function reorderQueue(
     if (!songMap.has(id)) return false
   }
   room.queue = songIds.map((id) => songMap.get(id)!)
+  changed()
   return true
 }
 
@@ -188,6 +233,7 @@ export function removeFromQueue(
   const idx = room.queue.findIndex((s) => s.id === songId)
   if (idx === -1) return false
   room.queue.splice(idx, 1)
+  changed()
   return true
 }
 
@@ -204,6 +250,7 @@ export function togglePlay(roomId: string, hostToken: string): boolean {
     room.position = 0
   }
   room.isPlaying = !room.isPlaying
+  changed()
   return true
 }
 
@@ -212,6 +259,7 @@ export function pauseRoom(roomId: string): boolean {
   const room = getRoom(roomId)
   if (!room || !room.isPlaying) return false
   room.isPlaying = false
+  changed()
   return true
 }
 
@@ -223,6 +271,7 @@ export function skipSong(roomId: string, hostToken: string): QueuedSong | null {
   const room = getRoom(roomId)
   if (!room || room.hostToken !== hostToken) return null
   room.position = 0
+  changed()
   if (room.queue.length === 0) {
     room.currentSong = null
     room.isPlaying = false
