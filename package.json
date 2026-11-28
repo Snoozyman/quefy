@@ -36,5 +36,8 @@
     "typescript": "^6.0.3",
     "vue-tsc": "^3.3.5"
   },
-  "packageManager": "bun"
+  "packageManager": "bun",
+  "imports": {
+    "#shared/*": "./shared/*.ts"
+  }
 }
