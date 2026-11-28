@@ -58,6 +58,8 @@ Available via Community Applications. Templates at [Snoozyman/unraid-templates](
 | `YT_DLP_PATH`                   | `yt-dlp`                                     | Path to yt-dlp binary                                                |
 | `YT_DLP_COOKIES`                | `data/cookies.txt`                           | Path to Netscape cookies file (can also be uploaded via the room UI) |
 | `DATA_DIR`                      | folder of `YT_DLP_COOKIES`, else `data/`     | Where rooms are saved (`rooms.json`) so they survive restarts        |
+| `PUID` / `PGID`                 | `1000` / `1000`                              | Docker: user and group the app runs as (Unraid: `99` / `100`)        |
+| `YT_DLP_AUTO_UPDATE`            | `true`                                       | Docker: update yt-dlp at container start                             |
 | `SPOTIFY_CLIENT_ID`             | _(required for Spotify)_                     | Spotify App Client ID                                                |
 | `SPOTIFY_CLIENT_SECRET`         | _(required for Spotify)_                     | Spotify App Client Secret                                            |
 | `SPOTIFY_REDIRECT_URI`          | `http://127.0.0.1:3000/api/spotify/callback` | OAuth redirect URI (must match Spotify App config)                   |

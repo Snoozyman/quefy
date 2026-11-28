@@ -92,6 +92,8 @@ docker run -d \
 | `PORT` | `3000` | HTTP server port |
 | `YT_DLP_COOKIES` | `data/cookies.txt` | Path to cookies file (or upload via room UI) |
 | `DATA_DIR` | folder of `YT_DLP_COOKIES`, else `data/` | Where rooms are saved (`rooms.json`); mount it to keep rooms across container updates |
+| `PUID` / `PGID` | `1000` / `1000` | User and group the app runs as; data folders are handed to them at start (Unraid: `99` / `100`) |
+| `YT_DLP_AUTO_UPDATE` | `true` | Run `yt-dlp -U` at container start, so YouTube changes don't need a new image |
 | `SPOTIFY_CLIENT_ID` | _(optional)_ | Spotify App Client ID |
 | `SPOTIFY_CLIENT_SECRET` | _(optional)_ | Spotify App Client Secret |
 | `SPOTIFY_REDIRECT_URI` | `http://localhost:3000/api/spotify/callback` | OAuth redirect URI |
